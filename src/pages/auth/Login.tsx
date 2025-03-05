@@ -1,5 +1,4 @@
-// src/pages/auth/Login.tsx
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { auth } from "../../firebase/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
