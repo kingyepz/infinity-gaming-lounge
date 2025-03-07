@@ -151,7 +151,79 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <h2 className="text-2xl font-bold mb-4">Gaming Sessions</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">Gaming Sessions</h2>
+              <div className="flex space-x-2">
+                <select 
+                  className="bg-black/40 border border-primary/20 rounded px-3 py-1 text-sm"
+                  onChange={(e) => {
+                    // Filter implementation would go here
+                    console.log("Filter by:", e.target.value);
+                  }}
+                >
+                  <option value="all">All Stations</option>
+                  <option value="active">Active Only</option>
+                  <option value="available">Available Only</option>
+                </select>
+                <select 
+                  className="bg-black/40 border border-primary/20 rounded px-3 py-1 text-sm"
+                  onChange={(e) => {
+                    // Sort implementation would go here
+                    console.log("Sort by:", e.target.value);
+                  }}
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="duration">Sort by Duration</option>
+                  <option value="game">Sort by Game</option>
+                </select>
+                <input 
+                  type="text" 
+                  placeholder="Search stations or customers..." 
+                  className="bg-black/40 border border-primary/20 rounded px-3 py-1 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Quick Stats Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                <CardContent className="pt-4">
+                  <div className="text-sm font-medium mb-1">Active Sessions</div>
+                  <div className="text-2xl font-bold">{stations?.filter(s => s.currentCustomer)?.length || 0} / {stations?.length || 0}</div>
+                </CardContent>
+              </Card>
+              <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                <CardContent className="pt-4">
+                  <div className="text-sm font-medium mb-1">Avg. Session Duration</div>
+                  <div className="text-2xl font-bold">45 min</div>
+                </CardContent>
+              </Card>
+              <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                <CardContent className="pt-4">
+                  <div className="text-sm font-medium mb-1">Most Popular Game</div>
+                  <div className="text-2xl font-bold">FC25</div>
+                </CardContent>
+              </Card>
+              <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                <CardContent className="pt-4">
+                  <div className="text-sm font-medium mb-1">Today's Revenue</div>
+                  <div className="text-2xl font-bold">KSH 2,500</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Batch Actions */}
+            <div className="flex justify-end mb-4 space-x-2">
+              <Button variant="outline" size="sm">
+                <ClockIcon className="mr-2 h-4 w-4" />
+                End All Sessions
+              </Button>
+              <Button variant="outline" size="sm">
+                <TrophyIcon className="mr-2 h-4 w-4" />
+                Award Bonus Points
+              </Button>
+            </div>
+
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {stations?.map((station) => (
@@ -175,9 +247,39 @@ export default function POSDashboard() {
                     <CardContent>
                       {station.currentCustomer ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Timer className="h-4 w-4" />
-                            <span>Session started at {new Date(station.sessionStartTime!).toLocaleTimeString()}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Timer className="h-4 w-4" />
+                              <span>Started: {new Date(station.sessionStartTime!).toLocaleTimeString()}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs text-muted-foreground">Duration</span>
+                              <div className="text-lg font-bold text-primary">
+                                {(() => {
+                                  // Calculate elapsed time
+                                  const startTime = new Date(station.sessionStartTime!);
+                                  const now = new Date();
+                                  const diffMs = now.getTime() - startTime.getTime();
+                                  const diffMins = Math.floor(diffMs / 60000);
+                                  const diffHrs = Math.floor(diffMins / 60);
+                                  const remainingMins = diffMins % 60;
+                                  return `${diffHrs}h ${remainingMins}m`;
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <Progress value={(() => {
+                              // For per_hour sessions, show percentage of hour completed
+                              if (station.sessionType === "per_hour") {
+                                const startTime = new Date(station.sessionStartTime!);
+                                const now = new Date();
+                                const diffMs = now.getTime() - startTime.getTime();
+                                const diffMins = Math.floor(diffMs / 60000);
+                                return Math.min((diffMins / 60) * 100, 100);
+                              }
+                              return 100; // For per_game sessions
+                            })()} className="h-2" />
                           </div>
                           <Button
                             variant="destructive"
@@ -216,6 +318,69 @@ export default function POSDashboard() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+              
+              {/* Recent Session History */}
+              <div className="mt-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold">Recent Session History</h3>
+                  <Button variant="outline" size="sm">
+                    View All History
+                  </Button>
+                </div>
+                
+                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                  <CardContent className="p-0">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-primary/20">
+                          <th className="text-left p-4">Customer</th>
+                          <th className="text-left p-4">Station</th>
+                          <th className="text-left p-4">Game</th>
+                          <th className="text-left p-4">Duration</th>
+                          <th className="text-left p-4">Amount</th>
+                          <th className="text-left p-4">Time</th>
+                          <th className="text-left p-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-primary/10 hover:bg-white/5">
+                          <td className="p-4">John Doe</td>
+                          <td className="p-4">Game Station 1</td>
+                          <td className="p-4">FC25</td>
+                          <td className="p-4">1h 24m</td>
+                          <td className="p-4">KSH 280</td>
+                          <td className="p-4">Today, 3:45 PM</td>
+                          <td className="p-4">
+                            <Button variant="ghost" size="sm">View</Button>
+                          </td>
+                        </tr>
+                        <tr className="border-b border-primary/10 hover:bg-white/5">
+                          <td className="p-4">Jane Smith</td>
+                          <td className="p-4">Game Station 3</td>
+                          <td className="p-4">NBA 2K25</td>
+                          <td className="p-4">45m</td>
+                          <td className="p-4">KSH 160</td>
+                          <td className="p-4">Today, 2:30 PM</td>
+                          <td className="p-4">
+                            <Button variant="ghost" size="sm">View</Button>
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/5">
+                          <td className="p-4">Mike Johnson</td>
+                          <td className="p-4">Game Station 2</td>
+                          <td className="p-4">GTA V</td>
+                          <td className="p-4">2h 15m</td>
+                          <td className="p-4">KSH 450</td>
+                          <td className="p-4">Today, 11:20 AM</td>
+                          <td className="p-4">
+                            <Button variant="ghost" size="sm">View</Button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
