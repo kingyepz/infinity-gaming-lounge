@@ -88,6 +88,10 @@ export default function POSDashboard() {
               <DollarSignIcon className="w-4 h-4 mr-2" />
               Reports
             </TabsTrigger>
+            <TabsTrigger value="payments" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+              <DollarSignIcon className="w-4 h-4 mr-2" />
+              Payments
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -111,7 +115,7 @@ export default function POSDashboard() {
                     <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">$1,250.00</div>
+                    <div className="text-2xl font-bold">KSH 1,250.00</div> {/* Changed to KSH */}
                     <p className="text-xs text-muted-foreground">+$350 from yesterday</p>
                   </CardContent>
                 </Card>
@@ -171,7 +175,7 @@ export default function POSDashboard() {
                             <p className="font-medium">Customer {i}</p>
                             <p className="text-sm text-muted-foreground">{new Date().toLocaleTimeString()}</p>
                           </div>
-                          <p className="font-medium">${(Math.random() * 100).toFixed(2)}</p>
+                          <p className="font-medium">KSH {(Math.random() * 100).toFixed(2)}</p> {/* Changed to KSH */}
                         </div>
                       ))}
                     </div>
@@ -241,7 +245,7 @@ export default function POSDashboard() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">Amount</p>
-                              <p className="font-medium">{station.sessionType === "per_game" ? "40 KES/game" : "200 KES/hour"}</p>
+                              <p className="font-medium">KSH {station.sessionType === "per_game" ? "40" : "200"}</p> {/* Changed to KSH */}
                             </div>
                           </div>
 
@@ -320,7 +324,7 @@ export default function POSDashboard() {
                           <p className="text-sm text-muted-foreground">Customer: Alex Smith</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${(Math.random() * 50).toFixed(2)}</p>
+                          <p className="font-medium">KSH {(Math.random() * 50).toFixed(2)}</p> {/* Changed to KSH */}
                           <p className="text-sm text-muted-foreground">2 hours</p>
                         </div>
                       </div>
@@ -573,6 +577,19 @@ export default function POSDashboard() {
             <div>
               <h3 className="text-2xl font-bold mb-4">Financial Reports</h3>
               <p>This tab will contain financial reporting features.</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Payments</h3>
+              <p>Select Payment Method:</p>
+              <ul>
+                <li>Cash</li>
+                <li>Lipa na M-Pesa</li>
+                <li>Airtel Money</li>
+              </ul>
+              {/* Add more payment methods and API integration here later */}
             </div>
           </TabsContent>
         </div>
