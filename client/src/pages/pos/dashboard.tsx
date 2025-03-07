@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,9 @@ import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerPortal from "@/pages/customer/portal";
 import type { GameStation, Game } from "@shared/schema";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowUp, ArrowDown, Download, Printer } from "lucide-react";
 
 
 export default function POSDashboard() {
@@ -268,7 +271,7 @@ export default function POSDashboard() {
                                 // Create a pending payment before ending the session
                                 // In a real implementation, this would create a transaction in the pending state
                                 // For now we'll just end the session and assume the UI will be updated
-                                
+
                                 // End the session
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
                                   currentCustomer: null,
@@ -276,13 +279,13 @@ export default function POSDashboard() {
                                   sessionType: null,
                                   sessionStartTime: null
                                 });
-                                
+
                                 // Show success message with payment hint
                                 toast({
                                   title: "Session ended",
                                   description: "Payment has been added to the pending payments list"
                                 });
-                                
+
                               } catch (error: any) {
                                 toast({
                                   variant: "destructive",
@@ -588,14 +591,39 @@ export default function POSDashboard() {
             {/* Reports Tab Content */}
             <div>
               <h3 className="text-2xl font-bold mb-4">Financial Reports</h3>
-              <p>This tab will contain financial reporting features.</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead>Customers</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>2023-10-26</TableCell>
+                    <TableCell>1200</TableCell>
+                    <TableCell>5</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>2023-10-27</TableCell>
+                    <TableCell>1500</TableCell>
+                    <TableCell>7</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>2023-10-28</TableCell>
+                    <TableCell>1000</TableCell>
+                    <TableCell>3</TableCell>
+                  </TableRow>
+                  </TableBody>
+              </Table>
             </div>
           </TabsContent>
 
           <TabsContent value="payments">
             <div className="space-y-6">
               <h3 className="text-2xl font-bold">Payments</h3>
-              
+
               {/* Pending Payments Section */}
               <Card className="border-primary/20">
                 <CardHeader>
@@ -631,7 +659,7 @@ export default function POSDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               {/* Payment Statistics Section */}
               <Card className="border-primary/20">
                 <CardHeader>
@@ -640,7 +668,7 @@ export default function POSDashboard() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-primary/5 p-3 rounded-md">
-                      <p className="text-sm text-muted-foreground">Today</p>
+                      <p className="text-sm text-mutedforeground">Today</p>
                       <p className="text-xl font-bold">KSH 12,500</p>
                       <p className="text-xs text-green-500">+15% from yesterday</p>
                     </div>
@@ -655,7 +683,7 @@ export default function POSDashboard() {
                       <p className="text-xs text-green-500">+12% from last month</p>
                     </div>
                   </div>
-                  
+
                   {/* Payment Method Breakdown */}
                   <div className="mt-4">
                     <p className="font-medium mb-2">Payment Method Breakdown</p>
@@ -667,7 +695,7 @@ export default function POSDashboard() {
                       <div className="w-full bg-gray-300 rounded-full h-2.5">
                         <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '35%' }}></div>
                       </div>
-                      
+
                       <div className="flex justify-between items-center mb-2 mt-3">
                         <span>M-Pesa</span>
                         <span>55%</span>
@@ -675,7 +703,7 @@ export default function POSDashboard() {
                       <div className="w-full bg-gray-300 rounded-full h-2.5">
                         <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '55%' }}></div>
                       </div>
-                      
+
                       <div className="flex justify-between items-center mb-2 mt-3">
                         <span>Airtel Money</span>
                         <span>10%</span>
@@ -687,7 +715,7 @@ export default function POSDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               {/* Recent Transactions Section */}
               <Card className="border-primary/20">
                 <CardHeader>
@@ -721,7 +749,7 @@ export default function POSDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               {/* Quick Actions */}
               <Card className="border-primary/20">
                 <CardHeader>

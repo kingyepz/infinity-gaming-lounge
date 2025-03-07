@@ -127,6 +127,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message });
     }
   });
+  
+  // New Enhanced Reporting Endpoints
+  app.get("/api/reports/revenue/:timeFrame", async (req, res) => {
+    try {
+      const timeFrame = req.params.timeFrame as 'daily' | 'weekly' | 'monthly';
+      if (!['daily', 'weekly', 'monthly'].includes(timeFrame)) {
+        return res.status(400).json({ error: "Invalid time frame. Use daily, weekly, or monthly." });
+      }
+      
+      const revenueData = await storage.getRevenueByTimeFrame(timeFrame);
+      res.json(revenueData);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/reports/popular-games", async (_req, res) => {
+    try {
+      const popularGames = await storage.getPopularGames();
+      res.json(popularGames);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/reports/station-utilization", async (_req, res) => {
+    try {
+      const stationUtilization = await storage.getStationUtilization();
+      res.json(stationUtilization);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/reports/customer-activity", async (_req, res) => {
+    try {
+      const customerActivity = await storage.getCustomerActivity();
+      res.json(customerActivity);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/reports/payment-methods", async (_req, res) => {
+    try {
+      // This is mock data - in a real implementation, you would query from your database
+      res.json({
+        methods: [
+          { name: "Cash", percentage: 35, amount: 20500 },
+          { name: "M-Pesa", percentage: 55, amount: 32450 },
+          { name: "Airtel Money", percentage: 10, amount: 5500 }
+        ],
+        total: 58450
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/reports/hourly-distribution", async (_req, res) => {
+    try {
+      // This is mock data - in a real implementation, you would aggregate from your database
+      const hours = Array.from({ length: 12 }, (_, i) => i + 9); // 9am to 8pm
+      const data = hours.map(hour => ({
+        hour: `${hour}:00`,
+        sessions: Math.floor(Math.random() * 20) + 5,
+        revenue: (Math.floor(Math.random() * 20) + 5) * 500
+      }));
+      
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Game Routes
   app.get("/api/games", async (_req, res) => {
