@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react
 import Welcome from "./pages/Welcome";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import "./App.css";
 
 const App: React.FC = () => {
   const location = useLocation();
