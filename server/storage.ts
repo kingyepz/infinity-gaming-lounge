@@ -15,8 +15,6 @@ export interface IStorage {
   getAllTransactions(): Promise<Transaction[]>;
   getTransactionsByStatus(status: string): Promise<Transaction[]>;
   updateTransactionStatus(id: number, status: string, reference?: string): Promise<Transaction>;
-  updateTransactionMpesaDetails(id: number, checkoutRequestId: string): Promise<Transaction>;
-  getTransactionByMpesaRequestId(checkoutRequestId: string): Promise<Transaction | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -94,8 +92,7 @@ export class MemStorage implements IStorage {
       id,
       paymentStatus: "pending",
       mpesaRef: null,
-      createdAt: new Date(),
-      mpesaCheckoutRequestId: null
+      createdAt: new Date()
     };
     this.transactions.set(id, transaction);
     return transaction;
@@ -123,24 +120,6 @@ export class MemStorage implements IStorage {
     const updated = { ...transaction, paymentStatus: status, mpesaRef: reference };
     this.transactions.set(id, updated);
     return updated;
-  }
-
-  async updateTransactionMpesaDetails(id: number, checkoutRequestId: string): Promise<Transaction> {
-    const transaction = this.transactions.get(id);
-    if (!transaction) throw new Error("Transaction not found");
-
-    const updated = { ...transaction, mpesaCheckoutRequestId: checkoutRequestId };
-    this.transactions.set(id, updated);
-    return updated;
-  }
-
-  async getTransactionByMpesaRequestId(checkoutRequestId: string): Promise<Transaction | undefined> {
-    for (const transaction of this.transactions.values()) {
-      if (transaction.mpesaCheckoutRequestId === checkoutRequestId) {
-        return transaction;
-      }
-    }
-    return undefined;
   }
 }
 
