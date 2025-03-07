@@ -1,0 +1,29 @@
+Please add the following prioritized features to the "Gaming Sessions" section of the POS system on Replit:
+
+1. **One-Click Session Report Generation**
+   - Implement a feature that allows staff to generate session reports with a single click, placed in a new "Reports" tab on the dashboard (separate from the main "Gaming Sessions" tab).
+   - Reports should include the following details for each session:
+     - Customer name (e.g., "John Doe").
+     - Game Station number (e.g., "Game Station 1").
+     - Game being played (e.g., "FC25", "GTA 5").
+     - Duration of session (in hours or games played).
+     - Total cost (calculated based on 40 KES/game or 200 KES/hour).
+   - Provide options to generate reports for:
+     - Current session.
+     - Hourly summary.
+     - Daily summary.
+   - Ensure the report is displayed in a clear, readable format (e.g., table or list) within the "Reports" tab and can be exported as a text file or printed if possible.
+   - Include a prominent "Generate Report" button on the "Reports" tab.
+
+2. **Customizable Staff Dashboard Widget Layout**
+   - Add a customizable dashboard layout where staff can rearrange widgets to suit their workflow, applied to the main "Gaming Sessions" tab.
+   - Include the following default widgets:
+     - Station Status List (showing "Game Station 1-10" with current customer, game, and status: Available/Occupied).
+     - Earnings Overview (total revenue from sessions, updated in real-time).
+     - Active Sessions (list of ongoing sessions with timers).
+   - Enable staff to drag and drop widgets to reorder them and resize them (e.g., make the Station Status List larger if preferred).
+   - Save each staff member's layout preferences (e.g., using a simple user ID or login system) so it persists across sessions.
+   - Ensure the customization is intuitive, with a "Save Layout" button and a reset option to default settings.
+
+Please implement these features while maintaining the existing functionality (e.g., "Game Station 1-10", 40 KES/game, 200 KES/hour pricing, customer name, and game input). Ensure the "Reports" tab is clearly labeled and easily accessible from the dashboard. Prioritize a user-friendly design and test for stability with up to 10 stations. Once completed, provide a brief note on any challenges or additional suggestions for refinement.
+​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​

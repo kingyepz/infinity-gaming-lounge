@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GamepadIcon, ClockIcon, Timer, FileText } from "lucide-react";
+import { GamepadIcon, ClockIcon, Timer, FileText, BarChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
@@ -76,30 +76,6 @@ export default function POSDashboard() {
       toast({
         variant: "destructive",
         title: "Failed to generate report",
-        description: error.message
-      });
-    }
-  };
-
-  const startSession = async (station: GameStation, formData: {
-    customerName: string;
-    gameName: string;
-    sessionType: "per_game" | "hourly";
-  }) => {
-    try {
-      await apiRequest("PATCH", `/api/stations/${station.id}`, {
-        currentCustomer: formData.customerName,
-        currentGame: formData.gameName,
-        sessionType: formData.sessionType,
-        sessionStartTime: new Date()
-      });
-
-      setSelectedStation(station);
-      setShowPayment(true);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to start session",
         description: error.message
       });
     }
@@ -205,11 +181,21 @@ export default function POSDashboard() {
 
               <Button
                 className="w-full"
-                onClick={() => startSession(station, {
-                  customerName,
-                  gameName: selectedGame,
-                  sessionType
-                })}
+                onClick={() => {
+                  try {
+                    startSession(station, {
+                      customerName,
+                      gameName: selectedGame,
+                      sessionType
+                    });
+                  } catch (error: any) {
+                    toast({
+                      variant: "destructive",
+                      title: "Failed to start session",
+                      description: error.message
+                    });
+                  }
+                }}
                 disabled={!customerName || !selectedGame}
               >
                 Start Session
@@ -221,6 +207,79 @@ export default function POSDashboard() {
     );
   };
 
+  const ReportsTab = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Session Reports</h2>
+        <div className="flex gap-2">
+          <Button onClick={() => generateReport("current")} className="bg-green-600 hover:bg-green-700">
+            <FileText className="mr-2 h-4 w-4" />
+            Current Sessions
+          </Button>
+          <Button onClick={() => generateReport("hourly")} className="bg-blue-600 hover:bg-blue-700">
+            <ClockIcon className="mr-2 h-4 w-4" />
+            Hourly Report
+          </Button>
+          <Button onClick={() => generateReport("daily")} className="bg-purple-600 hover:bg-purple-700">
+            <BarChart className="mr-2 h-4 w-4" />
+            Daily Report
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Report Generation Guide</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h3 className="font-semibold">Current Sessions Report</h3>
+            <p className="text-muted-foreground">
+              Shows all active gaming sessions with customer details, games being played, and costs.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold">Hourly Report</h3>
+            <p className="text-muted-foreground">
+              Summary of gaming sessions from the last hour, including revenue and session counts.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold">Daily Report</h3>
+            <p className="text-muted-foreground">
+              Complete overview of today's gaming sessions, total revenue, and station utilization.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const startSession = async (station: GameStation, formData: {
+    customerName: string;
+    gameName: string;
+    sessionType: "per_game" | "hourly";
+  }) => {
+    try {
+      await apiRequest("PATCH", `/api/stations/${station.id}`, {
+        currentCustomer: formData.customerName,
+        currentGame: formData.gameName,
+        sessionType: formData.sessionType,
+        sessionStartTime: new Date()
+      });
+
+      setSelectedStation(station);
+      setShowPayment(true);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to start session",
+        description: error.message
+      });
+    }
+  };
+
+
   if (stationsLoading || gamesLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -231,27 +290,12 @@ export default function POSDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gaming Sessions</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => generateReport("current")} variant="outline">
-            <FileText className="mr-2 h-4 w-4" />
-            Current Sessions
-          </Button>
-          <Button onClick={() => generateReport("hourly")} variant="outline">
-            <ClockIcon className="mr-2 h-4 w-4" />
-            Hourly Report
-          </Button>
-          <Button onClick={() => generateReport("daily")} variant="outline">
-            <GamepadIcon className="mr-2 h-4 w-4" />
-            Daily Report
-          </Button>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold">Gaming Sessions</h1>
 
       <Tabs defaultValue="sessions">
         <TabsList>
           <TabsTrigger value="sessions">Gaming Sessions</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="register">Register Customer</TabsTrigger>
         </TabsList>
 
@@ -261,6 +305,10 @@ export default function POSDashboard() {
               <StationCard key={station.id} station={station} />
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <ReportsTab />
         </TabsContent>
 
         <TabsContent value="register">
