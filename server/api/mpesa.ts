@@ -17,13 +17,13 @@ const mpesaCredentials = {
   callbackUrl: process.env.MPESA_CALLBACK_URL || ''
 };
 
-// M-Pesa credentials schema for validation
+// M-Pesa credentials schema for validation with optional fields
 const mpesaCredentialsSchema = z.object({
   consumerKey: z.string().min(1, "Consumer Key is required"),
   consumerSecret: z.string().min(1, "Consumer Secret is required"),
-  passKey: z.string().min(1, "Pass Key is required"),
-  shortCode: z.string().min(1, "Short Code is required"),
-  callbackUrl: z.string().url("Valid Callback URL is required")
+  passKey: z.string().optional().default(""),  // Optional since you don't have a Paybill
+  shortCode: z.string().optional().default(""), // Optional since you don't have a Paybill
+  callbackUrl: z.string().optional().default("http://example.com/callback") // Placeholder
 });
 
 // M-Pesa payment request schema

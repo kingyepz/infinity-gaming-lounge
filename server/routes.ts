@@ -317,10 +317,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const paymentData = mpesaPaymentSchema.parse(req.body);
 
-      // TODO: Integrate with actual M-Pesa API
-      // For now, simulate payment success
-      const mpesaRef = `MP${Date.now()}`;
+      // Since we don't have a Paybill, we'll simulate M-Pesa payment
+      console.log("Simulating M-Pesa payment:", paymentData);
+      
+      // Generate a mock M-Pesa reference
+      const mpesaRef = `MP${Date.now().toString().slice(-8)}`;
 
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update transaction status
       await storage.updateTransactionStatus(
         paymentData.transactionId,
         "completed",
@@ -329,11 +335,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: "Payment initiated",
+        message: "M-Pesa payment simulated successfully. In production, this would send an STK push to the customer's phone.",
         mpesaRef
       });
     } catch (error) {
       res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Add an endpoint to get M-Pesa token for frontend testing
+  app.get("/api/payments/mpesa/token", async (_req, res) => {
+    try {
+      // In a real implementation, this would call the M-Pesa API
+      // Since we're only testing, we'll return a mock token
+      res.json({
+        accessToken: "SIMULATED_MPESA_TOKEN_" + Date.now(),
+        expiresIn: 3600
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   });
 
