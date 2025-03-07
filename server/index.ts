@@ -1,86 +1,47 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import express from "express";
 
+// Initialize express app
 const app = express();
+
+// Basic middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
-// Request logging middleware
+// Simple request logging
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// Global error handler middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("Global error handler caught:", err);
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ message });
+// Health check endpoint
+app.get("/api/health", (_req, res) => {
+  console.log("Health check endpoint called");
+  res.json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    message: "Server is running correctly"
+  });
 });
 
-(async () => {
-  try {
-    log("Starting server initialization...");
-    const server = await registerRoutes(app);
+// Clear error handler
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("Server error:", err);
+  res.status(500).json({ error: "Internal Server Error" });
+});
 
-    // Setup Vite middleware based on environment
-    if (app.get("env") === "development") {
-      log("Setting up Vite in development mode...");
-      await setupVite(app, server);
-    } else {
-      log("Setting up static file serving for production...");
-      serveStatic(app);
-    }
+// Direct port binding
+const port = 5000;
+console.log("Starting server...");
+console.log(`Attempting to bind to port ${port}...`);
 
-    // ALWAYS serve the app on port 5000
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0", // Explicitly bind to all network interfaces
-      reusePort: true,
-    }, () => {
-      log(`Server is running on http://0.0.0.0:${port}`);
-    });
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server is listening on http://0.0.0.0:${port}`);
+}).on("error", (error: Error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});
 
-    // Handle server errors
-    server.on('error', (error: any) => {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${port} is already in use`);
-      } else {
-        console.error('Server error:', error);
-      }
-      process.exit(1);
-    });
-
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-})();
+// Global promise error handler
+process.on("unhandledRejection", (error: Error) => {
+  console.error("Unhandled promise rejection:", error);
+  process.exit(1);
+});
