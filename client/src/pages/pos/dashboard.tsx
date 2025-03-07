@@ -116,7 +116,7 @@ export default function POSDashboard() {
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <DollarSignIcon className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
