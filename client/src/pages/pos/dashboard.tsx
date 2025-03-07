@@ -131,53 +131,28 @@ export default function POSDashboard() {
                     </p>
                   </CardContent>
                 </Card>
-
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Points Earned Today
-                    </CardTitle>
-                    <StarIcon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">250</div>
-                    <p className="text-xs text-muted-foreground">
-                      across all customers
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Top Customer Today
-                    </CardTitle>
-                    <TrophyIcon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">John Doe</div>
-                    <p className="text-xs text-muted-foreground">
-                      50 points earned today
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Today's Revenue
-                    </CardTitle>
-                    <ActivityIcon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">KES 12,500</div>
-                    <p className="text-xs text-muted-foreground">
-                      +15% from yesterday
-                    </p>
-                  </CardContent>
-                </Card>
               </div>
 
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-semibold mb-2">Gaming Stations Overview</h3>
+                <p className="text-muted-foreground">Game stations have been moved to the Sessions tab</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    const sessionsTab = document.querySelector('[data-value="sessions"]') as HTMLElement;
+                    if (sessionsTab) sessionsTab.click();
+                  }}
+                >
+                  Go to Sessions
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <h2 className="text-2xl font-bold mb-4">Gaming Sessions</h2>
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {stations?.map((station) => (
                   <Card key={station.id} className="backdrop-blur-sm bg-white/10 border-primary/20">
@@ -242,12 +217,6 @@ export default function POSDashboard() {
                   </Card>
                 ))}
               </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sessions">
-            <div className="text-center text-muted-foreground py-8">
-              Gaming Sessions coming soon...
             </div>
           </TabsContent>
 
