@@ -3,39 +3,35 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
-
-const mpesaPaymentSchema = z.object({
-  phoneNumber: z.string(),
-  amount: z.number(),
-  transactionId: z.number()
-});
-
-const updateStationSchema = z.object({
-  currentCustomer: z.string().nullable(),
-  currentGame: z.string().nullable(),
-  sessionType: z.enum(["per_game", "hourly"]).nullable(),
-  sessionStartTime: z.date().nullable()
-});
+import { log } from "./vite";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Game Station Routes
-  app.get("/api/stations", async (_req, res) => {
+  // Create HTTP server
+  const server = createServer(app);
+
+  // Wrap route handlers with error catching
+  const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
+    return Promise.resolve(fn(req, res, next)).catch(next);
+  };
+
+  // Basic API routes
+  app.get("/api/stations", asyncHandler(async (_req, res) => {
     const stations = await storage.getGameStations();
     res.json(stations);
-  });
+  }));
 
-  app.patch("/api/stations/:id", async (req, res) => {
+  app.patch("/api/stations/:id", asyncHandler(async (req, res) => {
     try {
       const stationData = updateStationSchema.parse(req.body);
       const station = await storage.updateGameStation(Number(req.params.id), stationData);
       res.json(station);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      //This will be caught by the global error handler
+      throw error;
     }
-  });
+  }));
 
-  // Report Generation Routes
-  app.get("/api/reports/current", async (_req, res) => {
+  app.get("/api/reports/current", asyncHandler(async (_req, res) => {
     try {
       const stations = await storage.getGameStations();
       const activeStations = stations.filter(station => station.currentCustomer);
@@ -53,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stationName: station.name,
           customerName: station.currentCustomer,
           gameName: station.currentGame,
-          duration: station.sessionType === "per_game" 
+          duration: station.sessionType === "per_game"
             ? "1 game"
             : `${Math.ceil(duration / 60)} hour(s)`,
           cost
@@ -62,11 +58,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(report);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
+  }));
 
-  app.get("/api/reports/hourly", async (_req, res) => {
+  app.get("/api/reports/hourly", asyncHandler(async (_req, res) => {
     try {
       const stations = await storage.getGameStations();
       const transactions = await Promise.all(
@@ -76,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const hourAgo = new Date(now.getTime() - (60 * 60 * 1000));
 
-      const hourlyTransactions = transactions.flat().filter(tx => 
+      const hourlyTransactions = transactions.flat().filter(tx =>
         new Date(tx.createdAt) >= hourAgo
       );
 
@@ -93,11 +89,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(report);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
+  }));
 
-  app.get("/api/reports/daily", async (_req, res) => {
+  app.get("/api/reports/daily", asyncHandler(async (_req, res) => {
     try {
       const stations = await storage.getGameStations();
       const transactions = await Promise.all(
@@ -105,9 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const now = new Date();
-      const dayStart = new Date(now.setHours(0,0,0,0));
+      const dayStart = new Date(now.setHours(0, 0, 0, 0));
 
-      const dailyTransactions = transactions.flat().filter(tx => 
+      const dailyTransactions = transactions.flat().filter(tx =>
         new Date(tx.createdAt) >= dayStart
       );
 
@@ -124,53 +120,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(report);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  // New Enhanced Reporting Endpoints
-  app.get("/api/reports/revenue/:timeFrame", async (req, res) => {
+  }));
+
+  app.get("/api/reports/revenue/:timeFrame", asyncHandler(async (req, res) => {
     try {
       const timeFrame = req.params.timeFrame as 'daily' | 'weekly' | 'monthly';
       if (!['daily', 'weekly', 'monthly'].includes(timeFrame)) {
         return res.status(400).json({ error: "Invalid time frame. Use daily, weekly, or monthly." });
       }
-      
+
       const revenueData = await storage.getRevenueByTimeFrame(timeFrame);
       res.json(revenueData);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  app.get("/api/reports/popular-games", async (_req, res) => {
+  }));
+
+  app.get("/api/reports/popular-games", asyncHandler(async (_req, res) => {
     try {
       const popularGames = await storage.getPopularGames();
       res.json(popularGames);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  app.get("/api/reports/station-utilization", async (_req, res) => {
+  }));
+
+  app.get("/api/reports/station-utilization", asyncHandler(async (_req, res) => {
     try {
       const stationUtilization = await storage.getStationUtilization();
       res.json(stationUtilization);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  app.get("/api/reports/customer-activity", async (_req, res) => {
+  }));
+
+  app.get("/api/reports/customer-activity", asyncHandler(async (_req, res) => {
     try {
       const customerActivity = await storage.getCustomerActivity();
       res.json(customerActivity);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  app.get("/api/reports/payment-methods", async (_req, res) => {
+  }));
+
+  app.get("/api/reports/payment-methods", asyncHandler(async (_req, res) => {
     try {
       // This is mock data - in a real implementation, you would query from your database
       res.json({
@@ -182,11 +177,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: 58450
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  app.get("/api/reports/hourly-distribution", async (_req, res) => {
+  }));
+
+  app.get("/api/reports/hourly-distribution", asyncHandler(async (_req, res) => {
     try {
       // This is mock data - in a real implementation, you would aggregate from your database
       const hours = Array.from({ length: 12 }, (_, i) => i + 9); // 9am to 8pm
@@ -195,42 +190,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessions: Math.floor(Math.random() * 20) + 5,
         revenue: (Math.floor(Math.random() * 20) + 5) * 500
       }));
-      
+
       res.json(data);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
+  }));
 
-  // Game Routes
-  app.get("/api/games", async (_req, res) => {
+  app.get("/api/games", asyncHandler(async (_req, res) => {
     const games = await storage.getGames();
     res.json(games);
-  });
+  }));
 
-  // Transaction Routes
-  app.post("/api/transactions", async (req, res) => {
+  app.post("/api/transactions", asyncHandler(async (req, res) => {
     try {
       const transactionData = insertTransactionSchema.parse(req.body);
       const transaction = await storage.createTransaction(transactionData);
       res.json(transaction);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      throw error;
     }
-  });
+  }));
 
-  app.get("/api/transactions/station/:stationId", async (req, res) => {
+  app.get("/api/transactions/station/:stationId", asyncHandler(async (req, res) => {
     const transactions = await storage.getTransactionsByStation(Number(req.params.stationId));
     res.json(transactions);
-  });
-  
-  // User Transactions Route
-  app.get("/api/transactions/user/current", async (req, res) => {
-    // This would normally use authentication to get the current user
+  }));
+
+  app.get("/api/transactions/user/current", asyncHandler(async (req, res) => {
     try {
       const userId = req.headers['user-id'];
       if (!userId) {
-        // Return mock data for testing if no user ID provided
         return res.json([
           {
             id: 1,
@@ -258,60 +248,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         ]);
       }
-      
+
       const transactions = await storage.getTransactionsByUser(Number(userId));
       res.json(transactions);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  // Leaderboard Route
-  app.get("/api/leaderboard", async (_req, res) => {
-    // This would normally fetch from the database
+  }));
+
+  app.get("/api/leaderboard", asyncHandler(async (_req, res) => {
     res.json([
       { rank: 1, name: "EliteGamer", points: 2500 },
       { rank: 2, name: "VictoryRoad", points: 2300 },
       { rank: 3, name: "GameMaster", points: 1200 },
       { rank: 4, name: "ProPlayer22", points: 750 }
     ]);
-  });
-  
-  // Events Route
-  app.get("/api/events", async (_req, res) => {
+  }));
+
+  app.get("/api/events", asyncHandler(async (_req, res) => {
     res.json([
       { id: 1, title: "FIFA Tournament", date: "2023-12-15", time: "14:00", prize: "5000 Points" },
       { id: 2, title: "Call of Duty Marathon", date: "2023-12-22", time: "18:00", prize: "Free Hours" },
       { id: 3, title: "Racing Championship", date: "2023-12-29", time: "16:00", prize: "Gaming Gear" }
     ]);
-  });
-  
-  // Rewards Route
-  app.get("/api/rewards", async (_req, res) => {
+  }));
+
+  app.get("/api/rewards", asyncHandler(async (_req, res) => {
     res.json([
       { id: 1, title: "1 Hour Free Gaming", points: 500 },
       { id: 2, title: "Gaming Headset", points: 2000 },
       { id: 3, title: "Premium Snack Pack", points: 300 },
       { id: 4, title: "Controller Skin", points: 800 }
     ]);
-  });
-  
-  // User Friends Route
-  app.get("/api/users/friends", async (_req, res) => {
+  }));
+
+  app.get("/api/users/friends", asyncHandler(async (_req, res) => {
     res.json([
       { id: 1, name: "Alex Gaming", points: 980, status: "online" },
       { id: 2, name: "ProPlayer22", points: 750, status: "offline" },
       { id: 3, name: "GameMaster", points: 1200, status: "gaming" }
     ]);
-  });
-  
-  // Current User Route
-  app.get("/api/users/current", async (req, res) => {
-    // This would normally use authentication
+  }));
+
+  app.get("/api/users/current", asyncHandler(async (req, res) => {
     try {
       const userId = req.headers['user-id'];
       if (!userId) {
-        // Return mock data for testing if no user ID provided
         return res.json({
           id: 1,
           displayName: "John Doe",
@@ -323,20 +305,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() // 30 days ago
         });
       }
-      
+
       const user = await storage.getUserById(Number(userId));
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       res.json(user);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  // User Registration Route
-  app.post("/api/users/register", async (req, res) => {
+  }));
+
+  app.post("/api/users/register", asyncHandler(async (req, res) => {
     try {
       const userData = z.object({
         displayName: z.string(),
@@ -344,22 +325,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phoneNumber: z.string(),
         referredBy: z.string().optional()
       }).parse(req.body);
-      
-      // Check if user already exists
+
       const existingUser = await storage.getUserByPhone(userData.phoneNumber);
       if (existingUser) {
         return res.status(400).json({ error: "User with this phone number already exists" });
       }
-      
-      // Create the user
+
       const user = await storage.createUser({
         displayName: userData.displayName,
         gamingName: userData.gamingName,
         phoneNumber: userData.phoneNumber,
         role: "customer"
       });
-      
-      // If user was referred, award referral points to the referrer
+
       if (userData.referredBy) {
         try {
           const referrer = await storage.getUserByPhone(userData.referredBy);
@@ -370,49 +348,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error processing referral:", error);
         }
       }
-      
+
       res.json(user);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  // Points Management Routes
-  app.post("/api/users/points/award", async (req, res) => {
+  }));
+
+  app.post("/api/users/points/award", asyncHandler(async (req, res) => {
     try {
       const data = z.object({
         userId: z.number(),
         points: z.number().positive()
       }).parse(req.body);
-      
+
       const newPoints = await storage.awardLoyaltyPoints(data.userId, data.points);
       res.json({ success: true, newPoints });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      throw error;
     }
-  });
-  
-  app.post("/api/users/points/redeem", async (req, res) => {
+  }));
+
+  app.post("/api/users/points/redeem", asyncHandler(async (req, res) => {
     try {
       const data = z.object({
         userId: z.number(),
         points: z.number().positive()
       }).parse(req.body);
-      
+
       const newPoints = await storage.redeemLoyaltyPoints(data.userId, data.points);
       res.json({ success: true, newPoints });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      throw error;
     }
-  });
+  }));
 
-  // M-Pesa Payment Routes
-  app.post("/api/payments/mpesa", async (req, res) => {
+  app.post("/api/payments/mpesa", asyncHandler(async (req, res) => {
     try {
       const paymentData = mpesaPaymentSchema.parse(req.body);
 
-      // TODO: Integrate with actual M-Pesa API
-      // For now, simulate payment success
       const mpesaRef = `MP${Date.now()}`;
 
       await storage.updateTransactionStatus(
@@ -427,10 +401,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mpesaRef
       });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      throw error;
     }
+  }));
+
+  // Error handling middleware
+  app.use((err: any, _req: any, res: any, _next: any) => {
+    log(`API Error: ${err.message}`);
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ error: message });
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  return server;
 }
+
+const mpesaPaymentSchema = z.object({
+  phoneNumber: z.string(),
+  amount: z.number(),
+  transactionId: z.number()
+});
+
+const updateStationSchema = z.object({
+  currentCustomer: z.string().nullable(),
+  currentGame: z.string().nullable(),
+  sessionType: z.enum(["per_game", "hourly"]).nullable(),
+  sessionStartTime: z.date().nullable()
+});

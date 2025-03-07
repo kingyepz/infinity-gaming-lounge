@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, GamepadIcon, BarChart2Icon, DollarSignIcon, UsersIcon } from "lucide-react";
 import InfinityLogo from "@/components/animations/InfinityLogo";
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
