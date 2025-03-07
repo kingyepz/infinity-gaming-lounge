@@ -60,16 +60,18 @@ export default function POSDashboard() {
       <Tabs defaultValue="overview" className="flex w-full relative">
         {/* Sidebar */}
         <div className="w-64 border-r border-primary/20 p-4 space-y-2 backdrop-blur-sm bg-black/50">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-lg font-bold text-primary">Infinity Gaming</h1>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleLogout}
-              className="hover:bg-primary/20"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+          <div className="flex flex-col items-center mb-6">
+            <h1 className="text-xl font-bold text-primary text-center mb-2">Infinity Gaming</h1>
+            <div className="flex w-full justify-end">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleLogout}
+                className="hover:bg-primary/20"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           <TabsList className="flex flex-col w-full space-y-2">
@@ -116,7 +118,92 @@ export default function POSDashboard() {
           <TabsContent value="overview">
             {/* Dashboard Content */}
             <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Gaming Lounge Overview</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Quick Stats Cards */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">12</div>
+                    <p className="text-xs text-muted-foreground">+2 from yesterday</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">$1,234</div>
+                    <p className="text-xs text-muted-foreground">+15% from yesterday</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">8</div>
+                    <p className="text-xs text-muted-foreground">+3 from yesterday</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Points Awarded</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">1,850</div>
+                    <p className="text-xs text-muted-foreground">+220 from yesterday</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Recent Activity */}
+              <h3 className="text-xl font-semibold mt-8 mb-4">Recent Activity</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Station Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-[300px] overflow-auto">
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex items-center p-2 rounded-lg bg-primary/5 hover:bg-primary/10">
+                          <div className="mr-4 p-2 rounded-full bg-primary/20">
+                            <Gamepad2 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Station {i} activated</p>
+                            <p className="text-xs text-muted-foreground">{i * 10} minutes ago</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Customer Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-[300px] overflow-auto">
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex items-center p-2 rounded-lg bg-primary/5 hover:bg-primary/10">
+                          <div className="mr-4 p-2 rounded-full bg-primary/20">
+                            <Users className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-medium">New customer registered</p>
+                            <p className="text-xs text-muted-foreground">{i * 15} minutes ago</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
                 <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
@@ -390,30 +477,206 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="text-center text-muted-foreground py-8">
-              Analytics dashboard coming soon...
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Gaming Analytics</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Usage Analytics */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Station Usage</CardTitle>
+                    <CardDescription>Station utilization over time</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <div className="flex items-center justify-center h-full bg-primary/5 rounded-md">
+                      <div className="text-center">
+                        <BarChart className="h-12 w-12 mx-auto text-primary opacity-50" />
+                        <p className="mt-4 text-sm text-muted-foreground">Station Usage Chart</p>
+                        <p className="text-xs text-muted-foreground">(Data visualization will appear here)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Game Popularity */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Game Popularity</CardTitle>
+                    <CardDescription>Most played games this month</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <div className="flex items-center justify-center h-full bg-primary/5 rounded-md">
+                      <div className="text-center">
+                        <PieChart className="h-12 w-12 mx-auto text-primary opacity-50" />
+                        <p className="mt-4 text-sm text-muted-foreground">Game Popularity Chart</p>
+                        <p className="text-xs text-muted-foreground">(Data visualization will appear here)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Customer Retention */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Customer Retention</CardTitle>
+                    <CardDescription>Returning vs. new customers</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <div className="flex items-center justify-center h-full bg-primary/5 rounded-md">
+                      <div className="text-center">
+                        <LineChart className="h-12 w-12 mx-auto text-primary opacity-50" />
+                        <p className="mt-4 text-sm text-muted-foreground">Customer Retention Chart</p>
+                        <p className="text-xs text-muted-foreground">(Data visualization will appear here)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Peak Hours */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Peak Hours</CardTitle>
+                    <CardDescription>Busiest hours of operation</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <div className="flex items-center justify-center h-full bg-primary/5 rounded-md">
+                      <div className="text-center">
+                        <BarChart className="h-12 w-12 mx-auto text-primary opacity-50" />
+                        <p className="mt-4 text-sm text-muted-foreground">Peak Hours Chart</p>
+                        <p className="text-xs text-muted-foreground">(Data visualization will appear here)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="reports">
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Session Reports</h2>
+              <h2 className="text-2xl font-bold mb-4">Financial Reports</h2>
+              
+              <div className="flex justify-between items-center mb-6">
+                <div className="space-x-2">
+                  <Button variant="outline">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    This Week
+                  </Button>
+                  <Button variant="outline">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    This Month
+                  </Button>
+                  <Button variant="outline">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Custom Range
+                  </Button>
+                </div>
                 <div className="flex gap-2">
                   <Button variant="default">
                     <FileText className="mr-2 h-4 w-4" />
-                    Current Sessions
+                    Export Report
                   </Button>
-                  <Button variant="default">
-                    <ClockIcon className="mr-2 h-4 w-4" />
-                    Hourly Report
-                  </Button>
-                  <Button variant="default">
-                    <BarChart className="mr-2 h-4 w-4" />
-                    Daily Report
+                  <Button variant="outline">
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print
                   </Button>
                 </div>
               </div>
+              
+              {/* Revenue Summary */}
+              <Card className="bg-black/30 border-primary/20 mb-6">
+                <CardHeader>
+                  <CardTitle>Revenue Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-primary/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Today</p>
+                      <p className="text-2xl font-bold">$1,234</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">This Week</p>
+                      <p className="text-2xl font-bold">$5,678</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">This Month</p>
+                      <p className="text-2xl font-bold">$15,890</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Year to Date</p>
+                      <p className="text-2xl font-bold">$127,560</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Revenue by Service */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Revenue by Service Type</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <div className="flex items-center justify-center h-full bg-primary/5 rounded-md">
+                      <div className="text-center">
+                        <PieChart className="h-12 w-12 mx-auto text-primary opacity-50" />
+                        <p className="mt-4 text-sm text-muted-foreground">Service Revenue Chart</p>
+                        <p className="text-xs text-muted-foreground">(Data visualization will appear here)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Daily Revenue Trends</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <div className="flex items-center justify-center h-full bg-primary/5 rounded-md">
+                      <div className="text-center">
+                        <LineChart className="h-12 w-12 mx-auto text-primary opacity-50" />
+                        <p className="mt-4 text-sm text-muted-foreground">Daily Revenue Chart</p>
+                        <p className="text-xs text-muted-foreground">(Data visualization will appear here)</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Transactions Table */}
+              <Card className="bg-black/30 border-primary/20 mt-6">
+                <CardHeader>
+                  <CardTitle>Recent Transactions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-primary/20">
+                          <th className="text-left p-2">Transaction ID</th>
+                          <th className="text-left p-2">Customer</th>
+                          <th className="text-left p-2">Service</th>
+                          <th className="text-left p-2">Amount</th>
+                          <th className="text-left p-2">Date</th>
+                          <th className="text-left p-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <tr key={i} className="border-b border-primary/10 hover:bg-primary/5">
+                            <td className="p-2">TX-{1000 + i}</td>
+                            <td className="p-2">Customer {i}</td>
+                            <td className="p-2">Gaming Session</td>
+                            <td className="p-2">${20 + i * 5}</td>
+                            <td className="p-2">{new Date().toLocaleDateString()}</td>
+                            <td className="p-2"><span className="px-2 py-1 rounded-full bg-green-500/20 text-green-500 text-xs">Completed</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </div>
