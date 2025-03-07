@@ -1,8 +1,7 @@
-
-import { gameStations, games, transactions, users } from "@shared/schema";
+import { gameStations, games, transactions, users, friends, events, rewards, bookings } from "@shared/schema";
 import type { GameStation, InsertGameStation, Game, InsertGame, Transaction, InsertTransaction, User, InsertUser } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, desc } from "drizzle-orm";
 
 class StorageService {
   // Game Station Methods
@@ -15,7 +14,7 @@ class StorageService {
     }
   }
 
-  async updateGameStation(id: number, data: any) {
+  async updateGameStation(id: number, data: Partial<GameStation>) {
     try {
       await db.update(gameStations)
         .set(data)
@@ -44,19 +43,15 @@ class StorageService {
   // Transaction Methods
   async createTransaction(data: InsertTransaction) {
     try {
-      const result = await db.insert(transactions)
+      const [result] = await db.insert(transactions)
         .values({
           ...data,
-          paymentStatus: "pending"
+          paymentStatus: "pending",
+          createdAt: new Date()
         })
         .returning();
 
-      // If customer exists, award loyalty points
-      if (data.userId) {
-        await this.awardLoyaltyPoints(data.userId, Math.floor(data.amount / 100));
-      }
-
-      return result[0];
+      return result;
     } catch (error) {
       console.error("Error creating transaction:", error);
       throw error;
@@ -67,7 +62,8 @@ class StorageService {
     try {
       return await db.select()
         .from(transactions)
-        .where(eq(transactions.stationId, stationId));
+        .where(eq(transactions.stationId, stationId))
+        .orderBy(desc(transactions.createdAt));
     } catch (error) {
       console.error("Error fetching transactions by station:", error);
       return [];
@@ -87,17 +83,15 @@ class StorageService {
 
   async updateTransactionStatus(id: number, status: string, mpesaRef?: string) {
     try {
-      await db.update(transactions)
+      const [result] = await db.update(transactions)
         .set({ 
-          paymentStatus: status,
-          mpesaRef: mpesaRef
+          paymentStatus: status as "pending" | "completed" | "failed",
+          mpesaRef
         })
-        .where(eq(transactions.id, id));
-
-      return await db.select()
-        .from(transactions)
         .where(eq(transactions.id, id))
-        .then(res => res[0]);
+        .returning();
+
+      return result;
     } catch (error) {
       console.error("Error updating transaction status:", error);
       throw error;
@@ -107,14 +101,15 @@ class StorageService {
   // User Methods
   async createUser(data: InsertUser) {
     try {
-      const result = await db.insert(users)
+      const [result] = await db.insert(users)
         .values({
           ...data,
-          points: 0
+          points: 0,
+          createdAt: new Date()
         })
         .returning();
 
-      return result[0];
+      return result;
     } catch (error) {
       console.error("Error creating user:", error);
       throw error;
@@ -123,10 +118,10 @@ class StorageService {
 
   async getUserByPhone(phoneNumber: string) {
     try {
-      return await db.select()
+      const result = await db.select()
         .from(users)
-        .where(eq(users.phoneNumber, phoneNumber))
-        .then(res => res[0] || null);
+        .where(eq(users.phoneNumber, phoneNumber));
+      return result[0] || null;
     } catch (error) {
       console.error("Error fetching user by phone:", error);
       return null;
@@ -135,10 +130,10 @@ class StorageService {
 
   async getUserById(id: number) {
     try {
-      return await db.select()
+      const result = await db.select()
         .from(users)
-        .where(eq(users.id, id))
-        .then(res => res[0] || null);
+        .where(eq(users.id, id));
+      return result[0] || null;
     } catch (error) {
       console.error("Error fetching user by id:", error);
       return null;
@@ -152,11 +147,12 @@ class StorageService {
 
       const newPoints = (user.points || 0) + points;
 
-      await db.update(users)
+      const [result] = await db.update(users)
         .set({ points: newPoints })
-        .where(eq(users.id, userId));
+        .where(eq(users.id, userId))
+        .returning();
 
-      return newPoints;
+      return result.points;
     } catch (error) {
       console.error("Error awarding loyalty points:", error);
       throw error;
@@ -334,12 +330,17 @@ class StorageService {
     }
   }
 
-  // Mock data initialization for testing
+  // Initialize test data
   async initializeMockData() {
     try {
-      // Check if we already have data
-      const stations = await this.getGameStations();
-      if (stations.length > 0) return;
+      console.log("Checking for existing data...");
+      const existingStations = await this.getGameStations();
+      if (existingStations.length > 0) {
+        console.log("Mock data already exists, skipping initialization");
+        return;
+      }
+
+      console.log("Initializing mock data...");
 
       // Create game stations
       await db.insert(gameStations).values([
@@ -359,7 +360,7 @@ class StorageService {
         { name: "Minecraft", isActive: true }
       ]);
 
-      // Create sample users
+      // Create test users
       await db.insert(users).values([
         { 
           displayName: "John Doe", 
@@ -367,7 +368,7 @@ class StorageService {
           phoneNumber: "254700000000", 
           role: "customer",
           points: 750,
-          referralCode: "JD123"
+          level: "pro"
         },
         {
           displayName: "Staff Test",
@@ -388,6 +389,7 @@ class StorageService {
       console.log("Mock data initialized successfully");
     } catch (error) {
       console.error("Error initializing mock data:", error);
+      throw error;
     }
   }
 }
