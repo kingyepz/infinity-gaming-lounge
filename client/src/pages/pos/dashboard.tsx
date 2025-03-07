@@ -11,12 +11,17 @@ import {
   FileText,
   BarChart,
   Users,
-  LogOut
+  LogOut,
+  TrophyIcon,
+  StarIcon,
+  ActivityIcon
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerRegistrationForm from "@/components/shared/CustomerRegistrationForm";
 import type { GameStation, Game } from "@shared/schema";
+
+type ReportType = "current" | "hourly" | "daily";
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -63,7 +68,7 @@ export default function POSDashboard() {
               <CardTitle className="text-sm font-medium">
                 Top Customer Today
               </CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <TrophyIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">John Doe</div>
@@ -78,7 +83,7 @@ export default function POSDashboard() {
               <CardTitle className="text-sm font-medium">
                 Points Earned Today
               </CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
+              <StarIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">250</div>
@@ -93,7 +98,7 @@ export default function POSDashboard() {
               <CardTitle className="text-sm font-medium">
                 Today's Revenue
               </CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <ActivityIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">KES 12,500</div>
@@ -486,34 +491,32 @@ export default function POSDashboard() {
           </TabsList>
         </div>
         <div className="flex-1 p-6 space-y-6">
-          <Tabs defaultValue="dashboard">
-            <TabsContent value="dashboard">
-              <h2 className="text-2xl font-bold mb-6">POS Dashboard</h2>
-              <DashboardOverview />
-            </TabsContent>
+          <TabsContent value="dashboard">
+            <h2 className="text-2xl font-bold mb-6">POS Dashboard</h2>
+            <DashboardOverview />
+          </TabsContent>
 
-            <TabsContent value="sessions">
-              <h2 className="text-2xl font-bold mb-6">Gaming Sessions</h2>
-              <GamingSessionsTab />
-            </TabsContent>
+          <TabsContent value="sessions">
+            <h2 className="text-2xl font-bold mb-6">Gaming Sessions</h2>
+            <GamingSessionsTab />
+          </TabsContent>
 
-            <TabsContent value="customers">
-              <h2 className="text-2xl font-bold mb-6">Customer Portal</h2>
-              <CustomerRegistrationForm />
-            </TabsContent>
+          <TabsContent value="customers">
+            <h2 className="text-2xl font-bold mb-6">Customer Portal</h2>
+            <CustomerRegistrationForm />
+          </TabsContent>
 
-            <TabsContent value="analytics">
-              <h2 className="text-2xl font-bold mb-6">Analytics</h2>
-              <div className="text-center text-muted-foreground">
-                Analytics dashboard coming soon...
-              </div>
-            </TabsContent>
+          <TabsContent value="analytics">
+            <h2 className="text-2xl font-bold mb-6">Analytics</h2>
+            <div className="text-center text-muted-foreground">
+              Analytics dashboard coming soon...
+            </div>
+          </TabsContent>
 
-            <TabsContent value="reports">
-              <h2 className="text-2xl font-bold mb-6">Reports</h2>
-              <ReportsTab />
-            </TabsContent>
-          </Tabs>
+          <TabsContent value="reports">
+            <h2 className="text-2xl font-bold mb-6">Reports</h2>
+            <ReportsTab />
+          </TabsContent>
         </div>
       </Tabs>
       {showPayment && selectedStation && (
