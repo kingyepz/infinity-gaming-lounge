@@ -1,71 +1,52 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { initiateMpesaPayment, checkPaymentStatus } from "@/lib/mpesa";
-import type { Game } from "@shared/schema";
+import type { GameStation } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import PaymentForm from "./PaymentForm";
 
 interface PaymentModalProps {
-  game: Game;
+  station: GameStation;
   onClose: () => void;
 }
 
-export default function PaymentModal({ game, onClose }: PaymentModalProps) {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [duration, setDuration] = useState(1); // hours
+export default function PaymentModal({ station, onClose }: PaymentModalProps) {
+  const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const amount = game.hourlyRate * duration;
-
-  const handlePayment = async () => {
+  const handlePayment = async (paymentInfo: any) => {
     try {
       setLoading(true);
 
-      // Create transaction first
-      const transaction = await apiRequest("POST", "/api/transactions", {
-        gameId: game.id,
-        amount,
-        duration: duration * 60 // convert to minutes
+      // Create transaction and start session
+      await apiRequest("PATCH", `/api/stations/${station.id}`, {
+        currentCustomer: customerName,
+        sessionType: paymentInfo.sessionType || "hourly",
+        sessionStartTime: new Date().toISOString()
       });
 
-      // Initiate M-Pesa payment
-      await initiateMpesaPayment({
-        phoneNumber,
-        amount,
-        transactionId: transaction.id
+      // Create transaction record
+      await apiRequest("POST", "/api/transactions", {
+        stationId: station.id,
+        customerName,
+        amount: paymentInfo.amount,
+        sessionType: paymentInfo.sessionType || "hourly",
+        duration: paymentInfo.duration || 60, // Default to 1 hour
+        paymentStatus: "completed"
       });
 
-      // Poll for payment status
-      const checkStatus = async () => {
-        const status = await checkPaymentStatus(transaction.id);
-        if (status.status === "completed") {
-          toast({
-            title: "Payment Successful",
-            description: "Your gaming session has started!"
-          });
-          onClose();
-        } else if (status.status === "failed") {
-          toast({
-            variant: "destructive",
-            title: "Payment Failed",
-            description: "Please try again"
-          });
-        } else {
-          // Keep polling
-          setTimeout(checkStatus, 5000);
-        }
-      };
+      toast({
+        title: "Session Started",
+        description: "Gaming session has been started successfully!"
+      });
 
-      checkStatus();
-
-    } catch (error) {
+      onClose();
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Payment Failed",
-        description: error.message
+        title: "Failed to Start Session",
+        description: error.message || "An error occurred while starting the session"
       });
     } finally {
       setLoading(false);
@@ -76,46 +57,27 @@ export default function PaymentModal({ game, onClose }: PaymentModalProps) {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Pay for Gaming Session</DialogTitle>
+          <DialogTitle>Start Gaming Session - {station.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label>Duration (hours)</label>
-            <Input
-              type="number"
-              min={1}
-              value={duration}
-              onChange={(e) => setDuration(parseInt(e.target.value))}
+            <label className="text-sm text-muted-foreground">Customer Name</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 rounded-md bg-background border"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Enter customer name"
             />
           </div>
 
-          <div className="space-y-2">
-            <label>M-Pesa Phone Number</label>
-            <Input
-              type="tel"
-              placeholder="254700000000"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-          </div>
-
-          <div className="pt-4">
-            <p className="text-lg font-semibold">
-              Total Amount: KSH {amount}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              You'll earn {Math.floor(amount / 100)} loyalty points
-            </p>
-          </div>
-
-          <Button
-            className="w-full"
-            onClick={handlePayment}
-            disabled={loading || !phoneNumber || duration < 1}
-          >
-            {loading ? "Processing..." : "Pay with M-Pesa"}
-          </Button>
+          <PaymentForm
+            amount={station.hourlyRate || station.baseRate || 0}
+            customerName={customerName}
+            onComplete={handlePayment}
+            onCancel={onClose}
+          />
         </div>
       </DialogContent>
     </Dialog>
