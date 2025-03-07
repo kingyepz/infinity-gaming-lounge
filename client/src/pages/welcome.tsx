@@ -1,11 +1,39 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { GamepadIcon, UsersIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import FallingButtons from "@/components/animations/FallingButtons";
 import InfinityLogo from "@/components/animations/InfinityLogo";
 
 export default function WelcomePage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const handleStaffLogin = () => {
+    try {
+      // Set default staff user
+      const userData = {
+        id: 2,
+        displayName: "Staff Test",
+        gamingName: "staff",
+        phoneNumber: "254700000001",
+        role: "staff" as const,
+        points: 0,
+        createdAt: new Date()
+      };
+
+      console.log('Welcome: Setting staff test user:', userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      setLocation("/pos");
+    } catch (error) {
+      console.error('Welcome: Error during staff login:', error);
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: "Could not set up staff test account"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black overflow-hidden relative">
@@ -39,16 +67,7 @@ export default function WelcomePage() {
 
           <Button
             className="relative group px-8 py-6 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
-            onClick={() => {
-              // Set default staff user
-              localStorage.setItem("user", JSON.stringify({
-                displayName: "Staff User",
-                gamingName: "Staff User",
-                phoneNumber: "254700000001",
-                role: "staff"
-              }));
-              setLocation("/pos");
-            }}
+            onClick={handleStaffLogin}
           >
             <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
             <UsersIcon className="mr-2 h-5 w-5" />
