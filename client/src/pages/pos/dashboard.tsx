@@ -52,6 +52,34 @@ export default function POSDashboard() {
       </div>
 
       {/* Center Logo - Make it responsive */}
+
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Top Games</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {/* Mock top games data */}
+                      {[
+                        { name: "FIFA 24", sessions: 42, platform: "PS5" },
+                        { name: "Call of Duty", sessions: 38, platform: "Xbox" },
+                        { name: "Fortnite", sessions: 27, platform: "PC" },
+                        { name: "Mortal Kombat", sessions: 23, platform: "PS5" },
+                      ].map((game, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium">{game.name}</span>
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              {game.platform}
+                            </Badge>
+                          </div>
+                          <span className="text-sm">{game.sessions} sessions</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
       <div className="w-full flex justify-center items-center py-2 sm:py-4 z-10 relative">
         <div className="flex flex-col items-center">
           <InfinityLogo className="w-16 h-16 sm:w-24 sm:h-24" />
@@ -159,6 +187,35 @@ export default function POSDashboard() {
                             <p className="font-medium">Station {i}</p>
                             <p className="text-sm text-muted-foreground">Call of Duty: Warzone</p>
                           </div>
+
+            <Card className="bg-black/40 border-primary/20 mt-6">
+              <CardHeader>
+                <CardTitle>Upcoming Reservations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Mock reservation data */}
+                  {[
+                    { name: "John Doe", time: "3:00 PM", duration: "2 hours", stations: 2, status: "confirmed" },
+                    { name: "Jane Smith", time: "4:30 PM", duration: "3 hours", stations: 1, status: "pending" },
+                    { name: "Team Apex", time: "6:00 PM", duration: "4 hours", stations: 4, status: "confirmed" },
+                  ].map((reservation, i) => (
+                    <div key={i} className="flex items-center justify-between bg-black/20 p-3 rounded-md">
+                      <div>
+                        <div className="font-medium">{reservation.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {reservation.time} • {reservation.duration} • {reservation.stations} {reservation.stations > 1 ? 'stations' : 'station'}
+                        </div>
+                      </div>
+                      <Badge variant={reservation.status === "confirmed" ? "default" : "outline"}>
+                        {reservation.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
                           <Badge variant={i % 2 === 0 ? "default" : "secondary"}>
                             {i % 2 === 0 ? "Active" : "Ending Soon"}
                           </Badge>
@@ -430,6 +487,53 @@ export default function POSDashboard() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Revenue Trends */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Station Utilization</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-80 relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-full flex flex-col">
+                        {/* Station usage donut chart */}
+                        <div className="flex-1 flex items-center justify-center relative">
+                          <div className="w-48 h-48 rounded-full border-8 border-primary/20 relative">
+                            {stations && (
+                              <>
+                                <div 
+                                  className="absolute inset-0 rounded-full border-8 border-primary" 
+                                  style={{ 
+                                    clipPath: `polygon(50% 50%, 50% 0%, ${
+                                      50 + 50 * Math.sin((stations.filter(s => s.currentCustomer).length / stations.length) * Math.PI * 2)
+                                    }% ${
+                                      50 - 50 * Math.cos((stations.filter(s => s.currentCustomer).length / stations.length) * Math.PI * 2)
+                                    }%, 50% 50%)` 
+                                  }}
+                                ></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                  <span className="text-3xl font-bold">{
+                                    stations?.filter(s => s.currentCustomer)?.length || 0
+                                  }/{stations?.length || 0}</span>
+                                  <span className="text-xs text-muted-foreground">Stations in use</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-between px-4 py-4">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
+                            <span className="text-xs">Active</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
+                            <span className="text-xs">Available</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>
                     <CardTitle>Revenue Trends (7 Days)</CardTitle>
