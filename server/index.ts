@@ -3,6 +3,7 @@ import cors from "cors";
 import { setupVite, serveStatic } from "./vite";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
+import { storage } from "./storage"; // Import storage module
 
 // Initialize express app
 const app = express();
@@ -46,6 +47,10 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 (async () => {
   try {
     console.log("Starting server initialization...");
+
+    // Initialize mock data before registering routes
+    await storage.initializeMockData();
+    console.log("Database initialized with mock data");
 
     // Create HTTP server
     const httpServer = createServer(app);
