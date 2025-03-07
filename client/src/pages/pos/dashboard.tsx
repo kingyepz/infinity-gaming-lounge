@@ -14,7 +14,7 @@ import CustomerPortal from "@/pages/customer/portal";
 import type { GameStation, Game } from "@shared/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, ArrowDown, Download, Printer } from "lucide-react";
+import { ArrowUp, ArrowDown, Download, Printer, Calendar, LogOut } from "lucide-react";
 
 
 export default function POSDashboard() {
@@ -245,14 +245,95 @@ export default function POSDashboard() {
                 </Card>
               </div>
 
-              {/* Quick Actions - Make it responsive */}
+              {/* Enhanced Quick Actions Section - Make it responsive */}
               <div className="mt-4 sm:mt-6">
                 <h3 className="text-lg sm:text-xl font-semibold mb-4">Quick Actions</h3>
-                <div className="flex flex-wrap gap-2 sm:gap-3">
-                  <Button variant="default">New Session</Button>
-                  <Button variant="outline">View Reports</Button>
-                  <Button variant="outline">Manage Stations</Button>
-                </div>
+                <Card className="bg-black/30 border-primary/20">
+                  <CardContent className="p-4 mt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      <Button 
+                        variant="default" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => {
+                          const availableStation = stations?.find(s => !s.currentCustomer);
+                          if (availableStation) {
+                            setSelectedStation(availableStation);
+                            setShowPayment(true);
+                          } else {
+                            toast({
+                              title: "No available stations",
+                              description: "All stations are currently in use."
+                            });
+                          }
+                        }}
+                      >
+                        <GamepadIcon className="h-6 w-6 mb-2" />
+                        <span className="text-sm">New Session</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => document.querySelector('[value="reports"]')?.dispatchEvent(new MouseEvent('click'))}
+                      >
+                        <BarChart2Icon className="h-6 w-6 mb-2" />
+                        <span className="text-sm">View Reports</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => document.querySelector('[value="sessions"]')?.dispatchEvent(new MouseEvent('click'))}
+                      >
+                        <Calendar className="h-6 w-6 mb-2" />
+                        <span className="text-sm">Manage Sessions</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => document.querySelector('[value="customers"]')?.dispatchEvent(new MouseEvent('click'))}
+                      >
+                        <UsersIcon className="h-6 w-6 mb-2" />
+                        <span className="text-sm">Customer Portal</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => document.querySelector('[value="payments"]')?.dispatchEvent(new MouseEvent('click'))}
+                      >
+                        <DollarSignIcon className="h-6 w-6 mb-2" />
+                        <span className="text-sm">Process Payment</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => document.querySelector('[value="analytics"]')?.dispatchEvent(new MouseEvent('click'))}
+                      >
+                        <BarChart2Icon className="h-6 w-6 mb-2" />
+                        <span className="text-sm">View Analytics</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3"
+                        onClick={() => {
+                          toast({
+                            title: "Coming Soon",
+                            description: "This feature is under development."
+                          });
+                        }}
+                      >
+                        <Printer className="h-6 w-6 mb-2" />
+                        <span className="text-sm">Print Receipt</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-auto flex flex-col items-center p-3 bg-red-900/20 hover:bg-red-900/30"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-6 w-6 mb-2" />
+                        <span className="text-sm">Logout</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
