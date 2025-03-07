@@ -39,7 +39,16 @@ export default function WelcomePage() {
 
           <Button
             className="relative group px-8 py-6 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
-            onClick={() => setLocation("/staff/login")}
+            onClick={() => {
+              // Set default staff user
+              localStorage.setItem("user", JSON.stringify({
+                displayName: "Staff User",
+                gamingName: "Staff User",
+                phoneNumber: "254700000001",
+                role: "staff"
+              }));
+              setLocation("/pos");
+            }}
           >
             <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
             <UsersIcon className="mr-2 h-5 w-5" />

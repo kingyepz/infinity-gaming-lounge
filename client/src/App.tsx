@@ -21,7 +21,23 @@ function Router() {
         {/* Public routes */}
         <Route path="/" component={WelcomePage} />
         <Route path="/login" component={Login} />
-        <Route path="/staff/login" component={StaffLogin} />
+        <Route path="/staff/login">
+          {/* Check if we already have a user, if so redirect to dashboard */}
+          {() => {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+              const user = JSON.parse(userData);
+              if (user.role === 'admin') {
+                window.location.href = '/admin';
+                return null;
+              } else if (user.role === 'staff') {
+                window.location.href = '/pos';
+                return null;
+              }
+            }
+            return <StaffLogin />;
+          }}
+        </Route>
 
         {/* Protected routes with layout */}
         <Route path="/pos">
