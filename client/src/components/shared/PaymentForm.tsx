@@ -1,208 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { PaymentFormData, PaymentResult, processPayment } from '@/lib/payment';
-import { Card } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type PaymentFormProps = {
-  initialData?: Partial<PaymentFormData>;
-  onSuccess?: (result: PaymentResult) => void;
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { processPayment, type PaymentMethod } from "@/lib/payment";
+
+interface PaymentFormProps {
+  transactionId: number;
+  customerName: string;
+  amount: number;
+  onSuccess?: () => void;
   onCancel?: () => void;
-};
+}
 
 export default function PaymentForm({ 
-  initialData = {}, 
-  onSuccess,
-  onCancel
+  transactionId, 
+  customerName, 
+  amount, 
+  onSuccess, 
+  onCancel 
 }: PaymentFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [showMpesaPrompt, setShowMpesaPrompt] = useState(false);
-
-  // Define form schema
-  const formSchema = z.object({
-    customerName: z.string().min(1, "Customer name is required"),
-    stationId: z.number().optional(),
-    phoneNumber: z.string().min(1, "Phone number is required").regex(/^254\d{9}$/, "Phone number must be in format 254XXXXXXXXX"),
-    amount: z.number().min(1, "Amount must be at least 1"),
-    paymentMethod: z.enum(["mpesa", "cash", "card"]),
-    sessionType: z.enum(["hourly", "per_game", "tournament", "membership"]),
-    duration: z.number().optional(),
-    gameName: z.string().optional(),
-    discountApplied: z.number().min(0).max(100).optional(),
-  });
-
-  // Initialize form with react-hook-form
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      customerName: initialData.customerName || "",
-      stationId: initialData.stationId,
-      phoneNumber: initialData.phoneNumber || "254",
-      amount: initialData.amount || 0,
-      paymentMethod: initialData.paymentMethod || "cash",
-      sessionType: initialData.sessionType || "hourly",
-      duration: initialData.duration,
-      gameName: initialData.gameName || "",
-      discountApplied: initialData.discountApplied || 0,
-    },
-  });
-
-  const watchPaymentMethod = form.watch("paymentMethod");
-
-  // Handle form submission
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    setLoading(true);
-    setError(null);
-
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [applyDiscount, setApplyDiscount] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(Math.floor(amount / 100)); // Default points
+  const [redeemPoints, setRedeemPoints] = useState(false);
+  
+  const { toast } = useToast();
+  
+  // Calculate final amount
+  const discountAmount = applyDiscount ? (amount * (discount / 100)) : 0;
+  const finalAmount = amount - discountAmount;
+  
+  const handlePayment = async () => {
+    if (!paymentMethod) {
+      toast({
+        variant: "destructive",
+        title: "Payment method required",
+        description: "Please select a payment method"
+      });
+      return;
+    }
+    
+    if ((paymentMethod === "mpesa" || paymentMethod === "airtel") && !phoneNumber) {
+      toast({
+        variant: "destructive",
+        title: "Phone number required",
+        description: "Please enter a phone number for mobile money payment"
+      });
+      return;
+    }
+    
     try {
-      // If using M-Pesa and not yet shown the prompt
-      if (data.paymentMethod === "mpesa" && !showMpesaPrompt) {
-        setShowMpesaPrompt(true);
-        setLoading(false);
-        return;
+      setIsProcessing(true);
+      
+      const result = await processPayment({
+        transactionId,
+        amount,
+        method: paymentMethod as PaymentMethod,
+        customerName,
+        phoneNumber: phoneNumber || undefined,
+        discount: applyDiscount ? discount : 0,
+        loyaltyPoints: redeemPoints ? -loyaltyPoints : loyaltyPoints
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Payment successful",
+          description: `Reference: ${result.reference}`
+        });
+        if (onSuccess) onSuccess();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Payment failed",
+          description: result.error
+        });
       }
-
-      // Process the payment
-      console.log("Processing payment with data:", data);
-      const result = await processPayment(data as PaymentFormData);
-
-      setSuccess(true);
-      setLoading(false);
-
-      // Call the success callback if provided
-      if (onSuccess) {
-        onSuccess(result);
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
-      setLoading(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Payment failed",
+        description: error.message
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
-
-  // Get form field errors
-  const { errors } = form.formState;
-
+  
   return (
-    <Card className="p-6 max-w-md mx-auto">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="customerName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Customer Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter customer name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number (for M-Pesa)</FormLabel>
-                <FormControl>
-                  <Input placeholder="254XXXXXXXXX" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount (KES)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number"
-                    min="0"
-                    placeholder="Enter amount" 
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="paymentMethod"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Method</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="mpesa">M-Pesa</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Conditionally show M-Pesa prompt */}
-          {showMpesaPrompt && watchPaymentMethod === "mpesa" && (
-            <Alert className="bg-yellow-50 border-yellow-200">
-              <AlertDescription>
-                A payment request has been sent to your M-Pesa number. Please check your phone and complete the payment.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex justify-end space-x-2 pt-4">
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-            )}
-            <Button 
-              type="submit" 
-              disabled={loading || (Object.keys(errors).length > 0)}
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {watchPaymentMethod === "mpesa" && !showMpesaPrompt 
-                ? "Send M-Pesa Request" 
-                : "Complete Payment"}
-            </Button>
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm mb-1">Customer: <span className="font-medium">{customerName}</span></p>
+        <p className="text-lg font-bold">Amount: KSH {finalAmount.toFixed(2)}</p>
+        {applyDiscount && (
+          <p className="text-xs text-green-500">Discount: KSH {discountAmount.toFixed(2)} ({discount}%)</p>
+        )}
+      </div>
+      
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="payment-method">Payment Method</Label>
+          <Select 
+            value={paymentMethod} 
+            onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+          >
+            <SelectTrigger id="payment-method">
+              <SelectValue placeholder="Select payment method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cash">Cash</SelectItem>
+              <SelectItem value="mpesa">M-Pesa</SelectItem>
+              <SelectItem value="airtel">Airtel Money</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {(paymentMethod === "mpesa" || paymentMethod === "airtel") && (
+          <div>
+            <Label htmlFor="phone-number">Phone Number</Label>
+            <Input
+              id="phone-number"
+              placeholder="e.g. 254700000000"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
           </div>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </form>
-      </Form>
-    </Card>
+        )}
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="apply-discount" 
+            checked={applyDiscount}
+            onCheckedChange={(checked) => setApplyDiscount(checked === true)}
+          />
+          <Label htmlFor="apply-discount">Apply Discount</Label>
+        </div>
+        
+        {applyDiscount && (
+          <div>
+            <Label htmlFor="discount">Discount Percentage</Label>
+            <Input
+              id="discount"
+              type="number"
+              min="0"
+              max="100"
+              value={discount}
+              onChange={(e) => setDiscount(Number(e.target.value))}
+            />
+          </div>
+        )}
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="redeem-points" 
+            checked={redeemPoints}
+            onCheckedChange={(checked) => setRedeemPoints(checked === true)}
+          />
+          <Label htmlFor="redeem-points">Redeem Loyalty Points</Label>
+        </div>
+        
+        {redeemPoints && (
+          <div>
+            <Label htmlFor="points">Points to Redeem</Label>
+            <Input
+              id="points"
+              type="number"
+              min="0"
+              value={loyaltyPoints}
+              onChange={(e) => setLoyaltyPoints(Number(e.target.value))}
+            />
+          </div>
+        )}
+      </div>
+      
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel} disabled={isProcessing}>
+          Cancel
+        </Button>
+        <Button onClick={handlePayment} disabled={isProcessing}>
+          {isProcessing ? "Processing..." : "Complete Payment"}
+        </Button>
+      </div>
+    </div>
   );
 }

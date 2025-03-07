@@ -12,9 +12,7 @@ export interface IStorage {
   // Transaction Operations
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getTransactionsByStation(stationId: number): Promise<Transaction[]>;
-  getAllTransactions(): Promise<Transaction[]>;
-  getTransactionsByStatus(status: string): Promise<Transaction[]>;
-  updateTransactionStatus(id: number, status: string, reference?: string): Promise<Transaction>;
+  updateTransactionStatus(id: number, status: string, mpesaRef?: string): Promise<Transaction>;
 }
 
 export class MemStorage implements IStorage {
@@ -103,21 +101,11 @@ export class MemStorage implements IStorage {
       .filter(t => t.stationId === stationId);
   }
 
-  async getAllTransactions(): Promise<Transaction[]> {
-    return Array.from(this.transactions.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-
-  async getTransactionsByStatus(status: string): Promise<Transaction[]> {
-    return Array.from(this.transactions.values())
-      .filter(t => t.paymentStatus === status)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-
-  async updateTransactionStatus(id: number, status: string, reference?: string): Promise<Transaction> {
+  async updateTransactionStatus(id: number, status: string, mpesaRef?: string): Promise<Transaction> {
     const transaction = this.transactions.get(id);
     if (!transaction) throw new Error("Transaction not found");
 
-    const updated = { ...transaction, paymentStatus: status, mpesaRef: reference };
+    const updated = { ...transaction, paymentStatus: status, mpesaRef };
     this.transactions.set(id, updated);
     return updated;
   }

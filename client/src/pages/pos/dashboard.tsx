@@ -268,7 +268,7 @@ export default function POSDashboard() {
                                 // Create a pending payment before ending the session
                                 // In a real implementation, this would create a transaction in the pending state
                                 // For now we'll just end the session and assume the UI will be updated
-
+                                
                                 // End the session
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
                                   currentCustomer: null,
@@ -276,13 +276,13 @@ export default function POSDashboard() {
                                   sessionType: null,
                                   sessionStartTime: null
                                 });
-
+                                
                                 // Show success message with payment hint
                                 toast({
                                   title: "Session ended",
                                   description: "Payment has been added to the pending payments list"
                                 });
-
+                                
                               } catch (error: any) {
                                 toast({
                                   variant: "destructive",
@@ -356,115 +356,231 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold mb-4">Analytics</h3>
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold">Analytics Dashboard</h2>
 
-              {/* Revenue Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border-primary/20">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <Card className="bg-black/40 border-primary/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Daily Revenue</CardTitle>
+                    <CardTitle className="text-sm font-medium">Total Revenue (Today)</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KSH 4,250.00</div>
-                    <p className="text-xs text-green-500">+KSH 750 from yesterday</p>
+                    <div className="text-2xl font-bold">KSH {stations?.reduce((sum, station) => {
+                      if (station.currentCustomer) {
+                        return sum + (station.sessionType === "per_game" ? station.baseRate : station.hourlyRate)
+                      }
+                      return sum
+                    }, 0) || 0}</div>
+                    <p className="text-xs text-muted-foreground">+2.5% from yesterday</p>
                   </CardContent>
                 </Card>
 
-                <Card className="border-primary/20">
+                <Card className="bg-black/40 border-primary/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Weekly Revenue</CardTitle>
+                    <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KSH 28,750.00</div>
-                    <p className="text-xs text-green-500">+12% from last week</p>
+                    <div className="text-2xl font-bold">{stations?.filter(s => s.currentCustomer).length || 0}</div>
+                    <p className="text-xs text-muted-foreground">Out of {stations?.length || 0} stations</p>
                   </CardContent>
                 </Card>
 
-                <Card className="border-primary/20">
+                <Card className="bg-black/40 border-primary/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Monthly Revenue</CardTitle>
+                    <CardTitle className="text-sm font-medium">Most Popular Game</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KSH 120,500.00</div>
-                    <p className="text-xs text-green-500">+8% from last month</p>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const gameCounts = {};
+                        stations?.forEach(station => {
+                          if (station.currentGame) {
+                            gameCounts[station.currentGame] = (gameCounts[station.currentGame] || 0) + 1;
+                          }
+                        });
+                        const entries = Object.entries(gameCounts);
+                        if (entries.length === 0) return "N/A";
+                        return entries.sort((a, b) => b[1] - a[1])[0][0];
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Currently being played</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-black/40 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Average Session Time</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const activeSessions = stations?.filter(s => s.sessionStartTime && s.currentCustomer) || [];
+                        if (activeSessions.length === 0) return "0 min";
+                        const totalMinutes = activeSessions.reduce((sum, s) => {
+                          const startTime = new Date(s.sessionStartTime);
+                          const now = new Date();
+                          return sum + Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+                        }, 0);
+                        return `${Math.floor(totalMinutes / activeSessions.length)} min`;
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">For active sessions</p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Payment Method Breakdown */}
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle>Payment Method Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Cash</p>
-                        <p className="text-xs text-muted-foreground">42 transactions</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">KSH 52,450.00</p>
-                        <p className="text-xs text-muted-foreground">45% of total</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Revenue Trends */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Revenue Trends (7 Days)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-80 relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-full flex flex-col">
+                        <div className="flex-1 flex">
+                          {/* Mock bar chart */}
+                          {Array.from({ length: 7 }).map((_, i) => {
+                            const height = 30 + Math.random() * 70;
+                            return (
+                              <div key={i} className="flex-1 flex items-end pb-8">
+                                <div 
+                                  className="w-full mx-1 rounded-t-sm bg-gradient-to-t from-primary/50 to-primary/80" 
+                                  style={{ height: `${height}%` }}
+                                ></div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between px-2 text-xs text-muted-foreground">
+                          <span>Mon</span>
+                          <span>Tue</span>
+                          <span>Wed</span>
+                          <span>Thu</span>
+                          <span>Fri</span>
+                          <span>Sat</span>
+                          <span>Sun</span>
+                        </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">M-Pesa</p>
-                        <p className="text-xs text-muted-foreground">38 transactions</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">KSH 48,320.00</p>
-                        <p className="text-xs text-muted-foreground">40% of total</p>
-                      </div>
+                {/* Game Popularity */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Game Popularity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-80">
+                    <div className="h-full flex flex-col justify-center">
+                      {/* Game popularity bars */}
+                      {games?.slice(0, 5).map((game, i) => {
+                        const randomPercent = 20 + Math.random() * 80;
+                        return (
+                          <div key={i} className="mb-6 last:mb-0">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">{game.name}</span>
+                              <span className="text-sm font-medium">{Math.floor(randomPercent)}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-primary/20 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full"
+                                style={{ width: `${randomPercent}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Airtel Money</p>
-                        <p className="text-xs text-muted-foreground">18 transactions</p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Hourly Traffic */}
+                <Card className="bg-black/40 border-primary/20 col-span-1 lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Hourly Traffic</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-60 relative">
+                    <div className="absolute inset-0 px-4">
+                      <div className="h-full flex items-end">
+                        {/* Mock line chart */}
+                        <svg className="w-full h-full" viewBox="0 0 24 10" preserveAspectRatio="none">
+                          <path 
+                            d="M0,10 C1,8 2,9 3,7 C4,5 5,6 6,4 C7,2 8,3 9,3 C10,3 11,5 12,4 C13,3 14,2 15,3 C16,4 17,5 18,4 C19,3 20,2 21,1 C22,0 23,1 24,2" 
+                            fill="none" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth="0.2" 
+                            strokeLinecap="round"
+                          />
+                        </svg>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold">KSH 19,730.00</p>
-                        <p className="text-xs text-muted-foreground">15% of total</p>
+                      <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-muted-foreground px-2">
+                        <span>9AM</span>
+                        <span>12PM</span>
+                        <span>3PM</span>
+                        <span>6PM</span>
+                        <span>9PM</span>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Customer Loyalty Stats */}
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle>Customer Loyalty</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Total Points Awarded</p>
+                {/* Customer Breakdown */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Customer Types</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-60 flex items-center justify-center">
+                    {/* Mock donut chart */}
+                    <div className="relative w-36 h-36">
+                      <svg viewBox="0 0 36 36">
+                        <path 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth="2"
+                          strokeDasharray="60, 100"
+                        />
+                        <path 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="hsl(var(--primary) / 0.5)"
+                          strokeWidth="2"
+                          strokeDasharray="25, 100"
+                          strokeDashoffset="-60"
+                        />
+                        <path 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="hsl(var(--primary) / 0.2)"
+                          strokeWidth="2"
+                          strokeDasharray="15, 100"
+                          strokeDashoffset="-85"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-sm font-medium">Total: 100</span>
                       </div>
-                      <p className="font-bold">12,050 points</p>
                     </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Points Redeemed</p>
+                    <div className="ml-4">
+                      <div className="flex items-center mb-2">
+                        <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
+                        <span className="text-sm">Regular (60%)</span>
                       </div>
-                      <p className="font-bold">4,325 points</p>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">Discounts Applied</p>
+                      <div className="flex items-center mb-2">
+                        <div className="w-3 h-3 rounded-full bg-primary/50 mr-2"></div>
+                        <span className="text-sm">New (25%)</span>
                       </div>
-                      <p className="font-bold">KSH 8,450.00</p>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
+                        <span className="text-sm">VIP (15%)</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
@@ -477,66 +593,121 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="payments">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold mb-4">Payments</h3>
-
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold">Payments</h3>
+              
               {/* Pending Payments Section */}
               <Card className="border-primary/20">
                 <CardHeader>
-                  <CardTitle>Pending Payments</CardTitle>
+                  <CardTitle className="flex justify-between items-center">
+                    <span>Pending Payments</span>
+                    <Badge variant="secondary">3</Badge>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {/* This would come from the API in a real implementation */}
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex justify-between items-center p-3 border rounded-md hover:bg-primary/5">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
                         <div>
-                          <p className="font-medium">
-                            {['Alex Smith', 'Jane Doe', 'Michael Johnson'][i-1]}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Station {i} • {['FIFA 25', 'Call of Duty', 'GTA V'][i-1]}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {i === 2 ? 'Per game' : `${i === 1 ? '2 hours' : '1 hour'}`}
+                          <p className="font-medium">Customer {i+1}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Game Station {i+1} • {Math.floor(Math.random() * 60) + 30} min
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold">KSH {i === 2 ? '40.00' : (i === 1 ? '400.00' : '200.00')}</p>
-                          <Button size="sm" variant="outline" onClick={() => {
-                            toast({
-                              title: "Payment processed",
-                              description: `Payment for ${['Alex Smith', 'Jane Doe', 'Michael Johnson'][i-1]} has been processed.`,
-                            });
-                          }}>
-                            Process
-                          </Button>
+                          <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
+                          <div className="flex gap-2 mt-2">
+                            <select className="text-xs p-1 rounded border border-primary/20 bg-primary/5">
+                              <option value="">Payment Method</option>
+                              <option value="cash">Cash</option>
+                              <option value="mpesa">M-Pesa</option>
+                              <option value="airtel">Airtel Money</option>
+                            </select>
+                            <Button size="sm" variant="default" className="text-xs">Pay</Button>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Recent Transactions */}
+              
+              {/* Payment Statistics Section */}
               <Card className="border-primary/20">
                 <CardHeader>
-                  <CardTitle>Recent Transactions</CardTitle>
+                  <CardTitle>Payment Statistics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">Today</p>
+                      <p className="text-xl font-bold">KSH 12,500</p>
+                      <p className="text-xs text-green-500">+15% from yesterday</p>
+                    </div>
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">This Week</p>
+                      <p className="text-xl font-bold">KSH 68,200</p>
+                      <p className="text-xs text-green-500">+8% from last week</p>
+                    </div>
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">This Month</p>
+                      <p className="text-xl font-bold">KSH 245,800</p>
+                      <p className="text-xs text-green-500">+12% from last month</p>
+                    </div>
+                  </div>
+                  
+                  {/* Payment Method Breakdown */}
+                  <div className="mt-4">
+                    <p className="font-medium mb-2">Payment Method Breakdown</p>
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <div className="flex justify-between items-center mb-2">
+                        <span>Cash</span>
+                        <span>35%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2.5">
+                        <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '35%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mb-2 mt-3">
+                        <span>M-Pesa</span>
+                        <span>55%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2.5">
+                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '55%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mb-2 mt-3">
+                        <span>Airtel Money</span>
+                        <span>10%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2.5">
+                        <div className="bg-orange-600 h-2.5 rounded-full" style={{ width: '10%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Recent Transactions Section */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center">
+                    <span>Recent Transactions</span>
+                    <Button size="sm" variant="outline">Print Receipt</Button>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="flex justify-between items-center p-3 border rounded-md">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
                         <div>
-                          <p className="font-medium">
-                            {['John Doe', 'Jane Smith', 'Michael Johnson', 'Sarah Williams', 'David Brown'][i-1]}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date().toLocaleTimeString()} • Station {i}
-                          </p>
-                          <div className="flex space-x-1 mt-1">
+                          <p className="font-medium">Transaction #{10045 + i}</p>
+                          <div className="flex gap-2 items-center">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(Date.now() - i * 60 * 60 * 1000).toLocaleTimeString()}
+                            </p>
                             <Badge variant="outline" className="text-xs">
-                              {['Cash', 'M-Pesa', 'Airtel Money', 'Cash', 'M-Pesa'][i-1]}
+                              {['Cash', 'M-Pesa', 'Airtel Money'][i % 3]}
                             </Badge>
                             {i % 2 === 0 && <Badge variant="secondary" className="text-xs">10% Discount</Badge>}
                           </div>
@@ -550,7 +721,7 @@ export default function POSDashboard() {
                   </div>
                 </CardContent>
               </Card>
-
+              
               {/* Quick Actions */}
               <Card className="border-primary/20">
                 <CardHeader>
@@ -575,7 +746,6 @@ export default function POSDashboard() {
               </Card>
             </div>
           </TabsContent>
-
         </div>
       </Tabs>
       {showPayment && selectedStation && (
