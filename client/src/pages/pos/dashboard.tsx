@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +17,8 @@ import {
   Trophy,
   Star,
   Activity,
-  LayoutDashboardIcon
+  LayoutDashboardIcon,
+  LogOut
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -30,6 +32,7 @@ export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const { data: stations, isLoading: stationsLoading } = useQuery({
     queryKey: ["/api/stations"],
@@ -38,6 +41,11 @@ export default function POSDashboard() {
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["/api/games"],
   });
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setLocation('/');
+  };
 
   const DashboardOverview = () => {
     const activeSessions = stations?.filter(s => s.currentCustomer)?.length || 0;
@@ -445,27 +453,52 @@ export default function POSDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Gaming Lounge Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gaming Lounge Dashboard</h1>
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="bg-primary/10 hover:bg-primary/20 border-primary/50"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Back to Welcome
+        </Button>
+      </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="dashboard">
+        <TabsList className="grid w-full grid-cols-5 bg-background border border-primary/20">
+          <TabsTrigger 
+            value="dashboard" 
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+          >
             <LayoutDashboardIcon className="w-4 h-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="sessions">
+          <TabsTrigger 
+            value="sessions"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+          >
             <GamepadIcon className="w-4 h-4 mr-2" />
             Gaming Sessions
           </TabsTrigger>
-          <TabsTrigger value="customers">
+          <TabsTrigger 
+            value="customers"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+          >
             <Users className="w-4 h-4 mr-2" />
-            Customers
+            Customer Portal
           </TabsTrigger>
-          <TabsTrigger value="analytics">
+          <TabsTrigger 
+            value="analytics"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+          >
             <BarChart className="w-4 h-4 mr-2" />
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="reports">
+          <TabsTrigger 
+            value="reports"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+          >
             <FileText className="w-4 h-4 mr-2" />
             Reports
           </TabsTrigger>
