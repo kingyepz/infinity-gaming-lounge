@@ -64,7 +64,7 @@ export default function POSDashboard() {
         {/* Sidebar */}
         <div className="w-64 border-r border-primary/20 p-4 space-y-2 backdrop-blur-sm bg-black/50">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">POS System</h2>
+            {/* Removed POS System text */}
           </div>
 
           <TabsList className="flex flex-col w-full space-y-2">
