@@ -16,12 +16,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUp, ArrowDown, Download, Printer, Calendar, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -32,6 +36,10 @@ export default function POSDashboard() {
 
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["/api/games"],
+  });
+
+  const { data: customers } = useQuery({
+    queryKey: ["/api/users/customers"],
   });
 
   const handleLogout = () => {
@@ -316,7 +324,7 @@ export default function POSDashboard() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gaming Sessions</h2>
-                <Button variant="default">New Session</Button>
+                <Button variant="default" onClick={() => setShowNewSessionModal(true)}>New Session</Button> {/* Updated button */}
               </div>
 
               <Card className="bg-black/30 border-primary/20">
@@ -995,6 +1003,139 @@ export default function POSDashboard() {
             setSelectedStation(null);
           }}
         />
+      )}
+      {showNewSessionModal && (
+        <Dialog open={true} onOpenChange={() => setShowNewSessionModal(false)}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Start New Gaming Session</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {!showCustomerRegistration ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Select Customer</label>
+                    <div className="max-h-[200px] overflow-y-auto space-y-2">
+                      {customers?.map((customer) => (
+                        <div
+                          key={customer.id}
+                          className={`p-3 rounded-md cursor-pointer transition-colors ${
+                            selectedCustomer?.id === customer.id 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-primary/10 hover:bg-primary/20'
+                          }`}
+                          onClick={() => setSelectedCustomer(customer)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{customer.displayName}</p>
+                              <p className="text-sm opacity-80">@{customer.gamingName}</p>
+                            </div>
+                            <Badge>{customer.points} points</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowCustomerRegistration(true)}
+                  >
+                    Register New Customer
+                  </Button>
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Select Station</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {stations?.filter(s => !s.currentCustomer).map((station) => (
+                        <div
+                          key={station.id}
+                          className="p-3 rounded-md bg-primary/10 hover:bg-primary/20 cursor-pointer"
+                          onClick={() => {
+                            if (selectedCustomer) {
+                              setSelectedStation(station);
+                              setShowPayment(true);
+                              setShowNewSessionModal(false);
+                            } else {
+                              toast({
+                                title: "Select Customer",
+                                description: "Please select a customer first",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                        >
+                          <p className="font-medium">{station.name}</p>
+                          <p className="text-sm text-primary">Available</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target as HTMLFormElement);
+
+                  try {
+                    const response = await apiRequest("POST", "/api/users/register", {
+                      displayName: formData.get("displayName"),
+                      gamingName: formData.get("gamingName"),
+                      phoneNumber: formData.get("phoneNumber"),
+                      role: "customer"
+                    });
+
+                    toast({
+                      title: "Success",
+                      description: "Customer registered successfully!"
+                    });
+
+                    await queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] });
+                    setShowCustomerRegistration(false);
+                    setSelectedCustomer(response);
+
+                  } catch (error: any) {
+                    toast({
+                      variant: "destructive",
+                      title: "Registration failed",
+                      description: error.message || "Failed to register customer"
+                    });
+                  }
+                }} 
+                className="space-y-4">
+                  <div>
+                    <label className="text-sm text-muted-foreground">Display Name</label>
+                    <Input name="displayName" required placeholder="John Doe" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Gaming Name</label>
+                    <Input name="gamingName" required placeholder="ProGamer123" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Phone Number</label>
+                    <Input 
+                      name="phoneNumber" 
+                      required 
+                      placeholder="254700000000"
+                      pattern="^254[0-9]{9}$"
+                      title="Please enter a valid Kenyan phone number starting with 254"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit">Register Customer</Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowCustomerRegistration(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { GameStation } from "@shared/schema";
+import type { GameStation, User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentForm from "./PaymentForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,11 +9,11 @@ import { useQuery } from "@tanstack/react-query";
 
 interface PaymentModalProps {
   station: GameStation;
+  selectedCustomer?: User;
   onClose: () => void;
 }
 
-export default function PaymentModal({ station, onClose }: PaymentModalProps) {
-  const [customerName, setCustomerName] = useState("");
+export default function PaymentModal({ station, selectedCustomer, onClose }: PaymentModalProps) {
   const [selectedGame, setSelectedGame] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -38,7 +38,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
 
       // Create transaction and start session
       await apiRequest("PATCH", `/api/stations/${station.id}`, {
-        currentCustomer: customerName,
+        currentCustomer: selectedCustomer?.displayName,
         currentGame: selectedGame,
         sessionType: paymentInfo.sessionType || "hourly",
         sessionStartTime: new Date().toISOString()
@@ -47,12 +47,13 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
       // Create transaction record
       await apiRequest("POST", "/api/transactions", {
         stationId: station.id,
-        customerName,
+        customerName: selectedCustomer?.displayName,
         gameName: selectedGame,
         amount: paymentInfo.amount,
         sessionType: paymentInfo.sessionType || "hourly",
         duration: paymentInfo.duration || 60, // Default to 1 hour
-        paymentStatus: "completed"
+        paymentStatus: "completed",
+        userId: selectedCustomer?.id
       });
 
       toast({
@@ -80,16 +81,13 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Customer Name</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 rounded-md bg-background border"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Enter customer name"
-            />
-          </div>
+          {selectedCustomer && (
+            <div className="bg-primary/10 p-3 rounded-md">
+              <p className="text-sm text-muted-foreground">Selected Customer</p>
+              <p className="font-medium">{selectedCustomer.displayName}</p>
+              <p className="text-sm">@{selectedCustomer.gamingName}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">Select Game</label>
@@ -109,7 +107,8 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
 
           <PaymentForm
             amount={station.hourlyRate || station.baseRate || 0}
-            customerName={customerName}
+            customerName={selectedCustomer?.displayName || ""}
+            userId={selectedCustomer?.id}
             onComplete={handlePayment}
             onCancel={onClose}
           />
