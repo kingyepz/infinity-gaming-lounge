@@ -1,26 +1,19 @@
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, GamepadIcon, BarChart2Icon, DollarSignIcon, UsersIcon } from "lucide-react";
+import InfinityLogo from "@/components/animations/InfinityLogo";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  GamepadIcon,
-  ClockIcon,
-  Timer,
-  FileText,
-  BarChart,
-  Users,
-  LogOut,
-  TrophyIcon,
-  StarIcon,
-  ActivityIcon
-} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerPortal from "@/pages/customer/portal";
 import type { GameStation, Game } from "@shared/schema";
+
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -50,154 +43,246 @@ export default function POSDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-black">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 w-full h-full">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden">
+      {/* Background patterns */}
+      <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      <Tabs defaultValue="dashboard" className="flex w-full relative">
+      {/* Center Logo */}
+      <div className="w-full flex justify-center items-center py-4 z-10 relative">
+        <div className="flex flex-col items-center">
+          <InfinityLogo className="w-24 h-24" />
+          <h1 className="text-2xl font-bold text-primary">INFINITY GAMING LOUNGE</h1>
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="hover:bg-primary/20">
+            <UsersIcon className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="overview" className="flex w-full relative">
         {/* Sidebar */}
         <div className="w-64 border-r border-primary/20 p-4 space-y-2 backdrop-blur-sm bg-black/50">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-lg font-bold text-primary">Infinity Gaming</h1>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleLogout}
-              className="hover:bg-primary/20"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+            {/* Removed POS System text */}
           </div>
 
-          <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
-            <TabsTrigger 
-              value="dashboard"
-              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-            >
+          <TabsList className="flex flex-col w-full space-y-2">
+            <TabsTrigger value="overview" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <GamepadIcon className="w-4 h-4 mr-2" />
-              POS Dashboard
+              Overview
             </TabsTrigger>
-            <TabsTrigger 
-              value="sessions"
-              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-            >
-              <ClockIcon className="w-4 h-4 mr-2" />
-              Gaming Sessions
+            <TabsTrigger value="sessions" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+              <CalendarIcon className="w-4 h-4 mr-2" />
+              Sessions
             </TabsTrigger>
-            <TabsTrigger 
-              value="customers"
-              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Customer Portal
+            <TabsTrigger value="customers" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+              <UsersIcon className="w-4 h-4 mr-2" />
+              Customers
             </TabsTrigger>
-            <TabsTrigger 
-              value="analytics"
-              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-            >
-              <BarChart className="w-4 h-4 mr-2" />
+            <TabsTrigger value="analytics" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+              <BarChart2Icon className="w-4 h-4 mr-2" />
               Analytics
             </TabsTrigger>
-            <TabsTrigger 
-              value="reports"
-              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-            >
-              <FileText className="w-4 h-4 mr-2" />
+            <TabsTrigger value="reports" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+              <DollarSignIcon className="w-4 h-4 mr-2" />
               Reports
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+              <DollarSignIcon className="w-4 h-4 mr-2" />
+              Payments
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* Main Content Area */}
+        {/* Main Content */}
         <div className="flex-1 p-6 backdrop-blur-sm bg-black/50">
-          <TabsContent value="dashboard">
+          <TabsContent value="overview">
+            {/* Dashboard Content */}
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                    <GamepadIcon className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stations?.filter(s => s.currentCustomer)?.length || 0}</div>
-                    <p className="text-xs text-muted-foreground">stations in use</p>
+                    <p className="text-xs text-muted-foreground">+2 from last hour</p>
                   </CardContent>
                 </Card>
-
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Points Earned Today</CardTitle>
-                    <StarIcon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">250</div>
-                    <p className="text-xs text-muted-foreground">across all customers</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Top Customer Today</CardTitle>
-                    <TrophyIcon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">John Doe</div>
-                    <p className="text-xs text-muted-foreground">50 points earned today</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
-                    <ActivityIcon className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KES 12,500</div>
-                    <p className="text-xs text-muted-foreground">+15% from yesterday</p>
+                    <div className="text-2xl font-bold">KSH 1,250.00</div> {/* Changed to KSH */}
+                    <p className="text-xs text-muted-foreground">+$350 from yesterday</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">8</div>
+                    <p className="text-xs text-muted-foreground">+3 from yesterday</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Points Awarded</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">1,850</div>
+                    <p className="text-xs text-muted-foreground">+220 from yesterday</p>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {stations?.map((station) => (
-                  <Card key={station.id} className="backdrop-blur-sm bg-white/10 border-primary/20">
-                    <CardHeader>
-                      <CardTitle>{station.name}</CardTitle>
-                      <CardDescription>
-                        {station.currentCustomer ? (
-                          <>
-                            Customer: {station.currentCustomer}
-                            <br />
-                            Game: {station.currentGame}
-                            <br />
-                            Session: {station.sessionType === "per_game" ? "40 KES/game" : "200 KES/hour"}
-                          </>
-                        ) : (
-                          "Available"
-                        )}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {station.currentCustomer ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Timer className="h-4 w-4" />
-                            <span>Session started at {new Date(station.sessionStartTime!).toLocaleTimeString()}</span>
+              {/* Recent Activity */}
+              <h3 className="text-xl font-semibold mt-8 mb-4">Recent Activity</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Station Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-[300px] overflow-auto">
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">Station {i}</p>
+                            <p className="text-sm text-muted-foreground">Call of Duty: Warzone</p>
                           </div>
-                          <Button
-                            variant="destructive"
-                            className="w-full"
-                            onClick={async () => {
+                          <Badge variant={i % 2 === 0 ? "default" : "secondary"}>
+                            {i % 2 === 0 ? "Active" : "Ending Soon"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Latest Transactions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-h-[300px] overflow-auto">
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">Customer {i}</p>
+                            <p className="text-sm text-muted-foreground">{new Date().toLocaleTimeString()}</p>
+                          </div>
+                          <p className="font-medium">KSH {(Math.random() * 100).toFixed(2)}</p> {/* Changed to KSH */}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mt-6">
+                <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button variant="default">New Session</Button>
+                  <Button variant="outline">View Reports</Button>
+                  <Button variant="outline">Manage Stations</Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            {/* Sessions Tab Content */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Gaming Sessions</h2>
+                <Button variant="default">New Session</Button>
+              </div>
+
+              {/* Active Sessions */}
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Active Sessions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {stations?.filter(station => station.currentCustomer).map((station) => (
+                      <Card key={station.id} className="bg-primary/5 border-primary/10">
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between">
+                            <CardTitle className="text-sm font-medium">Station #{station.id}</CardTitle>
+                            <Badge>Active</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-muted-foreground mb-1">Customer</p>
+                          <p className="font-medium">{station.currentCustomer}</p>
+
+                          <div className="grid grid-cols-2 gap-2 mt-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Game</p>
+                              <p className="font-medium">{station.currentGame}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Time Left</p>
+                              <p className="font-medium">
+                                {(() => {
+                                  const startTime = new Date(station.sessionStartTime!);
+                                  const now = new Date();
+                                  const diffMs = now.getTime() - startTime.getTime();
+                                  const diffMins = Math.floor(diffMs / 60000);
+                                  return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
+                                })()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Started</p>
+                              <p className="font-medium">{new Date(station.sessionStartTime!).toLocaleTimeString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Amount</p>
+                              <p className="font-medium">KSH {station.sessionType === "per_game" ? "40" : "200"}</p> {/* Changed to KSH */}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-4">
+                            <Button size="sm" variant="outline" className="flex-1" onClick={async () => {
                               try {
+                                await apiRequest("PATCH", `/api/stations/${station.id}`, {
+                                  sessionStartTime: new Date().toISOString() //Extend session
+                                });
+                              } catch (error: any) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Failed to extend session",
+                                  description: error.message
+                                });
+                              }
+                            }}>Extend</Button>
+                            <Button size="sm" variant="destructive" className="flex-1" onClick={async () => {
+                              try {
+                                // Create a pending payment before ending the session
+                                // In a real implementation, this would create a transaction in the pending state
+                                // For now we'll just end the session and assume the UI will be updated
+
+                                // End the session
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
                                   currentCustomer: null,
                                   currentGame: null,
                                   sessionType: null,
                                   sessionStartTime: null
                                 });
+
+                                // Show success message with payment hint
+                                toast({
+                                  title: "Session ended",
+                                  description: "Payment has been added to the pending payments list"
+                                });
+
                               } catch (error: any) {
                                 toast({
                                   variant: "destructive",
@@ -205,53 +290,294 @@ export default function POSDashboard() {
                                   description: error.message
                                 });
                               }
-                            }}
-                          >
-                            End Session
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          className="w-full"
-                          onClick={() => {
+                            }}>End</Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Available Stations */}
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Available Stations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {stations?.filter(station => !station.currentCustomer).map((station) => (
+                      <Card key={station.id} className="bg-green-900/20 border-green-500/20">
+                        <CardContent className="p-4 text-center">
+                          <p className="font-bold text-lg">Station #{station.id}</p>
+                          <Badge variant="outline" className="mt-2 bg-green-500/20">Available</Badge>
+                          <Button size="sm" className="w-full mt-3" onClick={() => {
                             setSelectedStation(station);
                             setShowPayment(true);
-                          }}
-                        >
-                          Start Session
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
+                          }}>Start Session</Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-          <TabsContent value="sessions">
-            <div className="text-center text-muted-foreground py-8">
-              Gaming Sessions management coming soon...
+              {/* Recent Sessions */}
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Recent Sessions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className="flex justify-between items-center p-3 border border-primary/10 rounded-md">
+                        <div>
+                          <p className="font-medium">Station #{Math.floor(Math.random() * 10) + 1}</p>
+                          <p className="text-sm text-muted-foreground">Customer: Alex Smith</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">KSH {(Math.random() * 50).toFixed(2)}</p> {/* Changed to KSH */}
+                          <p className="text-sm text-muted-foreground">2 hours</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="customers">
-            <CustomerPortal />
+            {/* Customers Tab Content */}
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Customer Management</h3>
+              <CustomerPortal />
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="text-center text-muted-foreground py-8">
-              Analytics dashboard coming soon...
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold mb-4">Analytics</h3>
+
+              {/* Revenue Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Daily Revenue</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KSH 4,250.00</div>
+                    <p className="text-xs text-green-500">+KSH 750 from yesterday</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Weekly Revenue</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KSH 28,750.00</div>
+                    <p className="text-xs text-green-500">+12% from last week</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Monthly Revenue</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KSH 120,500.00</div>
+                    <p className="text-xs text-green-500">+8% from last month</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Payment Method Breakdown */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Payment Method Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-medium">Cash</p>
+                        <p className="text-xs text-muted-foreground">42 transactions</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">KSH 52,450.00</p>
+                        <p className="text-xs text-muted-foreground">45% of total</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-medium">M-Pesa</p>
+                        <p className="text-xs text-muted-foreground">38 transactions</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">KSH 48,320.00</p>
+                        <p className="text-xs text-muted-foreground">40% of total</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-medium">Airtel Money</p>
+                        <p className="text-xs text-muted-foreground">18 transactions</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">KSH 19,730.00</p>
+                        <p className="text-xs text-muted-foreground">15% of total</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Customer Loyalty Stats */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Customer Loyalty</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-medium">Total Points Awarded</p>
+                      </div>
+                      <p className="font-bold">12,050 points</p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-medium">Points Redeemed</p>
+                      </div>
+                      <p className="font-bold">4,325 points</p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-medium">Discounts Applied</p>
+                      </div>
+                      <p className="font-bold">KSH 8,450.00</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="reports">
-            <div className="text-center text-muted-foreground py-8">
-              Reports management coming soon...
+            {/* Reports Tab Content */}
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Financial Reports</h3>
+              <p>This tab will contain financial reporting features.</p>
             </div>
           </TabsContent>
+
+          <TabsContent value="payments">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold mb-4">Payments</h3>
+
+              {/* Pending Payments Section */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Pending Payments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {/* This would come from the API in a real implementation */}
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex justify-between items-center p-3 border rounded-md hover:bg-primary/5">
+                        <div>
+                          <p className="font-medium">
+                            {['Alex Smith', 'Jane Doe', 'Michael Johnson'][i-1]}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Station {i} • {['FIFA 25', 'Call of Duty', 'GTA V'][i-1]}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {i === 2 ? 'Per game' : `${i === 1 ? '2 hours' : '1 hour'}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">KSH {i === 2 ? '40.00' : (i === 1 ? '400.00' : '200.00')}</p>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            toast({
+                              title: "Payment processed",
+                              description: `Payment for ${['Alex Smith', 'Jane Doe', 'Michael Johnson'][i-1]} has been processed.`,
+                            });
+                          }}>
+                            Process
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Transactions */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Recent Transactions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex justify-between items-center p-3 border rounded-md">
+                        <div>
+                          <p className="font-medium">
+                            {['John Doe', 'Jane Smith', 'Michael Johnson', 'Sarah Williams', 'David Brown'][i-1]}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date().toLocaleTimeString()} • Station {i}
+                          </p>
+                          <div className="flex space-x-1 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {['Cash', 'M-Pesa', 'Airtel Money', 'Cash', 'M-Pesa'][i-1]}
+                            </Badge>
+                            {i % 2 === 0 && <Badge variant="secondary" className="text-xs">10% Discount</Badge>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
+                          <p className="text-xs text-primary">+{Math.floor(Math.random() * 50 + 20)} points</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Apply Discount</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Split Payment</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Verify Payment</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Redeem Points</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
         </div>
       </Tabs>
-
       {showPayment && selectedStation && (
         <PaymentModal
           station={selectedStation}

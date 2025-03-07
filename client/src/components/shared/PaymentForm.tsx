@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +30,13 @@ export default function PaymentForm({
   const [isProcessing, setIsProcessing] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState(Math.floor(amount / 100)); // Default points
   const [redeemPoints, setRedeemPoints] = useState(false);
-
+  
   const { toast } = useToast();
-
+  
   // Calculate final amount
   const discountAmount = applyDiscount ? (amount * (discount / 100)) : 0;
   const finalAmount = amount - discountAmount;
-
+  
   const handlePayment = async () => {
     if (!paymentMethod) {
       toast({
@@ -45,7 +46,7 @@ export default function PaymentForm({
       });
       return;
     }
-
+    
     if ((paymentMethod === "mpesa" || paymentMethod === "airtel") && !phoneNumber) {
       toast({
         variant: "destructive",
@@ -54,10 +55,10 @@ export default function PaymentForm({
       });
       return;
     }
-
+    
     try {
       setIsProcessing(true);
-
+      
       const result = await processPayment({
         transactionId,
         amount,
@@ -67,7 +68,7 @@ export default function PaymentForm({
         discount: applyDiscount ? discount : 0,
         loyaltyPoints: redeemPoints ? -loyaltyPoints : loyaltyPoints
       });
-
+      
       if (result.success) {
         toast({
           title: "Payment successful",
@@ -91,7 +92,7 @@ export default function PaymentForm({
       setIsProcessing(false);
     }
   };
-
+  
   return (
     <div className="space-y-4">
       <div>
@@ -101,7 +102,7 @@ export default function PaymentForm({
           <p className="text-xs text-green-500">Discount: KSH {discountAmount.toFixed(2)} ({discount}%)</p>
         )}
       </div>
-
+      
       <div className="space-y-3">
         <div>
           <Label htmlFor="payment-method">Payment Method</Label>
@@ -119,7 +120,7 @@ export default function PaymentForm({
             </SelectContent>
           </Select>
         </div>
-
+        
         {(paymentMethod === "mpesa" || paymentMethod === "airtel") && (
           <div>
             <Label htmlFor="phone-number">Phone Number</Label>
@@ -131,7 +132,7 @@ export default function PaymentForm({
             />
           </div>
         )}
-
+        
         <div className="flex items-center space-x-2">
           <Checkbox 
             id="apply-discount" 
@@ -140,7 +141,7 @@ export default function PaymentForm({
           />
           <Label htmlFor="apply-discount">Apply Discount</Label>
         </div>
-
+        
         {applyDiscount && (
           <div>
             <Label htmlFor="discount">Discount Percentage</Label>
@@ -154,7 +155,7 @@ export default function PaymentForm({
             />
           </div>
         )}
-
+        
         <div className="flex items-center space-x-2">
           <Checkbox 
             id="redeem-points" 
@@ -163,7 +164,7 @@ export default function PaymentForm({
           />
           <Label htmlFor="redeem-points">Redeem Loyalty Points</Label>
         </div>
-
+        
         {redeemPoints && (
           <div>
             <Label htmlFor="points">Points to Redeem</Label>
@@ -177,7 +178,7 @@ export default function PaymentForm({
           </div>
         )}
       </div>
-
+      
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel} disabled={isProcessing}>
           Cancel
@@ -207,37 +208,37 @@ interface PaymentFormProps {
   onCancel: () => void;
 }
 
-export default function PaymentFormComponent({ initialData, onSuccess, onCancel }: PaymentFormProps) {
+export default function PaymentForm({ initialData, onSuccess, onCancel }: PaymentFormProps) {
   const { toast } = useToast();
   const [paymentData, setPaymentData] = useState<PaymentFormData>(initialData);
   const [isProcessing, setIsProcessing] = useState(false);
-
+  
   const handleDataChange = (field: keyof PaymentFormData, value: any) => {
     setPaymentData(prev => ({ ...prev, [field]: value }));
   };
 
   const calculateFinalAmount = (): number => {
     let amount = paymentData.amount;
-
+    
     // Apply discount if selected
     if (paymentData.discount && paymentData.discount > 0) {
       amount = amount * (1 - (paymentData.discount / 100));
     }
-
+    
     // Apply points redemption if selected
     if (paymentData.redeemPoints && paymentData.pointsToRedeem && paymentData.pointsToRedeem > 0) {
       // Assuming 1 point = 1 KSH
       const discountFromPoints = Math.min(paymentData.pointsToRedeem, amount);
       amount = Math.max(0, amount - discountFromPoints);
     }
-
+    
     return amount;
   };
 
   const handlePayment = async () => {
     try {
       setIsProcessing(true);
-
+      
       if (!paymentData.paymentMethod) {
         toast({
           title: "Payment method required",
@@ -246,7 +247,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
         });
         return;
       }
-
+      
       if ((paymentData.paymentMethod === 'mpesa' || paymentData.paymentMethod === 'airtel') && 
           (!paymentData.phoneNumber || !paymentData.phoneNumber.match(/^254\d{9}$/))) {
         toast({
@@ -256,9 +257,9 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
         });
         return;
       }
-
+      
       const result = await processPayment(paymentData);
-
+      
       if (result.success) {
         toast({
           title: "Payment successful",
@@ -284,7 +285,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
       setIsProcessing(false);
     }
   };
-
+  
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -299,7 +300,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
             onChange={(e) => handleDataChange('customerName', e.target.value)}
           />
         </div>
-
+        
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <Input 
@@ -315,7 +316,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
               : `${paymentData.duration || 0} minutes (${Math.ceil((paymentData.duration || 0) / 60)} hour(s))`}
           </p>
         </div>
-
+        
         <div className="space-y-2">
           <Label htmlFor="payment-method">Payment Method</Label>
           <Select 
@@ -332,7 +333,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
             </SelectContent>
           </Select>
         </div>
-
+        
         {(paymentData.paymentMethod === 'mpesa' || paymentData.paymentMethod === 'airtel') && (
           <div className="space-y-2">
             <Label htmlFor="phone-number">Phone Number</Label>
@@ -345,7 +346,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
             <p className="text-xs text-muted-foreground">Format: 254XXXXXXXXX</p>
           </div>
         )}
-
+        
         <div className="flex items-center space-x-2">
           <Checkbox 
             id="apply-discount" 
@@ -354,7 +355,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
           />
           <Label htmlFor="apply-discount">Apply Discount</Label>
         </div>
-
+        
         {paymentData.discount && paymentData.discount > 0 && (
           <div className="space-y-2">
             <Label htmlFor="discount">Discount Percentage</Label>
@@ -368,7 +369,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
             />
           </div>
         )}
-
+        
         <div className="flex items-center space-x-2">
           <Checkbox 
             id="redeem-points"
@@ -377,7 +378,7 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
           />
           <Label htmlFor="redeem-points">Redeem Loyalty Points</Label>
         </div>
-
+        
         {paymentData.redeemPoints && (
           <div className="space-y-2">
             <Label htmlFor="points">Points to Redeem</Label>
@@ -391,22 +392,22 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
             <p className="text-xs text-muted-foreground">Available: 200 points</p>
           </div>
         )}
-
+        
         <Separator />
-
+        
         <div className="bg-muted p-3 rounded-md">
           <div className="flex justify-between">
             <span>Original Amount:</span>
             <span>{formatCurrency(paymentData.amount)}</span>
           </div>
-
+          
           {paymentData.discount && paymentData.discount > 0 && (
             <div className="flex justify-between text-green-500">
               <span>Discount ({paymentData.discount}%):</span>
               <span>-{formatCurrency(paymentData.amount * (paymentData.discount / 100))}</span>
             </div>
           )}
-
+          
           {paymentData.redeemPoints && paymentData.pointsToRedeem && paymentData.pointsToRedeem > 0 && (
             <div className="flex justify-between text-green-500">
               <span>Points Redeemed:</span>
@@ -414,9 +415,9 @@ export default function PaymentFormComponent({ initialData, onSuccess, onCancel 
                 paymentData.amount * (1 - (paymentData.discount || 0) / 100)))}</span>
             </div>
           )}
-
+          
           <Separator className="my-2" />
-
+          
           <div className="flex justify-between font-bold">
             <span>Final Amount:</span>
             <span>{formatCurrency(calculateFinalAmount())}</span>

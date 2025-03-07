@@ -1,21 +1,70 @@
-import React, { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+
+type Button = {
+  id: number;
+  type: string;
+  left: number;
+  delay: number;
+};
+
+const PS_BUTTONS = ["circle", "square", "triangle", "x"] as const;
+const XBOX_BUTTONS = ["a", "b", "x", "y"] as const;
 
 export default function FallingButtons() {
-  const [buttons, setButtons] = useState<Array<{id: number, button: string, x: number, y: number, speed: number}>>([]);
-  const [lastId, setLastId] = useState(0);
+  const [buttons, setButtons] = useState<Button[]>([]);
+  const [isPlayStation, setIsPlayStation] = useState(true);
 
-  const getRandomButton = () => {
-    const buttons = ["a", "b", "y"];
-    return buttons[Math.floor(Math.random() * buttons.length)];
-  };
+  // Switch between PlayStation and Xbox buttons every 5 seconds
+  useEffect(() => {
+    const consoleInterval = setInterval(() => {
+      setButtons([]); // Clear existing buttons before switching
+      setIsPlayStation(prev => !prev);
+    }, 5000);
 
-  const getButtonIcon = (button: string) => {
-    switch (button) {
+    return () => clearInterval(consoleInterval);
+  }, []);
+
+  // Create new falling buttons
+  useEffect(() => {
+    const currentButtons = isPlayStation ? PS_BUTTONS : XBOX_BUTTONS;
+
+    const interval = setInterval(() => {
+      const newButton: Button = {
+        id: Date.now(),
+        type: currentButtons[Math.floor(Math.random() * currentButtons.length)],
+        left: Math.random() * 90 + 5, // Keep buttons away from edges
+        delay: Math.random(),
+      };
+
+      setButtons(prev => [...prev, newButton]);
+
+      // Remove button after animation
+      setTimeout(() => {
+        setButtons(prev => prev.filter(b => b.id !== newButton.id));
+      }, 5000);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isPlayStation]);
+
+  const getButtonContent = (type: string) => {
+    switch (type) {
+      // PlayStation buttons
+      case "circle":
+        return "○";
+      case "square":
+        return "□";
+      case "triangle":
+        return "△";
+      case "x":
+        return "×";
+      // Xbox buttons
       case "a":
         return "A";
       case "b":
         return "B";
+      case "x":
+        return "X";
       case "y":
         return "Y";
       default:
@@ -23,12 +72,24 @@ export default function FallingButtons() {
     }
   };
 
-  const getButtonColor = (button: string) => {
-    switch (button) {
+  const getButtonColor = (type: string) => {
+    switch (type) {
+      // PlayStation colors
+      case "circle":
+        return "text-red-500";
+      case "square":
+        return "text-pink-500";
+      case "triangle":
+        return "text-green-500";
+      case "x":
+        return "text-blue-500";
+      // Xbox colors
       case "a":
         return "text-green-400";
       case "b":
         return "text-red-400";
+      case "x":
+        return "text-blue-400";
       case "y":
         return "text-yellow-400";
       default:
@@ -36,49 +97,19 @@ export default function FallingButtons() {
     }
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Add a new button
-      if (buttons.length < 20) {
-        const newButton = {
-          id: lastId + 1,
-          button: getRandomButton(),
-          x: Math.random() * 100,
-          y: -10,
-          speed: 0.5 + Math.random() * 1.5
-        };
-        setLastId(lastId + 1);
-        setButtons([...buttons, newButton]);
-      }
-
-      // Move buttons down
-      setButtons(buttons.map(button => ({
-        ...button,
-        y: button.y + button.speed
-      })).filter(button => button.y < 110));
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, [buttons, lastId]);
-
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
       {buttons.map(button => (
         <div
           key={button.id}
-          className={cn(
-            "absolute inline-flex items-center justify-center w-8 h-8 rounded-full border-2 font-bold",
-            getButtonColor(button.button)
-          )}
+          className={`absolute animate-fall text-2xl font-bold ${getButtonColor(button.type)}`}
           style={{
-            left: `${button.x}%`,
-            top: `${button.y}%`,
-            opacity: (100 - button.y) / 100,
-            transform: `rotate(${Math.sin(button.y / 10) * 20}deg)`,
-            borderColor: `currentColor`
+            left: `${button.left}%`,
+            animationDelay: `${button.delay}s`,
+            top: "-50px", // Start above viewport
           }}
         >
-          {getButtonIcon(button.button)}
+          {getButtonContent(button.type)}
         </div>
       ))}
     </div>

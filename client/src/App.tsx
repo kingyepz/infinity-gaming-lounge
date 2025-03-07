@@ -13,7 +13,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background">
       <Switch>
         {/* Public routes */}
         <Route path="/" component={WelcomePage} />
