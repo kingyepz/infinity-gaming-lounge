@@ -8,13 +8,22 @@ const MPESA_AUTH_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_
 const MPESA_STK_URL = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 const MPESA_QUERY_URL = 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query';
 
-// M-Pesa credentials schema
+// M-Pesa credentials from environment variables (Secrets)
+const mpesaCredentials = {
+  consumerKey: process.env.MPESA_CONSUMER_KEY || '',
+  consumerSecret: process.env.MPESA_CONSUMER_SECRET || '',
+  passKey: process.env.MPESA_PASS_KEY || '',
+  shortCode: process.env.MPESA_SHORT_CODE || '',
+  callbackUrl: process.env.MPESA_CALLBACK_URL || ''
+};
+
+// M-Pesa credentials schema for validation
 const mpesaCredentialsSchema = z.object({
-  consumerKey: z.string(),
-  consumerSecret: z.string(),
-  passKey: z.string(),
-  shortCode: z.string(),
-  callbackUrl: z.string()
+  consumerKey: z.string().min(1, "Consumer Key is required"),
+  consumerSecret: z.string().min(1, "Consumer Secret is required"),
+  passKey: z.string().min(1, "Pass Key is required"),
+  shortCode: z.string().min(1, "Short Code is required"),
+  callbackUrl: z.string().url("Valid Callback URL is required")
 });
 
 // M-Pesa payment request schema
