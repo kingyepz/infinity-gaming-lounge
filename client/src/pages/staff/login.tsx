@@ -1,15 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { SiGoogle } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
+import { SiGoogle } from "react-icons/si";
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 export default function StaffLogin() {
   const [loading, setLoading] = useState(false);
@@ -21,12 +19,15 @@ export default function StaffLogin() {
     try {
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
+
       // Create user in our backend with selected role
       await apiRequest("POST", "/api/users", {
-        email: result.user.email,
         displayName: result.user.displayName,
+        gamingName: result.user.displayName,
+        phoneNumber: result.user.phoneNumber || "254700000000",
         role: role
       });
+
       // Redirect based on role
       setLocation(role === "admin" ? "/admin" : "/pos");
     } catch (error: any) {
@@ -46,10 +47,14 @@ export default function StaffLogin() {
       // Get the test account
       const phoneNumber = testRole === "admin" ? "254700000000" : "254700000001";
       const response = await apiRequest("GET", `/api/users/phone/${phoneNumber}`);
+      const user = await response.json();
 
       if (!response.ok) {
         throw new Error("Test account not found");
       }
+
+      // Set the role in local state
+      setRole(testRole);
 
       // Redirect based on role
       setLocation(testRole === "admin" ? "/admin" : "/pos");
@@ -78,7 +83,6 @@ export default function StaffLogin() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Select Role</Label>
             <Select
               value={role}
               onValueChange={(value: "admin" | "staff") => setRole(value)}

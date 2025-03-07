@@ -14,14 +14,14 @@ export function useAuth(requiredRole?: "admin" | "staff" | "customer") {
   });
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       setLoading(true);
-      
-      if (!user) {
+
+      if (!firebaseUser) {
         setLocation("/");
-      } else if (requiredRole && user && (!user || user.role !== requiredRole)) {
+      } else if (requiredRole && (!user || user.role !== requiredRole)) {
         // Redirect based on role if they're trying to access wrong area
-        switch (user.role) {
+        switch (user?.role) {
           case "admin":
             setLocation("/admin");
             break;
@@ -35,12 +35,12 @@ export function useAuth(requiredRole?: "admin" | "staff" | "customer") {
             setLocation("/");
         }
       }
-      
+
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [setLocation, requiredRole]);
+  }, [setLocation, requiredRole, user]);
 
   return { loading, user };
 }
