@@ -46,69 +46,72 @@ export default function POSDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden">
-      {/* Background patterns */}
+      {/* Background patterns - keep existing */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      {/* Center Logo */}
-      <div className="w-full flex justify-center items-center py-4 z-10 relative">
+      {/* Center Logo - Make it responsive */}
+      <div className="w-full flex justify-center items-center py-2 sm:py-4 z-10 relative">
         <div className="flex flex-col items-center">
-          <InfinityLogo className="w-24 h-24" />
-          <h1 className="text-2xl font-bold text-primary">INFINITY GAMING LOUNGE</h1>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="hover:bg-primary/20">
+          <InfinityLogo className="w-16 h-16 sm:w-24 sm:h-24" />
+          <h1 className="text-xl sm:text-2xl font-bold text-primary">INFINITY GAMING LOUNGE</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleLogout} 
+            className="hover:bg-primary/20 mt-2"
+          >
             <UsersIcon className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="flex w-full relative">
-        {/* Sidebar */}
-        <div className="w-64 border-r border-primary/20 p-4 space-y-2 backdrop-blur-sm bg-black/50">
-          <div className="flex items-center justify-between mb-6">
-            {/* Removed POS System text */}
-          </div>
-
-          <TabsList className="flex flex-col w-full space-y-2">
-            <TabsTrigger value="overview" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+      <Tabs defaultValue="overview" className="flex flex-col md:flex-row w-full relative">
+        {/* Sidebar - Make it collapsible on mobile */}
+        <div className="w-full md:w-64 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
+          <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
+            <TabsTrigger value="overview" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <GamepadIcon className="w-4 h-4 mr-2" />
-              Overview
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+            <TabsTrigger value="sessions" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <CalendarIcon className="w-4 h-4 mr-2" />
-              Sessions
+              <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
-            <TabsTrigger value="customers" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+            <TabsTrigger value="customers" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <UsersIcon className="w-4 h-4 mr-2" />
-              Customers
+              <span className="hidden sm:inline">Customers</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+            <TabsTrigger value="analytics" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <BarChart2Icon className="w-4 h-4 mr-2" />
-              Analytics
+              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+            <TabsTrigger value="reports" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <DollarSignIcon className="w-4 h-4 mr-2" />
-              Reports
+              <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
-            <TabsTrigger value="payments" className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+            <TabsTrigger value="payments" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
               <DollarSignIcon className="w-4 h-4 mr-2" />
-              Payments
+              <span className="hidden sm:inline">Payments</span>
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6 backdrop-blur-sm bg-black/50">
+        {/* Main Content Area - Make it responsive */}
+        <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
           <TabsContent value="overview">
-            {/* Dashboard Content */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-4 sm:space-y-6">
+              {/* Stats Grid - Make it responsive */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                 <Card className="bg-black/30 border-primary/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stations?.filter(s => s.currentCustomer)?.length || 0}</div>
+                    <div className="text-lg sm:text-2xl font-bold">
+                      {stations?.filter(s => s.currentCustomer)?.length || 0}
+                    </div>
                     <p className="text-xs text-muted-foreground">+2 from last hour</p>
                   </CardContent>
                 </Card>
@@ -117,7 +120,7 @@ export default function POSDashboard() {
                     <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KSH 1,250.00</div> {/* Changed to KSH */}
+                    <div className="text-lg sm:text-2xl font-bold">KSH 1,250.00</div>
                     <p className="text-xs text-muted-foreground">+$350 from yesterday</p>
                   </CardContent>
                 </Card>
@@ -126,7 +129,7 @@ export default function POSDashboard() {
                     <CardTitle className="text-sm font-medium">New Customers</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">8</div>
+                    <div className="text-lg sm:text-2xl font-bold">8</div>
                     <p className="text-xs text-muted-foreground">+3 from yesterday</p>
                   </CardContent>
                 </Card>
@@ -135,21 +138,21 @@ export default function POSDashboard() {
                     <CardTitle className="text-sm font-medium">Total Points Awarded</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">1,850</div>
+                    <div className="text-lg sm:text-2xl font-bold">1,850</div>
                     <p className="text-xs text-muted-foreground">+220 from yesterday</p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Recent Activity */}
-              <h3 className="text-xl font-semibold mt-8 mb-4">Recent Activity</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Recent Activity Section - Make it responsive */}
+              <h3 className="text-lg sm:text-xl font-semibold mt-6 sm:mt-8 mb-4">Recent Activity</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <Card className="bg-black/30 border-primary/20">
                   <CardHeader>
-                    <CardTitle className="text-lg">Station Activity</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">Station Activity</CardTitle>
                   </CardHeader>
                   <CardContent className="max-h-[300px] overflow-auto">
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {[1, 2, 3, 4, 5].map(i => (
                         <div key={i} className="flex justify-between items-center">
                           <div>
@@ -167,17 +170,17 @@ export default function POSDashboard() {
 
                 <Card className="bg-black/30 border-primary/20">
                   <CardHeader>
-                    <CardTitle className="text-lg">Latest Transactions</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">Latest Transactions</CardTitle>
                   </CardHeader>
                   <CardContent className="max-h-[300px] overflow-auto">
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {[1, 2, 3, 4, 5].map(i => (
                         <div key={i} className="flex justify-between items-center">
                           <div>
                             <p className="font-medium">Customer {i}</p>
                             <p className="text-sm text-muted-foreground">{new Date().toLocaleTimeString()}</p>
                           </div>
-                          <p className="font-medium">KSH {(Math.random() * 100).toFixed(2)}</p> {/* Changed to KSH */}
+                          <p className="font-medium">KSH {(Math.random() * 100).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>
@@ -185,10 +188,10 @@ export default function POSDashboard() {
                 </Card>
               </div>
 
-              {/* Quick Actions */}
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
-                <div className="flex flex-wrap gap-3">
+              {/* Quick Actions - Make it responsive */}
+              <div className="mt-4 sm:mt-6">
+                <h3 className="text-lg sm:text-xl font-semibold mb-4">Quick Actions</h3>
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   <Button variant="default">New Session</Button>
                   <Button variant="outline">View Reports</Button>
                   <Button variant="outline">Manage Stations</Button>
@@ -247,7 +250,7 @@ export default function POSDashboard() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">Amount</p>
-                              <p className="font-medium">KSH {station.sessionType === "per_game" ? "40" : "200"}</p> {/* Changed to KSH */}
+                              <p className="font-medium">KSH {station.sessionType === "per_game" ? "40" : "200"}</p>
                             </div>
                           </div>
 
@@ -255,7 +258,7 @@ export default function POSDashboard() {
                             <Button size="sm" variant="outline" className="flex-1" onClick={async () => {
                               try {
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
-                                  sessionStartTime: new Date().toISOString() //Extend session
+                                  sessionStartTime: new Date().toISOString() 
                                 });
                               } catch (error: any) {
                                 toast({
@@ -267,11 +270,6 @@ export default function POSDashboard() {
                             }}>Extend</Button>
                             <Button size="sm" variant="destructive" className="flex-1" onClick={async () => {
                               try {
-                                // Create a pending payment before ending the session
-                                // In a real implementation, this would create a transaction in the pending state
-                                // For now we'll just end the session and assume the UI will be updated
-
-                                // End the session
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
                                   currentCustomer: null,
                                   currentGame: null,
@@ -279,7 +277,6 @@ export default function POSDashboard() {
                                   sessionStartTime: null
                                 });
 
-                                // Show success message with payment hint
                                 toast({
                                   title: "Session ended",
                                   description: "Payment has been added to the pending payments list"
@@ -338,7 +335,7 @@ export default function POSDashboard() {
                           <p className="text-sm text-muted-foreground">Customer: Alex Smith</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">KSH {(Math.random() * 50).toFixed(2)}</p> {/* Changed to KSH */}
+                          <p className="font-medium">KSH {(Math.random() * 50).toFixed(2)}</p>
                           <p className="text-sm text-muted-foreground">2 hours</p>
                         </div>
                       </div>
@@ -614,7 +611,7 @@ export default function POSDashboard() {
                     <TableCell>1000</TableCell>
                     <TableCell>3</TableCell>
                   </TableRow>
-                  </TableBody>
+                </TableBody>
               </Table>
             </div>
           </TabsContent>
