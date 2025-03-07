@@ -11,6 +11,7 @@ import CustomerPortal from "@/pages/customer/portal";
 import AdminAnalytics from "@/pages/admin/analytics";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import React from "react";
 
 function Router() {
@@ -24,19 +25,25 @@ function Router() {
 
         {/* Protected routes with layout */}
         <Route path="/pos">
-          <Layout>
-            <POSDashboard />
-          </Layout>
+          <ProtectedRoute role="staff">
+            <Layout>
+              <POSDashboard />
+            </Layout>
+          </ProtectedRoute>
         </Route>
         <Route path="/portal">
-          <Layout>
-            <CustomerPortal />
-          </Layout>
+          <ProtectedRoute role="customer">
+            <Layout>
+              <CustomerPortal />
+            </Layout>
+          </ProtectedRoute>
         </Route>
         <Route path="/admin">
-          <Layout>
-            <AdminAnalytics />
-          </Layout>
+          <ProtectedRoute role="admin">
+            <Layout>
+              <AdminAnalytics />
+            </Layout>
+          </ProtectedRoute>
         </Route>
 
         <Route component={NotFound} />
