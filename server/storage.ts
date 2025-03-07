@@ -330,6 +330,18 @@ class StorageService {
     }
   }
 
+  async getAllCustomers() {
+    try {
+      return await db.select()
+        .from(users)
+        .where(eq(users.role, "customer"))
+        .orderBy(desc(users.createdAt));
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      return [];
+    }
+  }
+
   // Initialize test data
   async initializeMockData() {
     try {

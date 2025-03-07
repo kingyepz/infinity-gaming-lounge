@@ -408,11 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add this endpoint after the existing user-related endpoints
   app.get("/api/users/customers", asyncHandler(async (_req, res) => {
     try {
-      const customers = await db.select()
-        .from(users)
-        .where(eq(users.role, "customer"))
-        .orderBy(desc(users.createdAt));
-
+      const customers = await storage.getAllCustomers();
       res.json(customers);
     } catch (error) {
       console.error("Error fetching customers:", error);

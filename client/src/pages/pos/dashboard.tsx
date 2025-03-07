@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,10 @@ import { Input } from "@/components/ui/input";
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
   const [showPayment, setShowPayment] = useState(false);
-  const [showRegistration, setShowRegistration] = useState(false); // Added state for registration form
+  const [showRegistration, setShowRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const { data: stations, isLoading: stationsLoading } = useQuery({
     queryKey: ["/api/stations"],
@@ -48,39 +49,35 @@ export default function POSDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden">
-      {/* Background patterns - keep existing */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      {/* Center Logo - Make it responsive */}
-
-                <Card className="bg-black/30 border-primary/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Top Games</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {/* Mock top games data */}
-                      {[
-                        { name: "FIFA 24", sessions: 42, platform: "PS5" },
-                        { name: "Call of Duty", sessions: 38, platform: "Xbox" },
-                        { name: "Fortnite", sessions: 27, platform: "PC" },
-                        { name: "Mortal Kombat", sessions: 23, platform: "PS5" },
-                      ].map((game, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium">{game.name}</span>
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              {game.platform}
-                            </Badge>
-                          </div>
-                          <span className="text-sm">{game.sessions} sessions</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+      <Card className="bg-black/30 border-primary/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Top Games</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[
+              { name: "FIFA 24", sessions: 42, platform: "PS5" },
+              { name: "Call of Duty", sessions: 38, platform: "Xbox" },
+              { name: "Fortnite", sessions: 27, platform: "PC" },
+              { name: "Mortal Kombat", sessions: 23, platform: "PS5" },
+            ].map((game, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-sm font-medium">{game.name}</span>
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {game.platform}
+                  </Badge>
+                </div>
+                <span className="text-sm">{game.sessions} sessions</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="w-full flex justify-center items-center py-2 sm:py-4 z-10 relative">
         <div className="flex flex-col items-center">
@@ -98,7 +95,6 @@ export default function POSDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="flex flex-col md:flex-row w-full relative">
-        {/* Sidebar - Make it collapsible on mobile */}
         <div className="w-full md:w-64 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
           <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
             <TabsTrigger value="overview" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
@@ -128,11 +124,9 @@ export default function POSDashboard() {
           </TabsList>
         </div>
 
-        {/* Main Content Area - Make it responsive */}
         <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
           <TabsContent value="overview">
             <div className="space-y-4 sm:space-y-6">
-              {/* Stats Grid - Make it responsive */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                 <Card className="bg-black/30 border-primary/20">
                   <CardHeader className="pb-2">
@@ -174,7 +168,6 @@ export default function POSDashboard() {
                 </Card>
               </div>
 
-              {/* Recent Activity Section - Make it responsive */}
               <h3 className="text-lg sm:text-xl font-semibold mt-6 sm:mt-8 mb-4">Recent Activity</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <Card className="bg-black/30 border-primary/20">
@@ -205,7 +198,6 @@ export default function POSDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* Mock reservation data */}
                       {[
                         { name: "John Doe", time: "3:00 PM", duration: "2 hours", stations: 2, status: "confirmed" },
                         { name: "Jane Smith", time: "4:30 PM", duration: "3 hours", stations: 1, status: "pending" },
@@ -228,7 +220,6 @@ export default function POSDashboard() {
                 </Card>
               </div>
 
-              {/* Enhanced Quick Actions Section - Make it responsive */}
               <div className="mt-4 sm:mt-6">
                 <h3 className="text-lg sm:text-xl font-semibold mb-4">Quick Actions</h3>
                 <Card className="bg-black/30 border-primary/20">
@@ -322,14 +313,12 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="sessions">
-            {/* Sessions Tab Content */}
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gaming Sessions</h2>
                 <Button variant="default">New Session</Button>
               </div>
 
-              {/* Active Sessions */}
               <Card className="bg-black/30 border-primary/20">
                 <CardHeader>
                   <CardTitle>Active Sessions</CardTitle>
@@ -419,7 +408,6 @@ export default function POSDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Available Stations */}
               <Card className="bg-black/30 border-primary/20">
                 <CardHeader>
                   <CardTitle>Available Stations</CardTitle>
@@ -442,7 +430,6 @@ export default function POSDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Recent Sessions */}
               <Card className="bg-black/30 border-primary/20">
                 <CardHeader>
                   <CardTitle>Recent Sessions</CardTitle>
@@ -468,7 +455,6 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="customers">
-            {/* Customers Tab Content */}
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Customer Management</h2>
@@ -492,21 +478,23 @@ export default function POSDashboard() {
                           displayName: formData.get("displayName"),
                           gamingName: formData.get("gamingName"),
                           phoneNumber: formData.get("phoneNumber"),
+                          role: "customer" 
                         });
 
-                        if (response.ok) {
-                          toast({
-                            title: "Success",
-                            description: "Customer registered successfully!"
-                          });
-                          setShowRegistration(false);
-                          (e.target as HTMLFormElement).reset();
-                        }
+                        toast({
+                          title: "Success",
+                          description: "Customer registered successfully!"
+                        });
+
+                        await queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] });
+
+                        setShowRegistration(false);
+                        (e.target as HTMLFormElement).reset();
                       } catch (error: any) {
                         toast({
                           variant: "destructive",
                           title: "Registration failed",
-                          description: error.message
+                          description: error.message || "Failed to register customer"
                         });
                       }
                     }} 
@@ -623,7 +611,6 @@ export default function POSDashboard() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Revenue Trends */}
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>
                     <CardTitle>Station Utilization</CardTitle>
@@ -631,7 +618,6 @@ export default function POSDashboard() {
                   <CardContent className="h-80 relative">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-full h-full flex flex-col">
-                        {/* Station usage donut chart */}
                         <div className="flex-1 flex items-center justify-center relative">
                           <div className="w-48 h-48 rounded-full border-8 border-primary/20 relative">
                             {stations && (
@@ -680,7 +666,6 @@ export default function POSDashboard() {
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-full h-full flex flex-col">
                         <div className="flex-1 flex">
-                          {/* Mock bar chart */}
                           {Array.from({ length: 7 }).map((_, i) => {
                             const height = 30 + Math.random() * 70;
                             return (
@@ -707,14 +692,12 @@ export default function POSDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Game Popularity */}
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>
                     <CardTitle>Game Popularity</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
                     <div className="h-full flex flex-col justify-center">
-                      {/* Game popularity bars */}
                       {games?.slice(0, 5).map((game, i) => {
                         const randomPercent = 20 + Math.random() * 80;
                         return (
@@ -738,7 +721,6 @@ export default function POSDashboard() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Hourly Traffic */}
                 <Card className="bg-black/40 border-primary/20 col-span-1 lg:col-span-2">
                   <CardHeader>
                     <CardTitle>Hourly Traffic</CardTitle>
@@ -746,7 +728,6 @@ export default function POSDashboard() {
                   <CardContent className="h-60 relative">
                     <div className="absolute inset-0 px-4">
                       <div className="h-full flex items-end">
-                        {/* Mock line chart */}
                         <svg className="w-full h-full" viewBox="0 0 24 10" preserveAspectRatio="none">
                           <path 
                             d="M0,10 C1,8 2,9 3,7 C4,5 5,6 6,4 C7,2 8,3 9,3 C10,3 11,5 12,4 C13,3 14,2 15,3 C16,4 17,5 18,4 C19,3 20,2 21,1 C22,0 23,1 24,2" 
@@ -768,13 +749,11 @@ export default function POSDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Customer Breakdown */}
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>
                     <CardTitle>Customer Types</CardTitle>
                   </CardHeader>
                   <CardContent className="h-60 flex items-center justify-center">
-                    {/* Mock donut chart */}
                     <div className="relative w-36 h-36">
                       <svg viewBox="0 0 36 36">
                         <path 
@@ -826,7 +805,6 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="reports">
-            {/* Reports Tab Content */}
             <div>
               <h3 className="text-2xl font-bold mb-4">Financial Reports</h3>
               <Table>
@@ -862,7 +840,6 @@ export default function POSDashboard() {
             <div className="space-y-6">
               <h3 className="text-2xl font-bold">Payments</h3>
 
-              {/* Pending Payments Section */}
               <Card className="border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
@@ -898,7 +875,6 @@ export default function POSDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Payment Statistics Section */}
               <Card className="border-primary/20">
                 <CardHeader>
                   <CardTitle>Payment Statistics</CardTitle>
@@ -922,7 +898,6 @@ export default function POSDashboard() {
                     </div>
                   </div>
 
-                  {/* Payment Method Breakdown */}
                   <div className="mt-4">
                     <p className="font-medium mb-2">Payment Method Breakdown</p>
                     <div className="bg-primary/5 p-3 rounded-md">
@@ -954,7 +929,6 @@ export default function POSDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Recent Transactions Section */}
               <Card className="border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
@@ -988,7 +962,6 @@ export default function POSDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Quick Actions */}
               <Card className="border-primary/20">
                 <CardHeader>
                   <CardTitle>Quick Actions</CardTitle>
