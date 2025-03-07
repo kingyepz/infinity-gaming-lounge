@@ -6,12 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GamepadIcon, ClockIcon, Timer } from "lucide-react";
+import { GamepadIcon, ClockIcon, Timer, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerRegistrationForm from "@/components/shared/CustomerRegistrationForm";
 import type { GameStation, Game } from "@shared/schema";
+
+type ReportType = "current" | "hourly" | "daily";
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -25,6 +27,59 @@ export default function POSDashboard() {
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["/api/games"],
   });
+
+  const generateReport = async (type: ReportType) => {
+    try {
+      const response = await apiRequest("GET", `/api/reports/${type}`);
+      const report = await response.json();
+
+      // Convert report data to text
+      let reportText = `=== ${type.toUpperCase()} REPORT ===\n\n`;
+
+      if (type === "current") {
+        // Format current active sessions
+        report.forEach((session: any) => {
+          reportText += `Station: ${session.stationName}\n`;
+          reportText += `Customer: ${session.customerName}\n`;
+          reportText += `Game: ${session.gameName}\n`;
+          reportText += `Duration: ${session.duration}\n`;
+          reportText += `Cost: KES ${session.cost}\n\n`;
+        });
+      } else {
+        // Format summary reports
+        reportText += `Total Revenue: KES ${report.totalRevenue}\n`;
+        reportText += `Active Sessions: ${report.activeSessions}\n`;
+        reportText += `Completed Sessions: ${report.completedSessions}\n\n`;
+
+        reportText += "Session Details:\n";
+        report.sessions.forEach((session: any) => {
+          reportText += `- ${session.stationName}: ${session.customerName} (${session.duration})\n`;
+        });
+      }
+
+      // Create and download report file
+      const blob = new Blob([reportText], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gaming-report-${type}-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Report Generated",
+        description: "The report has been downloaded to your device."
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to generate report",
+        description: error.message
+      });
+    }
+  };
 
   const startSession = async (station: GameStation, formData: {
     customerName: string;
@@ -176,6 +231,24 @@ export default function POSDashboard() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gaming Sessions</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => generateReport("current")} variant="outline">
+            <FileText className="mr-2 h-4 w-4" />
+            Current Sessions
+          </Button>
+          <Button onClick={() => generateReport("hourly")} variant="outline">
+            <ClockIcon className="mr-2 h-4 w-4" />
+            Hourly Report
+          </Button>
+          <Button onClick={() => generateReport("daily")} variant="outline">
+            <GamepadIcon className="mr-2 h-4 w-4" />
+            Daily Report
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="sessions">
         <TabsList>
           <TabsTrigger value="sessions">Gaming Sessions</TabsTrigger>

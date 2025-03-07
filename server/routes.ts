@@ -34,6 +34,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Report Generation Routes
+  app.get("/api/reports/current", async (_req, res) => {
+    try {
+      const stations = await storage.getGameStations();
+      const activeStations = stations.filter(station => station.currentCustomer);
+
+      const report = activeStations.map(station => {
+        const duration = station.sessionStartTime
+          ? Math.ceil((Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60)) // minutes
+          : 0;
+
+        const cost = station.sessionType === "per_game"
+          ? station.baseRate
+          : Math.ceil(duration / 60) * station.hourlyRate;
+
+        return {
+          stationName: station.name,
+          customerName: station.currentCustomer,
+          gameName: station.currentGame,
+          duration: station.sessionType === "per_game" 
+            ? "1 game"
+            : `${Math.ceil(duration / 60)} hour(s)`,
+          cost
+        };
+      });
+
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reports/hourly", async (_req, res) => {
+    try {
+      const stations = await storage.getGameStations();
+      const transactions = await Promise.all(
+        stations.map(station => storage.getTransactionsByStation(station.id))
+      );
+
+      const now = new Date();
+      const hourAgo = new Date(now.getTime() - (60 * 60 * 1000));
+
+      const hourlyTransactions = transactions.flat().filter(tx => 
+        new Date(tx.createdAt) >= hourAgo
+      );
+
+      const report = {
+        totalRevenue: hourlyTransactions.reduce((sum, tx) => sum + tx.amount, 0),
+        activeSessions: stations.filter(s => s.currentCustomer).length,
+        completedSessions: hourlyTransactions.length,
+        sessions: hourlyTransactions.map(tx => ({
+          stationName: stations.find(s => s.id === tx.stationId)?.name,
+          customerName: tx.customerName,
+          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration} minutes`
+        }))
+      };
+
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reports/daily", async (_req, res) => {
+    try {
+      const stations = await storage.getGameStations();
+      const transactions = await Promise.all(
+        stations.map(station => storage.getTransactionsByStation(station.id))
+      );
+
+      const now = new Date();
+      const dayStart = new Date(now.setHours(0,0,0,0));
+
+      const dailyTransactions = transactions.flat().filter(tx => 
+        new Date(tx.createdAt) >= dayStart
+      );
+
+      const report = {
+        totalRevenue: dailyTransactions.reduce((sum, tx) => sum + tx.amount, 0),
+        activeSessions: stations.filter(s => s.currentCustomer).length,
+        completedSessions: dailyTransactions.length,
+        sessions: dailyTransactions.map(tx => ({
+          stationName: stations.find(s => s.id === tx.stationId)?.name,
+          customerName: tx.customerName,
+          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration} minutes`
+        }))
+      };
+
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Game Routes
   app.get("/api/games", async (_req, res) => {
     const games = await storage.getGames();
