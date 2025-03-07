@@ -10,6 +10,48 @@ export const users = pgTable("users", {
   phoneNumber: text("phone_number").notNull(),
   role: text("role", { enum: ["admin", "staff", "customer"] }).notNull(),
   points: integer("points").default(0),
+  referralCode: text("referral_code"),
+  referredBy: integer("referred_by"),
+  level: text("level", { enum: ["beginner", "pro", "elite"] }).default("beginner"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const friends = pgTable("friends", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  friendId: integer("friend_id").notNull(),
+  status: text("status", { enum: ["pending", "accepted", "rejected"] }).notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  date: text("date").notNull(),
+  time: text("time").notNull(),
+  prize: text("prize"),
+  maxParticipants: integer("max_participants"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const rewards = pgTable("rewards", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  points: integer("points").notNull(),
+  available: boolean("available").default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  stationId: integer("station_id").notNull(),
+  date: text("date").notNull(),
+  time: text("time").notNull(),
+  duration: integer("duration").notNull(), // in hours
+  status: text("status", { enum: ["pending", "confirmed", "cancelled"] }).notNull(),
   createdAt: timestamp("created_at").defaultNow()
 });
 

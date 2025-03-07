@@ -149,6 +149,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const transactions = await storage.getTransactionsByStation(Number(req.params.stationId));
     res.json(transactions);
   });
+  
+  // User Transactions Route
+  app.get("/api/transactions/user/current", async (req, res) => {
+    // This would normally use authentication to get the current user
+    // For now, we'll return some mock data
+    res.json([
+      {
+        id: 1,
+        stationId: 1,
+        customerName: "John Doe",
+        gameName: "FIFA 23",
+        sessionType: "per_game",
+        amount: 500,
+        paymentStatus: "completed",
+        mpesaRef: "MP123456",
+        duration: null,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // yesterday
+      },
+      {
+        id: 2,
+        stationId: 2,
+        customerName: "John Doe",
+        gameName: "Call of Duty",
+        sessionType: "hourly",
+        amount: 1000,
+        paymentStatus: "completed",
+        mpesaRef: "MP123457",
+        duration: 60,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
+      }
+    ]);
+  });
+  
+  // Leaderboard Route
+  app.get("/api/leaderboard", async (_req, res) => {
+    // This would normally fetch from the database
+    res.json([
+      { rank: 1, name: "EliteGamer", points: 2500 },
+      { rank: 2, name: "VictoryRoad", points: 2300 },
+      { rank: 3, name: "GameMaster", points: 1200 },
+      { rank: 4, name: "ProPlayer22", points: 750 }
+    ]);
+  });
+  
+  // Events Route
+  app.get("/api/events", async (_req, res) => {
+    res.json([
+      { id: 1, title: "FIFA Tournament", date: "2023-12-15", time: "14:00", prize: "5000 Points" },
+      { id: 2, title: "Call of Duty Marathon", date: "2023-12-22", time: "18:00", prize: "Free Hours" },
+      { id: 3, title: "Racing Championship", date: "2023-12-29", time: "16:00", prize: "Gaming Gear" }
+    ]);
+  });
+  
+  // Rewards Route
+  app.get("/api/rewards", async (_req, res) => {
+    res.json([
+      { id: 1, title: "1 Hour Free Gaming", points: 500 },
+      { id: 2, title: "Gaming Headset", points: 2000 },
+      { id: 3, title: "Premium Snack Pack", points: 300 },
+      { id: 4, title: "Controller Skin", points: 800 }
+    ]);
+  });
+  
+  // User Friends Route
+  app.get("/api/users/friends", async (_req, res) => {
+    res.json([
+      { id: 1, name: "Alex Gaming", points: 980, status: "online" },
+      { id: 2, name: "ProPlayer22", points: 750, status: "offline" },
+      { id: 3, name: "GameMaster", points: 1200, status: "gaming" }
+    ]);
+  });
+  
+  // Current User Route
+  app.get("/api/users/current", async (_req, res) => {
+    // This would normally use authentication
+    res.json({
+      id: 1,
+      displayName: "John Doe",
+      gamingName: "JDGamer",
+      phoneNumber: "254700000000",
+      role: "customer",
+      points: 750,
+      referralCode: "JDGAM123",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() // 30 days ago
+    });
+  });
 
   // M-Pesa Payment Routes
   app.post("/api/payments/mpesa", async (req, res) => {

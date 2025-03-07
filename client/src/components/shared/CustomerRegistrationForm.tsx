@@ -95,6 +95,21 @@ export default function CustomerRegistrationForm() {
             </FormItem>
           )}
         />
+        
+        <FormField
+          control={form.control}
+          name="referralCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Referral Code (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter referral code if any" {...field} />
+              </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground">If referred by a friend, enter their code for bonus points</p>
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Registering..." : "Register Customer"}
