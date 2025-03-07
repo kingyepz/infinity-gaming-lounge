@@ -340,10 +340,231 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            {/* Analytics Tab Content */}
-            <div>
-              <h3 className="text-2xl font-bold mb-4">Analytics Dashboard</h3>
-              <p>This tab will display various analytical data and metrics.</p>
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold">Analytics Dashboard</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <Card className="bg-black/40 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Revenue (Today)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KSH {stations?.reduce((sum, station) => {
+                      if (station.currentCustomer) {
+                        return sum + (station.sessionType === "per_game" ? station.baseRate : station.hourlyRate)
+                      }
+                      return sum
+                    }, 0) || 0}</div>
+                    <p className="text-xs text-muted-foreground">+2.5% from yesterday</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-black/40 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stations?.filter(s => s.currentCustomer).length || 0}</div>
+                    <p className="text-xs text-muted-foreground">Out of {stations?.length || 0} stations</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-black/40 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Most Popular Game</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const gameCounts = {};
+                        stations?.forEach(station => {
+                          if (station.currentGame) {
+                            gameCounts[station.currentGame] = (gameCounts[station.currentGame] || 0) + 1;
+                          }
+                        });
+                        const entries = Object.entries(gameCounts);
+                        if (entries.length === 0) return "N/A";
+                        return entries.sort((a, b) => b[1] - a[1])[0][0];
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Currently being played</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-black/40 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Average Session Time</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const activeSessions = stations?.filter(s => s.sessionStartTime && s.currentCustomer) || [];
+                        if (activeSessions.length === 0) return "0 min";
+                        const totalMinutes = activeSessions.reduce((sum, s) => {
+                          const startTime = new Date(s.sessionStartTime);
+                          const now = new Date();
+                          return sum + Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+                        }, 0);
+                        return `${Math.floor(totalMinutes / activeSessions.length)} min`;
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">For active sessions</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Revenue Trends */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Revenue Trends (7 Days)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-80 relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-full flex flex-col">
+                        <div className="flex-1 flex">
+                          {/* Mock bar chart */}
+                          {Array.from({ length: 7 }).map((_, i) => {
+                            const height = 30 + Math.random() * 70;
+                            return (
+                              <div key={i} className="flex-1 flex items-end pb-8">
+                                <div 
+                                  className="w-full mx-1 rounded-t-sm bg-gradient-to-t from-primary/50 to-primary/80" 
+                                  style={{ height: `${height}%` }}
+                                ></div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between px-2 text-xs text-muted-foreground">
+                          <span>Mon</span>
+                          <span>Tue</span>
+                          <span>Wed</span>
+                          <span>Thu</span>
+                          <span>Fri</span>
+                          <span>Sat</span>
+                          <span>Sun</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Game Popularity */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Game Popularity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-80">
+                    <div className="h-full flex flex-col justify-center">
+                      {/* Game popularity bars */}
+                      {games?.slice(0, 5).map((game, i) => {
+                        const randomPercent = 20 + Math.random() * 80;
+                        return (
+                          <div key={i} className="mb-6 last:mb-0">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">{game.name}</span>
+                              <span className="text-sm font-medium">{Math.floor(randomPercent)}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-primary/20 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full"
+                                style={{ width: `${randomPercent}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Hourly Traffic */}
+                <Card className="bg-black/40 border-primary/20 col-span-1 lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Hourly Traffic</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-60 relative">
+                    <div className="absolute inset-0 px-4">
+                      <div className="h-full flex items-end">
+                        {/* Mock line chart */}
+                        <svg className="w-full h-full" viewBox="0 0 24 10" preserveAspectRatio="none">
+                          <path 
+                            d="M0,10 C1,8 2,9 3,7 C4,5 5,6 6,4 C7,2 8,3 9,3 C10,3 11,5 12,4 C13,3 14,2 15,3 C16,4 17,5 18,4 C19,3 20,2 21,1 C22,0 23,1 24,2" 
+                            fill="none" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth="0.2" 
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-muted-foreground px-2">
+                        <span>9AM</span>
+                        <span>12PM</span>
+                        <span>3PM</span>
+                        <span>6PM</span>
+                        <span>9PM</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Customer Breakdown */}
+                <Card className="bg-black/40 border-primary/20 col-span-1">
+                  <CardHeader>
+                    <CardTitle>Customer Types</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-60 flex items-center justify-center">
+                    {/* Mock donut chart */}
+                    <div className="relative w-36 h-36">
+                      <svg viewBox="0 0 36 36">
+                        <path 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth="2"
+                          strokeDasharray="60, 100"
+                        />
+                        <path 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="hsl(var(--primary) / 0.5)"
+                          strokeWidth="2"
+                          strokeDasharray="25, 100"
+                          strokeDashoffset="-60"
+                        />
+                        <path 
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="hsl(var(--primary) / 0.2)"
+                          strokeWidth="2"
+                          strokeDasharray="15, 100"
+                          strokeDashoffset="-85"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-sm font-medium">Total: 100</span>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <div className="flex items-center mb-2">
+                        <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
+                        <span className="text-sm">Regular (60%)</span>
+                      </div>
+                      <div className="flex items-center mb-2">
+                        <div className="w-3 h-3 rounded-full bg-primary/50 mr-2"></div>
+                        <span className="text-sm">New (25%)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
+                        <span className="text-sm">VIP (15%)</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
