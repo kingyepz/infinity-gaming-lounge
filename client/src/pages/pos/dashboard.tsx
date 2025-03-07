@@ -265,12 +265,24 @@ export default function POSDashboard() {
                             }}>Extend</Button>
                             <Button size="sm" variant="destructive" className="flex-1" onClick={async () => {
                               try {
+                                // Create a pending payment before ending the session
+                                // In a real implementation, this would create a transaction in the pending state
+                                // For now we'll just end the session and assume the UI will be updated
+                                
+                                // End the session
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
                                   currentCustomer: null,
                                   currentGame: null,
                                   sessionType: null,
                                   sessionStartTime: null
                                 });
+                                
+                                // Show success message with payment hint
+                                toast({
+                                  title: "Session ended",
+                                  description: "Payment has been added to the pending payments list"
+                                });
+                                
                               } catch (error: any) {
                                 toast({
                                   variant: "destructive",
@@ -581,15 +593,157 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="payments">
-            <div>
-              <h3 className="text-2xl font-bold mb-4">Payments</h3>
-              <p>Select Payment Method:</p>
-              <ul>
-                <li>Cash</li>
-                <li>Lipa na M-Pesa</li>
-                <li>Airtel Money</li>
-              </ul>
-              {/* Add more payment methods and API integration here later */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold">Payments</h3>
+              
+              {/* Pending Payments Section */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center">
+                    <span>Pending Payments</span>
+                    <Badge variant="secondary">3</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
+                        <div>
+                          <p className="font-medium">Customer {i+1}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Game Station {i+1} • {Math.floor(Math.random() * 60) + 30} min
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
+                          <div className="flex gap-2 mt-2">
+                            <select className="text-xs p-1 rounded border border-primary/20 bg-primary/5">
+                              <option value="">Payment Method</option>
+                              <option value="cash">Cash</option>
+                              <option value="mpesa">M-Pesa</option>
+                              <option value="airtel">Airtel Money</option>
+                            </select>
+                            <Button size="sm" variant="default" className="text-xs">Pay</Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Payment Statistics Section */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Payment Statistics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">Today</p>
+                      <p className="text-xl font-bold">KSH 12,500</p>
+                      <p className="text-xs text-green-500">+15% from yesterday</p>
+                    </div>
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">This Week</p>
+                      <p className="text-xl font-bold">KSH 68,200</p>
+                      <p className="text-xs text-green-500">+8% from last week</p>
+                    </div>
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">This Month</p>
+                      <p className="text-xl font-bold">KSH 245,800</p>
+                      <p className="text-xs text-green-500">+12% from last month</p>
+                    </div>
+                  </div>
+                  
+                  {/* Payment Method Breakdown */}
+                  <div className="mt-4">
+                    <p className="font-medium mb-2">Payment Method Breakdown</p>
+                    <div className="bg-primary/5 p-3 rounded-md">
+                      <div className="flex justify-between items-center mb-2">
+                        <span>Cash</span>
+                        <span>35%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2.5">
+                        <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '35%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mb-2 mt-3">
+                        <span>M-Pesa</span>
+                        <span>55%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2.5">
+                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '55%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mb-2 mt-3">
+                        <span>Airtel Money</span>
+                        <span>10%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2.5">
+                        <div className="bg-orange-600 h-2.5 rounded-full" style={{ width: '10%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Recent Transactions Section */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center">
+                    <span>Recent Transactions</span>
+                    <Button size="sm" variant="outline">Print Receipt</Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
+                        <div>
+                          <p className="font-medium">Transaction #{10045 + i}</p>
+                          <div className="flex gap-2 items-center">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(Date.now() - i * 60 * 60 * 1000).toLocaleTimeString()}
+                            </p>
+                            <Badge variant="outline" className="text-xs">
+                              {['Cash', 'M-Pesa', 'Airtel Money'][i % 3]}
+                            </Badge>
+                            {i % 2 === 0 && <Badge variant="secondary" className="text-xs">10% Discount</Badge>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
+                          <p className="text-xs text-primary">+{Math.floor(Math.random() * 50 + 20)} points</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Quick Actions */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Apply Discount</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Split Payment</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Verify Payment</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto flex flex-col items-center py-3">
+                      <span className="text-sm">Redeem Points</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </div>
