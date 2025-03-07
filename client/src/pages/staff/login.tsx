@@ -21,12 +21,20 @@ export default function StaffLogin() {
       const result = await signInWithPopup(auth, googleProvider);
 
       // Create user in our backend with selected role
-      await apiRequest("POST", "/api/users", {
+      const response = await apiRequest("POST", "/api/users", {
         displayName: result.user.displayName,
         gamingName: result.user.displayName,
         phoneNumber: result.user.phoneNumber || "254700000000",
         role: role
       });
+      
+      const userData = await response.json();
+
+      // Store user data in localStorage
+      localStorage.setItem("user", JSON.stringify({
+        ...userData,
+        role: role // Ensure role is set correctly
+      }));
 
       // Redirect based on role
       setLocation(role === "admin" ? "/admin" : "/pos");
@@ -47,14 +55,21 @@ export default function StaffLogin() {
       // Get the test account
       const phoneNumber = testRole === "admin" ? "254700000000" : "254700000001";
       const response = await apiRequest("GET", `/api/users/phone/${phoneNumber}`);
-      const user = await response.json();
-
+      
       if (!response.ok) {
         throw new Error("Test account not found");
       }
+      
+      const user = await response.json();
 
       // Set the role in local state
       setRole(testRole);
+      
+      // Store user data in localStorage (this is what useAuth likely checks)
+      localStorage.setItem("user", JSON.stringify({
+        ...user,
+        role: testRole // Ensure role is set correctly
+      }));
 
       // Redirect based on role
       setLocation(testRole === "admin" ? "/admin" : "/pos");
