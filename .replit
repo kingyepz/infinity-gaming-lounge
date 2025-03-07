@@ -2,3 +2,14 @@ modules = ["nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
+
+[workflows]
+runButton = "Backend Server"
+
+[[workflows.workflow]]
+name = "Backend Server"
+author = 40282584
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && npx tsx index.ts"
