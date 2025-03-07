@@ -4,6 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { GameStation } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentForm from "./PaymentForm";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 interface PaymentModalProps {
   station: GameStation;
@@ -12,16 +14,32 @@ interface PaymentModalProps {
 
 export default function PaymentModal({ station, onClose }: PaymentModalProps) {
   const [customerName, setCustomerName] = useState("");
+  const [selectedGame, setSelectedGame] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Fetch available games
+  const { data: games } = useQuery({
+    queryKey: ["/api/games"],
+  });
+
   const handlePayment = async (paymentInfo: any) => {
     try {
+      if (!selectedGame) {
+        toast({
+          variant: "destructive",
+          title: "Game Required",
+          description: "Please select a game to start the session"
+        });
+        return;
+      }
+
       setLoading(true);
 
       // Create transaction and start session
       await apiRequest("PATCH", `/api/stations/${station.id}`, {
         currentCustomer: customerName,
+        currentGame: selectedGame,
         sessionType: paymentInfo.sessionType || "hourly",
         sessionStartTime: new Date().toISOString()
       });
@@ -30,6 +48,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
       await apiRequest("POST", "/api/transactions", {
         stationId: station.id,
         customerName,
+        gameName: selectedGame,
         amount: paymentInfo.amount,
         sessionType: paymentInfo.sessionType || "hourly",
         duration: paymentInfo.duration || 60, // Default to 1 hour
@@ -70,6 +89,22 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Enter customer name"
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Select Game</label>
+            <Select value={selectedGame} onValueChange={setSelectedGame}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a game" />
+              </SelectTrigger>
+              <SelectContent>
+                {games?.map((game) => (
+                  <SelectItem key={game.id} value={game.name}>
+                    {game.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <PaymentForm
