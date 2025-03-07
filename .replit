@@ -1,10 +1,10 @@
-modules = ["nodejs-20"]
+modules = ["nodejs-20", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Backend Server"
+runButton = "Full Stack Dev"
 
 [[workflows.workflow]]
 name = "Backend Server"
@@ -13,3 +13,23 @@ author = 40282584
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd server && npx tsx index.ts"
+
+[[workflows.workflow]]
+name = "Full Stack Dev"
+author = 40282584
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Production"
+author = 40282584
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build && npm run start"
+
+[deployment]
+run = ["sh", "-c", "npm run start"]
+build = ["sh", "-c", "npm run build"]
