@@ -45,6 +45,31 @@ export class MemStorage implements IStorage {
       phoneNumber: "254700000001",
       role: "staff"
     });
+
+    // Create default gaming stations
+    this.createGame({
+      name: "PS5 Station 1",
+      hourlyRate: 500,
+      isActive: true
+    });
+
+    this.createGame({
+      name: "PS5 Station 2",
+      hourlyRate: 500,
+      isActive: true
+    });
+
+    this.createGame({
+      name: "Xbox Series X Station",
+      hourlyRate: 600,
+      isActive: true
+    });
+
+    this.createGame({
+      name: "Gaming PC Station",
+      hourlyRate: 400,
+      isActive: true
+    });
   }
 
   // User Operations
