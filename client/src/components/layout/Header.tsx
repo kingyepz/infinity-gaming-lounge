@@ -1,38 +1,36 @@
-import React from 'react';
-import { Link } from 'wouter';
-import { Menu } from 'lucide-react';
+import { auth } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [, setLocation] = useLocation();
+
+  const handleSignOut = async () => {
+    await auth.signOut();
+    setLocation("/");
+  };
 
   return (
-    <header className="bg-background border-b border-border">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <a className="text-xl font-bold hover:text-primary transition-colors">
-            Infinity Gaming
-          </a>
-        </Link>
-
-        <nav className="hidden md:flex space-x-6">
-          <Link href="/customer/portal">
-            <a className="text-sm hover:text-primary transition-colors">Customer Portal</a>
-          </Link>
-          <Link href="/staff/login">
-            <a className="text-sm hover:text-primary transition-colors">Staff Login</a>
-          </Link>
-          <Link href="/pos/dashboard">
-            <a className="text-sm hover:text-primary transition-colors">POS Dashboard</a>
-          </Link>
-        </nav>
-
-        <button 
-          className="md:hidden hover:text-primary transition-colors"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+    <header className="border-b">
+      <div className="flex h-16 items-center px-4">
+        <div className="flex-1">
+          <h1 className="text-xl font-bold">Infinity Gaming Lounge</h1>
+        </div>
+        
+        {auth.currentUser && (
+          <div className="flex items-center gap-4">
+            <Avatar>
+              <AvatarImage src={auth.currentUser.photoURL || undefined} />
+              <AvatarFallback>
+                {auth.currentUser.displayName?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="ghost" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );

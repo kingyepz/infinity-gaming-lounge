@@ -1,69 +1,52 @@
-import React from 'react';
-import { Link } from 'wouter';
-import { motion } from 'framer-motion';
-import { Gamepad, Users, DollarSign } from 'lucide-react';
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { GamepadIcon, UsersIcon } from "lucide-react";
+import FallingButtons from "@/components/animations/FallingButtons";
+import InfinityLogo from "@/components/animations/InfinityLogo";
 
-export default function Welcome() {
+export default function WelcomePage() {
+  const [, setLocation] = useLocation();
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <h1 className="text-4xl font-bold mb-6">
-            Welcome to Infinity Gaming Lounge
-          </h1>
-          <p className="text-xl text-muted-foreground mb-12">
-            Your premium gaming destination
-          </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black overflow-hidden relative">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <Link href="/customer/portal">
-              <motion.a 
-                className="p-6 border rounded-lg hover:border-primary transition-colors cursor-pointer"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Gamepad className="w-12 h-12 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Customer Portal</h2>
-                <p className="text-sm text-muted-foreground">
-                  Book gaming sessions and manage your account
-                </p>
-              </motion.a>
-            </Link>
+      {/* Falling Buttons Animation */}
+      <FallingButtons />
 
-            <Link href="/staff/login">
-              <motion.a 
-                className="p-6 border rounded-lg hover:border-primary transition-colors cursor-pointer"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Users className="w-12 h-12 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Staff Login</h2>
-                <p className="text-sm text-muted-foreground">
-                  Access staff management features
-                </p>
-              </motion.a>
-            </Link>
+      <div className="z-10 text-center px-4 sm:px-6 lg:px-8">
+        <InfinityLogo />
+        <h1 className="mt-6 text-4xl sm:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500 tracking-tight">
+          Infinity Gaming Lounge
+        </h1>
+        <p className="mt-4 text-lg sm:text-xl text-gray-300">
+          Experience gaming like never before
+        </p>
 
-            <Link href="/pos/dashboard">
-              <motion.a 
-                className="p-6 border rounded-lg hover:border-primary transition-colors cursor-pointer"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <DollarSign className="w-12 h-12 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">POS Dashboard</h2>
-                <p className="text-sm text-muted-foreground">
-                  Manage transactions and gaming sessions
-                </p>
-              </motion.a>
-            </Link>
-          </div>
-        </motion.div>
-      </main>
+        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            className="relative group px-8 py-6 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
+            onClick={() => setLocation("/login")}
+          >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+            <GamepadIcon className="mr-2 h-5 w-5" />
+            <span className="relative z-10">Start Gaming</span>
+          </Button>
+
+          <Button
+            className="relative group px-8 py-6 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
+            onClick={() => setLocation("/staff/login")}
+          >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+            <UsersIcon className="mr-2 h-5 w-5" />
+            <span className="relative z-10">Staff Portal</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

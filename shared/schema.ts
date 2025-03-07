@@ -1,53 +1,58 @@
-import { createInsertSchema } from 'drizzle-zod';
-import { integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
-import { z } from 'zod';
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
-// Users table - for both staff and customers
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  password: text('password').notNull(),
-  role: text('role', { enum: ['admin', 'staff', 'customer'] }).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email"),
+  displayName: text("display_name").notNull(),
+  gamingName: text("gaming_name").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  role: text("role", { enum: ["admin", "staff", "customer"] }).notNull(),
+  points: integer("points").default(0),
+  createdAt: timestamp("created_at").defaultNow()
 });
 
-// Gaming sessions table
-export const gamingSessions = pgTable('gaming_sessions', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time'),
-  status: text('status', { enum: ['active', 'completed', 'cancelled'] }).notNull(),
-  consoleType: text('console_type', { enum: ['ps5', 'xbox'] }).notNull(),
-  amount: integer('amount').notNull(),
+export const games = pgTable("games", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  hourlyRate: integer("hourly_rate").notNull(),
+  isActive: boolean("is_active").default(true)
 });
 
-// Payments table
-export const payments = pgTable('payments', {
-  id: serial('id').primaryKey(),
-  sessionId: integer('session_id').references(() => gamingSessions.id),
-  amount: integer('amount').notNull(),
-  status: text('status', { enum: ['pending', 'completed', 'failed'] }).notNull(),
-  mpesaReference: text('mpesa_reference'),
-  createdAt: timestamp('created_at').defaultNow(),
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  gameId: integer("game_id").notNull(),
+  amount: integer("amount").notNull(),
+  paymentStatus: text("payment_status", { enum: ["pending", "completed", "failed"] }).notNull(),
+  mpesaRef: text("mpesa_ref"),
+  duration: integer("duration").notNull(), // in minutes
+  createdAt: timestamp("created_at").defaultNow(),
+  points: integer("points").default(0)
 });
 
-// Create insert schemas
-export const insertUserSchema = createInsertSchema(users).extend({
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
+// Insert Schemas
+export const insertUserSchema = createInsertSchema(users).pick({
+  displayName: true,
+  gamingName: true,
+  phoneNumber: true,
+  role: true
 });
 
-export const insertGamingSessionSchema = createInsertSchema(gamingSessions);
-export const insertPaymentSchema = createInsertSchema(payments);
+export const insertGameSchema = createInsertSchema(games);
 
-// Define types
+export const insertTransactionSchema = createInsertSchema(transactions).pick({
+  userId: true,
+  gameId: true,
+  amount: true,
+  duration: true
+});
+
+// Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type GamingSession = typeof gamingSessions.$inferSelect;
-export type InsertGamingSession = z.infer<typeof insertGamingSessionSchema>;
-export type Payment = typeof payments.$inferSelect;
-export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Game = typeof games.$inferSelect;
+export type InsertGame = z.infer<typeof insertGameSchema>;
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;

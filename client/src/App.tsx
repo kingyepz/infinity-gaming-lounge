@@ -1,36 +1,71 @@
-import { Route, Switch } from 'wouter';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import { Toaster } from '@/components/ui/toaster';
-import Header from '@/components/layout/Header';
+import { Switch, Route } from "wouter";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { Toaster } from "@/components/ui/toaster";
+import NotFound from "@/pages/not-found";
+import WelcomePage from "@/pages/welcome";
+import Login from "@/pages/auth/login";
+import StaffLogin from "@/pages/staff/login";
+import POSDashboard from "@/pages/pos/dashboard";
+import CustomerPortal from "@/pages/customer/portal";
+import AdminAnalytics from "@/pages/admin/analytics";
+import Header from "@/components/layout/Header";
+import Sidebar from "@/components/layout/Sidebar";
+import React from "react";
 
-// Pages
-import Welcome from '@/pages/welcome';
-import NotFound from '@/pages/not-found';
-import CustomerPortal from '@/pages/customer/portal';
-import AdminAnalytics from '@/pages/admin/analytics';
-import POSDashboard from '@/pages/pos/dashboard';
-import StaffLogin from '@/pages/staff/login';
-import AuthLogin from '@/pages/auth/login';
+function Router() {
+  return (
+    <div className="min-h-screen bg-background">
+      <Switch>
+        {/* Public routes */}
+        <Route path="/" component={WelcomePage} />
+        <Route path="/login" component={Login} />
+        <Route path="/staff/login" component={StaffLogin} />
 
-export default function App() {
+        {/* Protected routes with layout */}
+        <Route path="/pos">
+          <Layout>
+            <POSDashboard />
+          </Layout>
+        </Route>
+        <Route path="/portal">
+          <Layout>
+            <CustomerPortal />
+          </Layout>
+        </Route>
+        <Route path="/admin">
+          <Layout>
+            <AdminAnalytics />
+          </Layout>
+        </Route>
+
+        <Route component={NotFound} />
+      </Switch>
+      <Toaster />
+    </div>
+  );
+}
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Header />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6">
+          {children}
+        </main>
+      </div>
+    </>
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main>
-          <Switch>
-            <Route path="/" component={Welcome} />
-            <Route path="/customer/portal" component={CustomerPortal} />
-            <Route path="/admin/analytics" component={AdminAnalytics} />
-            <Route path="/pos/dashboard" component={POSDashboard} />
-            <Route path="/staff/login" component={StaffLogin} />
-            <Route path="/auth/login" component={AuthLogin} />
-            <Route component={NotFound} />
-          </Switch>
-        </main>
-        <Toaster />
-      </div>
+      <Router />
     </QueryClientProvider>
   );
 }
+
+export default App;

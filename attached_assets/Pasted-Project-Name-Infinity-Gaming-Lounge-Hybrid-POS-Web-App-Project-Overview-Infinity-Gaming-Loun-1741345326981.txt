@@ -1,0 +1,49 @@
+Project Name: Infinity Gaming Lounge - Hybrid POS & Web App
+
+Project Overview:
+
+Infinity Gaming Lounge is a hybrid point-of-sale (POS) system and web app designed for gaming businesses. It supports real-time payments, loyalty rewards, analytics, and community features, operating both online (Firebase) and offline (SQLite). The system ensures secure role-based access for Admins, Staff, and Customers.
+
+Tech Stack:
+	•	Frontend: React, TypeScript, Redux, Vite, CSS
+	•	Backend: Node.js, Express.js, Firebase Functions
+	•	Database: Firebase (online), SQLite (offline)
+	•	Payments: Lipa Na M-Pesa API
+	•	Authentication: Firebase Auth (Google, Email/Password)
+	•	Hosting: Firebase Hosting / Vercel
+
+Key Features:
+
+✅ Gaming POS System – Pay per game or hourly via Lipa Na M-Pesa
+✅ Loyalty Program – Earn & redeem points for discounts
+✅ Role-Based Access – Admin, Staff, and Customer dashboards
+✅ Real-Time Analytics – Track revenue, player activity & game stats
+✅ Offline Mode – Runs with SQLite when internet is unavailable
+✅ Gamification & Community – Leaderboards, challenges, & events
+
+Tasks for Replit AI:
+	1.	Initialize the Project:
+	•	Set up a Vite + TypeScript frontend
+	•	Configure Redux for state management
+	•	Install dependencies: react-router-dom, firebase, redux-toolkit, sqlite3, express, etc.
+	2.	Frontend Development:
+	•	Build modern login & register pages with Firebase Auth
+	•	Design POS dashboard for staff to process payments & track games
+	•	Create customer portal for viewing loyalty points & activity
+	•	Implement admin panel for managing users, transactions, and analytics
+	3.	Backend Development:
+	•	Set up Express.js API for handling transactions & user data
+	•	Integrate SQLite for offline transactions & Firebase Firestore for online data
+	•	Implement Lipa Na M-Pesa API for processing payments
+	4.	Loyalty & Gamification System:
+	•	Assign points per game played & per hour
+	•	Allow redemption of points for rewards
+	•	Implement leaderboards & community challenges
+	5.	Security & Deployment:
+	•	Implement role-based authentication
+	•	Deploy frontend to Vercel/Firebase Hosting
+	•	Deploy backend API with Firebase Functions
+
+Final Goal:
+
+A fully functional gaming POS system & web app with secure payments, a loyalty system, and real-time analytics—scalable for future gaming locations.
