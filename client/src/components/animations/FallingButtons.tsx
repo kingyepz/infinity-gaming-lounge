@@ -1,52 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export default function FallingButtons() {
-  const [buttons, setButtons] = useState<Array<{
-    id: number;
-    x: number;
-    y: number;
-    type: string;
-    rotation: number;
-    scale: number;
-    opacity: number;
-  }>>([]);
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newButton = {
-        id: Math.random(),
-        x: Math.random() * 100,
-        y: -10,
-        type: ["a", "b", "y"][Math.floor(Math.random() * 3)],
-        rotation: Math.random() * 360,
-        scale: 0.5 + Math.random() * 1.5,
-        opacity: 0.3 + Math.random() * 0.5
-      };
-      
-      setButtons(prev => [...prev, newButton]);
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  useEffect(() => {
-    const animationInterval = setInterval(() => {
-      setButtons(prev => 
-        prev.map(button => ({
-          ...button,
-          y: button.y + 1 + Math.random() * 0.5,
-          rotation: button.rotation + (Math.random() * 2 - 1),
-        })).filter(button => button.y < 110)
-      );
-    }, 50);
-    
-    return () => clearInterval(animationInterval);
-  }, []);
-  
-  const getButtonLabel = (type: string) => {
-    switch(type) {
+  const [buttons, setButtons] = useState<Array<{id: number, button: string, x: number, y: number, speed: number}>>([]);
+  const [lastId, setLastId] = useState(0);
+
+  const getRandomButton = () => {
+    const buttons = ["a", "b", "y"];
+    return buttons[Math.floor(Math.random() * buttons.length)];
+  };
+
+  const getButtonIcon = (button: string) => {
+    switch (button) {
       case "a":
         return "A";
       case "b":
@@ -54,12 +19,12 @@ export default function FallingButtons() {
       case "y":
         return "Y";
       default:
-        return "X";
+        return "";
     }
   };
-  
-  const getButtonColor = (type: string) => {
-    switch(type) {
+
+  const getButtonColor = (button: string) => {
+    switch (button) {
       case "a":
         return "text-green-400";
       case "b":
@@ -67,29 +32,53 @@ export default function FallingButtons() {
       case "y":
         return "text-yellow-400";
       default:
-        return "text-blue-400";
+        return "text-white";
     }
   };
-  
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Add a new button
+      if (buttons.length < 20) {
+        const newButton = {
+          id: lastId + 1,
+          button: getRandomButton(),
+          x: Math.random() * 100,
+          y: -10,
+          speed: 0.5 + Math.random() * 1.5
+        };
+        setLastId(lastId + 1);
+        setButtons([...buttons, newButton]);
+      }
+
+      // Move buttons down
+      setButtons(buttons.map(button => ({
+        ...button,
+        y: button.y + button.speed
+      })).filter(button => button.y < 110));
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [buttons, lastId]);
+
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {buttons.map(button => (
-        <div 
+        <div
           key={button.id}
           className={cn(
-            "absolute transform -translate-x-1/2 -translate-y-1/2",
-            getButtonColor(button.type)
+            "absolute inline-flex items-center justify-center w-8 h-8 rounded-full border-2 font-bold",
+            getButtonColor(button.button)
           )}
           style={{
             left: `${button.x}%`,
             top: `${button.y}%`,
-            transform: `translate(-50%, -50%) rotate(${button.rotation}deg) scale(${button.scale})`,
-            opacity: button.opacity
+            opacity: (100 - button.y) / 100,
+            transform: `rotate(${Math.sin(button.y / 10) * 20}deg)`,
+            borderColor: `currentColor`
           }}
         >
-          <div className="text-2xl font-bold border-2 border-current rounded-full w-10 h-10 flex items-center justify-center">
-            {getButtonLabel(button.type)}
-          </div>
+          {getButtonIcon(button.button)}
         </div>
       ))}
     </div>
