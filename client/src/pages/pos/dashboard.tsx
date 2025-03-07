@@ -57,7 +57,7 @@ export default function POSDashboard() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      <div className="flex w-full relative">
+      <Tabs defaultValue="dashboard" className="flex w-full relative">
         {/* Sidebar */}
         <div className="w-64 border-r border-primary/20 p-4 space-y-2 backdrop-blur-sm bg-black/50">
           <div className="flex items-center justify-between mb-6">
@@ -72,48 +72,46 @@ export default function POSDashboard() {
             </Button>
           </div>
 
-          <Tabs defaultValue="dashboard" orientation="vertical" className="w-full">
-            <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
-              <TabsTrigger 
-                value="dashboard"
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-              >
-                <GamepadIcon className="w-4 h-4 mr-2" />
-                POS Dashboard
-              </TabsTrigger>
-              <TabsTrigger 
-                value="sessions"
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-              >
-                <ClockIcon className="w-4 h-4 mr-2" />
-                Gaming Sessions
-              </TabsTrigger>
-              <TabsTrigger 
-                value="customers"
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Customer Portal
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analytics"
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-              >
-                <BarChart className="w-4 h-4 mr-2" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reports"
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Reports
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
+            <TabsTrigger 
+              value="dashboard"
+              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <GamepadIcon className="w-4 h-4 mr-2" />
+              POS Dashboard
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sessions"
+              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <ClockIcon className="w-4 h-4 mr-2" />
+              Gaming Sessions
+            </TabsTrigger>
+            <TabsTrigger 
+              value="customers"
+              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Customer Portal
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics"
+              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <BarChart className="w-4 h-4 mr-2" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reports"
+              className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Reports
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <div className="flex-1 p-6 backdrop-blur-sm bg-black/50">
           <TabsContent value="dashboard">
             <div className="space-y-6">
@@ -252,7 +250,7 @@ export default function POSDashboard() {
             </div>
           </TabsContent>
         </div>
-      </div>
+      </Tabs>
 
       {showPayment && selectedStation && (
         <PaymentModal
