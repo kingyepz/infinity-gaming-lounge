@@ -4,9 +4,6 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   GamepadIcon,
   ClockIcon,
@@ -14,19 +11,12 @@ import {
   FileText,
   BarChart,
   Users,
-  Trophy,
-  Star,
-  Activity,
-  LayoutDashboardIcon,
   LogOut
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerRegistrationForm from "@/components/shared/CustomerRegistrationForm";
 import type { GameStation, Game } from "@shared/schema";
-
-type ReportType = "current" | "hourly" | "daily";
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -53,7 +43,6 @@ export default function POSDashboard() {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Active Sessions Widget */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -69,7 +58,6 @@ export default function POSDashboard() {
             </CardContent>
           </Card>
 
-          {/* Top Customer Widget */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -85,7 +73,6 @@ export default function POSDashboard() {
             </CardContent>
           </Card>
 
-          {/* Total Points Widget */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -101,7 +88,6 @@ export default function POSDashboard() {
             </CardContent>
           </Card>
 
-          {/* Revenue Widget */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -119,7 +105,6 @@ export default function POSDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Top Customers List */}
           <Card>
             <CardHeader>
               <CardTitle>Top Customers</CardTitle>
@@ -151,7 +136,6 @@ export default function POSDashboard() {
             </CardContent>
           </Card>
 
-          {/* Top Games List */}
           <Card>
             <CardHeader>
               <CardTitle>Popular Games</CardTitle>
@@ -395,11 +379,9 @@ export default function POSDashboard() {
       const response = await apiRequest("GET", `/api/reports/${type}`);
       const report = await response.json();
 
-      // Convert report data to text
       let reportText = `=== ${type.toUpperCase()} REPORT ===\n\n`;
 
       if (type === "current") {
-        // Format current active sessions
         report.forEach((session: any) => {
           reportText += `Station: ${session.stationName}\n`;
           reportText += `Customer: ${session.customerName}\n`;
@@ -408,7 +390,6 @@ export default function POSDashboard() {
           reportText += `Cost: KES ${session.cost}\n\n`;
         });
       } else {
-        // Format summary reports
         reportText += `Total Revenue: KES ${report.totalRevenue}\n`;
         reportText += `Active Sessions: ${report.activeSessions}\n`;
         reportText += `Completed Sessions: ${report.completedSessions}\n\n`;
@@ -419,7 +400,6 @@ export default function POSDashboard() {
         });
       }
 
-      // Create and download report file
       const blob = new Blob([reportText], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -452,80 +432,91 @@ export default function POSDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gaming Lounge Dashboard</h1>
-        <Button 
-          variant="outline" 
-          onClick={handleLogout}
-          className="bg-primary/10 hover:bg-primary/20 border-primary/50"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Back to Welcome
-        </Button>
-      </div>
-
-      <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-background border border-primary/20">
-          <TabsTrigger 
-            value="dashboard" 
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+    <div className="flex min-h-screen bg-background">
+      <div className="w-64 border-r border-primary/20 p-4 space-y-2">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-lg font-bold">Gaming Lounge</h1>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleLogout}
+            className="hover:bg-primary/20"
           >
-            <LayoutDashboardIcon className="w-4 h-4 mr-2" />
-            Overview
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <TabsList className="flex flex-col w-full space-y-2">
+          <TabsTrigger 
+            value="dashboard"
+            className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+          >
+            <GamepadIcon className="w-4 h-4 mr-2" />
+            POS Dashboard
           </TabsTrigger>
           <TabsTrigger 
             value="sessions"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
-            <GamepadIcon className="w-4 h-4 mr-2" />
+            <ClockIcon className="w-4 h-4 mr-2" />
             Gaming Sessions
           </TabsTrigger>
           <TabsTrigger 
             value="customers"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
             <Users className="w-4 h-4 mr-2" />
             Customer Portal
           </TabsTrigger>
           <TabsTrigger 
             value="analytics"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
             <BarChart className="w-4 h-4 mr-2" />
             Analytics
           </TabsTrigger>
           <TabsTrigger 
             value="reports"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
             <FileText className="w-4 h-4 mr-2" />
             Reports
           </TabsTrigger>
         </TabsList>
+      </div>
 
-        <TabsContent value="dashboard">
-          <DashboardOverview />
-        </TabsContent>
+      <div className="flex-1 min-h-screen">
+        <div className="p-6 space-y-6">
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsContent value="dashboard">
+              <h2 className="text-2xl font-bold mb-6">POS Dashboard</h2>
+              <DashboardOverview />
+            </TabsContent>
 
-        <TabsContent value="sessions">
-          <GamingSessionsTab />
-        </TabsContent>
+            <TabsContent value="sessions">
+              <h2 className="text-2xl font-bold mb-6">Gaming Sessions</h2>
+              <GamingSessionsTab />
+            </TabsContent>
 
-        <TabsContent value="customers">
-          <CustomerRegistrationForm />
-        </TabsContent>
+            <TabsContent value="customers">
+              <h2 className="text-2xl font-bold mb-6">Customer Portal</h2>
+              <CustomerRegistrationForm />
+            </TabsContent>
 
-        <TabsContent value="analytics">
-          <div className="text-center text-muted-foreground py-8">
-            Analytics dashboard coming soon...
-          </div>
-        </TabsContent>
+            <TabsContent value="analytics">
+              <h2 className="text-2xl font-bold mb-6">Analytics</h2>
+              <div className="text-center text-muted-foreground">
+                Analytics dashboard coming soon...
+              </div>
+            </TabsContent>
 
-        <TabsContent value="reports">
-          <ReportsTab />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="reports">
+              <h2 className="text-2xl font-bold mb-6">Reports</h2>
+              <ReportsTab />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
       {showPayment && selectedStation && (
         <PaymentModal
