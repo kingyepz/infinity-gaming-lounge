@@ -1,0 +1,60 @@
+Please reorganize the dashboard of the Infinity Gaming Lounge POS system on Replit into the following vertical tab structure, ensuring all existing functionality is preserved and enhanced as specified, with the addition of a loyalty points system, bonus game feature, and a section for recording redeemed points and bonus games:
+
+1. **POS Dashboard Tab** (Main Overview)
+   - Set this as the default tab when the system loads.
+   - Include the following widgets for an overview:
+     - Games in Session: A list or count of currently active sessions (e.g., "3 sessions active").
+     - Top Customer: Display the customer with the most sessions or loyalty points for the day.
+     - Loyalty Points Earned: Show total points earned by customers (daily, weekly, monthly) in a small table or chart, calculated as 5 points per 40 KES game and 25 points per 200 KES hour.
+     - Top Customers: List the top 5 customers by session count, points earned, or bonus games earned (e.g., "1. John Doe - 10 sessions, 50 points").
+     - Top Games Played: List the top 5 games by play count (e.g., "1. FC25 - 15 plays").
+     - Earnings Charts: Display daily, weekly, and monthly earnings in simple line or bar charts (e.g., using a lightweight charting library).
+   - Allow staff to customize the layout of these widgets (drag-and-drop to reorder/resize) and save preferences per user.
+
+2. **Gaming Sessions Tab**
+   - Retain the current functionality for managing "Game Station 1-10".
+   - Display each station with:
+     - Status (Available/Occupied).
+     - Customer Name (input field: "Enter customer name").
+     - Game (dropdown: "Select game" with options like FC25, GTA 5, GTA 6, NBA 2K25, F1 Racing, VR Games).
+     - Session Type (dropdown: "40 KES/game" or "200 KES/hour").
+     - "Start Session" button to initiate the session.
+   - Add a timer for active sessions (e.g., "Time: 00:15:32") and an "End Session" button to free up the station.
+   - Implement a loyalty points tracker:
+     - Award 5 points per 40 KES game and 25 points per 200 KES hour, updating in real-time per customer.
+     - Track consecutive games played by the same customer at the same station. If a customer plays 5 games in a row, award a free bonus game (valued at 40 KES) and record it separately from normal games.
+     - Display a notification (e.g., "Bonus Game Unlocked!") when the threshold is met, allowing staff to apply it manually or automatically.
+
+3. **Customer Portal Tab**
+   - Replace the current "Register Customer" tab with a broader "Customer Portal" tab.
+   - Include functionality to:
+     - Register new customers (name, optional contact details).
+     - View/edit customer profiles (e.g., past sessions, total loyalty points earned, history of bonus games earned).
+     - Display a searchable list of all registered customers.
+   - Add a "Redemptions & Bonuses" subsection:
+     - Record all redeemed loyalty points (e.g., points exchanged for free games or hours, with a suggested redemption rate of 100 points = 1 free hour).
+     - Log all bonus games earned (e.g., date, customer name, station number) separately from normal games.
+     - Allow staff to mark a redemption (e.g., "Redeem 100 points for 1 hour") and update the customer’s points balance.
+   - Integrate with the loyalty program to show points per customer and a separate count of bonus games earned.
+
+4. **Analytics Tab**
+   - Add a new "Analytics" tab for in-depth data insights.
+   - Include the following data visualizations:
+     - Revenue Trends: Charts showing revenue over time (daily, weekly, monthly).
+     - Loyalty Points: Total points distributed (all-time, monthly, etc.) in a chart or table, broken down by games (5 points) and hours (25 points).
+     - Top Games: Bar chart of the top 5 games by play count.
+     - Top 5 Customers: Table or chart showing the top 5 customers by sessions, points, or bonus games earned.
+     - Bonus Games Usage: A count or chart of total bonus games awarded.
+     - Redemptions: A summary of total points redeemed and their value (e.g., free hours/games).
+   - Ensure data is aggregated from session logs and updated in real-time.
+
+5. **Reports Tab**
+   - Retain the existing "Reports" tab with one-click session report generation.
+   - Ensure reports include:
+     - Customer name, Game Station number, game played, session duration, total cost, and loyalty points earned (5/game or 25/hour).
+     - A separate column or section for bonus games earned (e.g., "1 Bonus Game") and points redeemed (e.g., "100 points for 1 hour").
+     - Options for current session, hourly summary, and daily summary.
+     - Display reports in a table format with an option to export as a text file.
+
+Please implement this vertical tab structure, ensuring the tabs are clearly labeled and the active tab is highlighted. Preserve all existing functionality (e.g., pricing, customer name, game selection) and integrate the new loyalty points system (5 points/game, 25 points/hour), bonus game feature (5 games in a row earns a free 40 KES game, recorded separately), and the "Redemptions & Bonuses" subsection in the "Customer Portal" tab. Optionally, if you find the subsection becomes too extensive, consider promoting it to a separate "Redeemed/Bonus Games" tab in the future—please note any recommendations on this after implementation. Prioritize a user-friendly design, test for stability with up to 10 stations, and provide a brief note on any challenges or additional suggestions for refinement.
+​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​

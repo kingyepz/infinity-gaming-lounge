@@ -1,0 +1,49 @@
+Please reorganize the dashboard of the Infinity Gaming Lounge POS system on Replit into the following vertical tab structure, ensuring all existing functionality is preserved and enhanced as specified:
+
+1. **POS Dashboard Tab** (Main Overview)
+   - Set this as the default tab when the system loads.
+   - Include the following widgets for an overview:
+     - Games in Session: A list or count of currently active sessions (e.g., "3 sessions active").
+     - Top Customer: Display the customer with the most sessions or loyalty points for the day.
+     - Loyalty Points Earned: Show total points earned by customers (daily, weekly, monthly) in a small table or chart.
+     - Top Customers: List the top 5 customers by session count or points earned (e.g., "1. John Doe - 10 sessions").
+     - Top Games Played: List the top 5 games by play count (e.g., "1. FC25 - 15 plays").
+     - Earnings Charts: Display daily, weekly, and monthly earnings in simple line or bar charts (e.g., using a lightweight charting library).
+   - Allow staff to customize the layout of these widgets (drag-and-drop to reorder/resize) and save preferences per user.
+
+2. **Gaming Sessions Tab**
+   - Retain the current functionality for managing "Game Station 1-10".
+   - Display each station with:
+     - Status (Available/Occupied).
+     - Customer Name (input field: "Enter customer name").
+     - Game (dropdown: "Select game" with options like FC25, GTA 5, GTA 6, NBA 2K25, F1 Racing, VR Games).
+     - Session Type (dropdown: "40 KES/game" or "200 KES/hour").
+     - "Start Session" button to initiate the session.
+   - Add a timer for active sessions (e.g., "Time: 00:15:32") and an "End Session" button to free up the station.
+
+3. **Customer Portal Tab**
+   - Replace the current "Register Customer" tab with a broader "Customer Portal" tab.
+   - Include functionality to:
+     - Register new customers (name, optional contact details).
+     - View/edit customer profiles (e.g., past sessions, total loyalty points earned).
+     - Display a searchable list of all registered customers.
+   - Integrate with the loyalty program (to be implemented later) to show points per customer.
+
+4. **Analytics Tab**
+   - Add a new "Analytics" tab for in-depth data insights.
+   - Include the following data visualizations:
+     - Revenue Trends: Charts showing revenue over time (daily, weekly, monthly).
+     - Loyalty Points: Total points distributed (all-time, monthly, etc.) in a chart or table.
+     - Top Games: Bar chart of the top 5 games by play count.
+     - Top 5 Customers: Table or chart showing the top 5 customers by sessions or points.
+   - Ensure data is aggregated from session logs and updated in real-time.
+
+5. **Reports Tab**
+   - Retain the existing "Reports" tab with one-click session report generation.
+   - Ensure reports include:
+     - Customer name, Game Station number, game played, session duration, and total cost.
+     - Options for current session, hourly summary, and daily summary.
+     - Display reports in a table format with an option to export as a text file.
+
+Please implement this vertical tab structure, ensuring the tabs are clearly labeled and the active tab is highlighted. Preserve all existing functionality (e.g., pricing, customer name, game selection) and integrate the new overview features in the "POS Dashboard" tab. Prioritize a user-friendly design, test for stability with up to 10 stations, and provide a brief note on any challenges or additional suggestions for refinement.
+​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
