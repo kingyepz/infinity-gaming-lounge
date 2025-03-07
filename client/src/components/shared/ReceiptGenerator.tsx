@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -21,12 +20,12 @@ export default function ReceiptGenerator({
 }: ReceiptGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  
+
   const handleGenerate = async () => {
     try {
       setIsGenerating(true);
       const receiptBlob = await generateReceipt(transactionId);
-      
+
       // Create a download link
       const url = URL.createObjectURL(receiptBlob);
       const a = document.createElement('a');
@@ -34,11 +33,11 @@ export default function ReceiptGenerator({
       a.download = `receipt-${transactionId}.pdf`;
       document.body.appendChild(a);
       a.click();
-      
+
       // Clean up
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast({
         title: "Receipt generated",
         description: "Your receipt has been downloaded"
@@ -53,15 +52,15 @@ export default function ReceiptGenerator({
       setIsGenerating(false);
     }
   };
-  
+
   const handlePrint = async () => {
     try {
       setIsGenerating(true);
       const receiptBlob = await generateReceipt(transactionId);
-      
+
       // Create object URL for printing
       const url = URL.createObjectURL(receiptBlob);
-      
+
       // Create an iframe for printing
       const printFrame = document.createElement('iframe');
       printFrame.style.position = 'fixed';
@@ -70,20 +69,20 @@ export default function ReceiptGenerator({
       printFrame.style.width = '0';
       printFrame.style.height = '0';
       printFrame.style.border = '0';
-      
+
       printFrame.onload = () => {
         printFrame.contentWindow?.print();
-        
+
         // Remove iframe after printing
         setTimeout(() => {
           document.body.removeChild(printFrame);
           URL.revokeObjectURL(url);
         }, 100);
       };
-      
+
       printFrame.src = url;
       document.body.appendChild(printFrame);
-      
+
       toast({
         title: "Receipt printed",
         description: "Your receipt has been sent to printer"
@@ -98,21 +97,21 @@ export default function ReceiptGenerator({
       setIsGenerating(false);
     }
   };
-  
+
   return (
     <div className="flex gap-2">
-      <Button 
-        size="sm" 
-        variant="outline" 
-        onClick={handleGenerate} 
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleGenerate}
         disabled={isGenerating}
       >
         Download Receipt
       </Button>
-      <Button 
-        size="sm" 
-        variant="outline" 
-        onClick={handlePrint} 
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handlePrint}
         disabled={isGenerating}
       >
         Print Receipt
@@ -121,130 +120,130 @@ export default function ReceiptGenerator({
   );
 }
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate, formatTime } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
-import { PaymentResult } from "@/lib/payment";
-import { Printer, Download } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { PaymentResult } from '@/lib/payment';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { useReactToPrint } from 'react-to-print';
 
 interface ReceiptGeneratorProps {
   paymentResult: PaymentResult;
   onClose: () => void;
 }
 
-export default function ReceiptGenerator({ paymentResult, onClose }: ReceiptGeneratorProps) {
-  const { transaction, reference, pointsAwarded } = paymentResult;
-  
-  if (!transaction) {
-    return (
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Receipt Unavailable</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Transaction details are not available.</p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={onClose}>Close</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-  
-  const handlePrint = () => {
-    window.print();
-  };
-  
-  const handleDownload = () => {
-    // In a real implementation, this would generate a PDF
-    alert("Receipt download functionality would be implemented here");
-  };
-  
+export default function ReceiptGenerator({
+  paymentResult,
+  onClose
+}: ReceiptGeneratorProps) {
+  const receiptRef = React.useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => receiptRef.current,
+    documentTitle: `Receipt-${paymentResult.transactionId}`,
+  });
+
   return (
-    <Card className="w-full max-w-md" id="receipt-card">
-      <CardHeader className="text-center border-b">
-        <CardTitle className="text-xl">Infinity Gaming Lounge</CardTitle>
-        <p className="text-sm text-muted-foreground">Receipt</p>
-      </CardHeader>
-      
-      <CardContent className="space-y-4 pt-4">
-        <div className="text-center mb-4">
-          <p className="text-xs text-muted-foreground">{formatDate(transaction.timestamp)} at {formatTime(transaction.timestamp)}</p>
-          <p className="text-xs font-medium">Ref: {reference}</p>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Customer:</span>
-            <span className="font-medium">{transaction.customerName}</span>
+    <div className="flex flex-col space-y-4">
+      <Card className="border border-dashed p-6" ref={receiptRef}>
+        <CardContent className="p-0">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold mb-1">Infinity Gaming Lounge</h2>
+            <p className="text-sm text-gray-500">Official Receipt</p>
           </div>
-          
-          <div className="flex justify-between text-sm">
-            <span>Station:</span>
-            <span className="font-medium">Station {transaction.stationId}</span>
-          </div>
-          
-          <div className="flex justify-between text-sm">
-            <span>Session Type:</span>
-            <span className="font-medium">
-              {transaction.sessionType === 'per_game' ? 'Per Game' : 'Hourly'}
-            </span>
-          </div>
-          
-          <div className="flex justify-between text-sm">
-            <span>Payment Method:</span>
-            <span className="font-medium capitalize">{transaction.paymentMethod}</span>
-          </div>
-        </div>
-        
-        <Separator />
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span>Amount:</span>
-            <span className="font-medium">{formatCurrency(transaction.amount)}</span>
-          </div>
-          
-          {transaction.discountApplied && transaction.discountApplied > 0 && (
-            <div className="flex justify-between text-green-500 text-sm">
-              <span>Discount Applied:</span>
-              <span>{transaction.discountApplied}%</span>
+
+          <div className="space-y-4">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Transaction ID:</span>
+              <span>{paymentResult.transactionId}</span>
             </div>
-          )}
-          
-          {pointsAwarded && pointsAwarded > 0 && (
-            <div className="flex justify-between text-emerald-600 text-sm">
-              <span>Points Earned:</span>
-              <span>+{pointsAwarded} points</span>
+
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Date:</span>
+              <span>{formatDate(new Date(paymentResult.timestamp))}</span>
             </div>
-          )}
-        </div>
-        
-        <Separator />
-        
-        <div className="flex justify-between font-bold">
-          <span>Total Paid:</span>
-          <span>{formatCurrency(transaction.amount)}</span>
-        </div>
-        
-        <div className="text-center mt-6">
-          <p className="text-xs">Thank you for choosing Infinity Gaming Lounge!</p>
-          <p className="text-xs text-muted-foreground">www.infinitygaminglounge.com</p>
-        </div>
-      </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" size="sm" onClick={handlePrint}>
-          <Printer className="w-4 h-4 mr-2" />
-          Print
+
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Customer:</span>
+              <span>{paymentResult.customerName}</span>
+            </div>
+
+            {paymentResult.phoneNumber && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Phone:</span>
+                <span>{paymentResult.phoneNumber}</span>
+              </div>
+            )}
+
+            {paymentResult.stationId && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Station:</span>
+                <span>{paymentResult.stationId}</span>
+              </div>
+            )}
+
+            {paymentResult.sessionType && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Session Type:</span>
+                <span className="capitalize">{paymentResult.sessionType.replace('_', ' ')}</span>
+              </div>
+            )}
+
+            {paymentResult.gameName && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Game:</span>
+                <span>{paymentResult.gameName}</span>
+              </div>
+            )}
+
+            {paymentResult.duration && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Duration:</span>
+                <span>{paymentResult.duration} minutes</span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Payment Method:</span>
+              <span className="capitalize">{paymentResult.paymentMethod}</span>
+            </div>
+
+            {paymentResult.mpesaReceiptNumber && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">M-Pesa Receipt:</span>
+                <span>{paymentResult.mpesaReceiptNumber}</span>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-dashed">
+              <div className="flex justify-between font-bold">
+                <span>Total Amount:</span>
+                <span>{formatCurrency(paymentResult.amount)}</span>
+              </div>
+            </div>
+
+            {paymentResult.pointsAwarded > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span className="font-medium">Points Awarded:</span>
+                <span>+{paymentResult.pointsAwarded} points</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 text-center text-xs text-gray-500">
+            <p>Thank you for visiting Infinity Gaming Lounge!</p>
+            <p>We appreciate your business.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={onClose}>
+          Close
         </Button>
-        <Button variant="outline" size="sm" onClick={handleDownload}>
-          <Download className="w-4 h-4 mr-2" />
-          Download
+        <Button onClick={handlePrint}>
+          Print Receipt
         </Button>
-        <Button size="sm" onClick={onClose}>Close</Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
