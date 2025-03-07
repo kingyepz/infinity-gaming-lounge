@@ -121,3 +121,72 @@ export default function PaymentModal({ game, onClose }: PaymentModalProps) {
     </Dialog>
   );
 }
+import React, { useState } from 'react';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import PaymentForm from "./PaymentForm";
+import ReceiptGenerator from "./ReceiptGenerator";
+import { PaymentFormData, PaymentResult } from "@/lib/payment";
+import type { GameStation } from "@shared/schema";
+
+interface PaymentModalProps {
+  station: GameStation;
+  onClose: () => void;
+}
+
+export default function PaymentModal({ station, onClose }: PaymentModalProps) {
+  const [activeTab, setActiveTab] = useState<string>("form");
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
+
+  // Build the initial payment data from the station details
+  const initialPaymentData: PaymentFormData = {
+    customerName: station.currentCustomer || "",
+    stationId: station.id,
+    amount: station.sessionType === "per_game" ? station.baseRate : 
+           (station.sessionStartTime ? 
+            Math.ceil((Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60 * 60)) * station.hourlyRate : 
+            station.hourlyRate),
+    paymentMethod: "cash",
+    sessionType: station.sessionType || "per_game",
+    duration: station.sessionStartTime ? 
+              Math.ceil((Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60)) : 
+              null,
+    gameName: station.currentGame || "Unknown Game"
+  };
+
+  const handlePaymentSuccess = (result: PaymentResult) => {
+    setPaymentResult(result);
+    setActiveTab("receipt");
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={value => !value && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="form">Payment</TabsTrigger>
+            <TabsTrigger value="receipt" disabled={!paymentResult}>Receipt</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="form" className="pt-4">
+            <PaymentForm 
+              initialData={initialPaymentData}
+              onSuccess={handlePaymentSuccess}
+              onCancel={onClose}
+            />
+          </TabsContent>
+          
+          <TabsContent value="receipt" className="pt-4">
+            {paymentResult && (
+              <ReceiptGenerator 
+                paymentResult={paymentResult} 
+                onClose={onClose} 
+              />
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

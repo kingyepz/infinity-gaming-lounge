@@ -150,6 +150,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(transactions);
   });
   
+  // New transaction API endpoints
+  app.get("/api/transactions/all", async (_req, res) => {
+    try {
+      const allTransactions = await storage.getAllTransactions();
+      res.json(allTransactions);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/transactions/pending", async (_req, res) => {
+    try {
+      const pendingTransactions = await storage.getTransactionsByStatus("pending");
+      res.json(pendingTransactions);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.put("/api/transactions/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, reference } = req.body;
+      const updatedTransaction = await storage.updateTransactionStatus(
+        parseInt(id),
+        status,
+        reference
+      );
+      res.json(updatedTransaction);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  app.get("/api/analytics", async (req, res) => {
+    try {
+      const { period } = req.query;
+      const analyticsPeriod = period as string || 'daily';
+      
+      // Get all transactions
+      const allTransactions = await storage.getAllTransactions();
+      
+      // Filter by period
+      let startDate = new Date();
+      switch(analyticsPeriod) {
+        case 'weekly':
+          startDate.setDate(startDate.getDate() - 7);
+          break;
+        case 'monthly':
+          startDate.setMonth(startDate.getMonth() - 1);
+          break;
+        case 'yearly':
+          startDate.setFullYear(startDate.getFullYear() - 1);
+          break;
+        default: // daily
+          startDate.setHours(0, 0, 0, 0);
+      }
+      
+      const periodTransactions = allTransactions.filter(
+        tx => tx.paymentStatus === 'completed' && new Date(tx.createdAt) >= startDate
+      );
+      
+      // Calculate metrics
+      const totalRevenue = periodTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+      
+      res.json({
+        period: analyticsPeriod,
+        totalRevenue,
+        transactionCount: periodTransactions.length,
+        transactions: periodTransactions.slice(0, 10) // Return only 10 most recent
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
   // User Transactions Route
   app.get("/api/transactions/user/current", async (req, res) => {
     // This would normally use authentication to get the current user
