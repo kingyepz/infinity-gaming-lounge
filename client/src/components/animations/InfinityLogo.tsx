@@ -1,11 +1,15 @@
 import { GamepadIcon } from "lucide-react";
 
-export default function InfinityLogo() {
+export default function InfinityLogo({ compact = false }) {
+  const svgClass = compact ? "w-24 h-12" : "w-32 h-16";
+  const gamepadClass = compact ? "w-8 h-8" : "w-12 h-12";
+  const gapClass = compact ? "gap-4" : "gap-8";
+
   return (
-    <div className="flex items-center justify-center gap-8">
+    <div className={`flex items-center justify-center ${gapClass}`}>
       {/* Infinity Sign SVG */}
       <svg
-        className="w-32 h-16"
+        className={svgClass}
         viewBox="0 0 100 40"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -20,7 +24,7 @@ export default function InfinityLogo() {
 
       {/* Separate Gamepad Icon */}
       <div className="animate-pulse">
-        <GamepadIcon className="w-12 h-12 text-primary" />
+        <GamepadIcon className={`${gamepadClass} text-primary`} />
       </div>
     </div>
   );
