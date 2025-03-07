@@ -15,11 +15,13 @@ import type { GameStation, Game } from "@shared/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUp, ArrowDown, Download, Printer, Calendar, LogOut } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [showRegistration, setShowRegistration] = useState(false); // Added state for registration form
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -188,34 +190,6 @@ export default function POSDashboard() {
                             <p className="text-sm text-muted-foreground">Call of Duty: Warzone</p>
                           </div>
 
-            <Card className="bg-black/40 border-primary/20 mt-6">
-              <CardHeader>
-                <CardTitle>Upcoming Reservations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Mock reservation data */}
-                  {[
-                    { name: "John Doe", time: "3:00 PM", duration: "2 hours", stations: 2, status: "confirmed" },
-                    { name: "Jane Smith", time: "4:30 PM", duration: "3 hours", stations: 1, status: "pending" },
-                    { name: "Team Apex", time: "6:00 PM", duration: "4 hours", stations: 4, status: "confirmed" },
-                  ].map((reservation, i) => (
-                    <div key={i} className="flex items-center justify-between bg-black/20 p-3 rounded-md">
-                      <div>
-                        <div className="font-medium">{reservation.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {reservation.time} • {reservation.duration} • {reservation.stations} {reservation.stations > 1 ? 'stations' : 'station'}
-                        </div>
-                      </div>
-                      <Badge variant={reservation.status === "confirmed" ? "default" : "outline"}>
-                        {reservation.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
                           <Badge variant={i % 2 === 0 ? "default" : "secondary"}>
                             {i % 2 === 0 ? "Active" : "Ending Soon"}
                           </Badge>
@@ -225,19 +199,28 @@ export default function POSDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-black/30 border-primary/20">
+                <Card className="bg-black/40 border-primary/20 mt-6">
                   <CardHeader>
-                    <CardTitle className="text-base sm:text-lg">Latest Transactions</CardTitle>
+                    <CardTitle>Upcoming Reservations</CardTitle>
                   </CardHeader>
-                  <CardContent className="max-h-[300px] overflow-auto">
-                    <div className="space-y-3 sm:space-y-4">
-                      {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="flex justify-between items-center">
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Mock reservation data */}
+                      {[
+                        { name: "John Doe", time: "3:00 PM", duration: "2 hours", stations: 2, status: "confirmed" },
+                        { name: "Jane Smith", time: "4:30 PM", duration: "3 hours", stations: 1, status: "pending" },
+                        { name: "Team Apex", time: "6:00 PM", duration: "4 hours", stations: 4, status: "confirmed" },
+                      ].map((reservation, i) => (
+                        <div key={i} className="flex items-center justify-between bg-black/20 p-3 rounded-md">
                           <div>
-                            <p className="font-medium">Customer {i}</p>
-                            <p className="text-sm text-muted-foreground">{new Date().toLocaleTimeString()}</p>
+                            <div className="font-medium">{reservation.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {reservation.time} • {reservation.duration} • {reservation.stations} {reservation.stations > 1 ? 'stations' : 'station'}
+                            </div>
                           </div>
-                          <p className="font-medium">KSH {(Math.random() * 100).toFixed(2)}</p>
+                          <Badge variant={reservation.status === "confirmed" ? "default" : "outline"}>
+                            {reservation.status}
+                          </Badge>
                         </div>
                       ))}
                     </div>
@@ -486,8 +469,81 @@ export default function POSDashboard() {
 
           <TabsContent value="customers">
             {/* Customers Tab Content */}
-            <div>
-              <h3 className="text-2xl font-bold mb-4">Customer Management</h3>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Customer Management</h2>
+                <Button variant="default" onClick={() => setShowRegistration(true)}>
+                  Register New Customer
+                </Button>
+              </div>
+
+              {showRegistration && (
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Register New Customer</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target as HTMLFormElement);
+
+                      try {
+                        const response = await apiRequest("POST", "/api/users/register", {
+                          displayName: formData.get("displayName"),
+                          gamingName: formData.get("gamingName"),
+                          phoneNumber: formData.get("phoneNumber"),
+                        });
+
+                        if (response.ok) {
+                          toast({
+                            title: "Success",
+                            description: "Customer registered successfully!"
+                          });
+                          setShowRegistration(false);
+                          (e.target as HTMLFormElement).reset();
+                        }
+                      } catch (error: any) {
+                        toast({
+                          variant: "destructive",
+                          title: "Registration failed",
+                          description: error.message
+                        });
+                      }
+                    }} 
+                    className="space-y-4">
+                      <div>
+                        <label className="text-sm text-muted-foreground">Display Name</label>
+                        <Input name="displayName" required placeholder="John Doe" />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground">Gaming Name</label>
+                        <Input name="gamingName" required placeholder="ProGamer123" />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground">Phone Number</label>
+                        <Input 
+                          name="phoneNumber" 
+                          required 
+                          placeholder="254700000000"
+                          pattern="^254[0-9]{9}$"
+                          title="Please enter a valid Kenyan phone number starting with 254"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="submit">Register Customer</Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setShowRegistration(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
               <CustomerPortal />
             </div>
           </TabsContent>
@@ -606,7 +662,7 @@ export default function POSDashboard() {
                             <span className="text-xs">Active</span>
                           </div>
                           <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
+                            <div className="w-3 h-3 rounded-full bg-primary/20 relative"></div>
                             <span className="text-xs">Available</span>
                           </div>
                         </div>
@@ -615,6 +671,7 @@ export default function POSDashboard() {
                   </CardContent>
                 </Card>
                 
+
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>
                     <CardTitle>Revenue Trends (7 Days)</CardTitle>
