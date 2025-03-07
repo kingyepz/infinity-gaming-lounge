@@ -7,7 +7,6 @@ import ReceiptGenerator from "./ReceiptGenerator";
 import { PaymentResult } from "@/lib/payment";
 import type { GameStation } from "@shared/schema";
 
-// Unified interface for PaymentModal properties
 interface PaymentModalProps {
   station?: GameStation;
   onClose: () => void;
@@ -39,16 +38,19 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
             {station && (
               <PaymentForm 
                 stationId={station.id}
-                customerName={station.currentCustomer || ""}
                 amount={station.sessionType === "per_game" ? station.baseRate : station.hourlyRate}
-                sessionType={station.sessionType || "hourly"}
                 onSuccess={handlePaymentSuccess}
               />
             )}
           </TabsContent>
 
           <TabsContent value="receipt">
-            {paymentResult && <ReceiptGenerator result={paymentResult} />}
+            {paymentResult && (
+              <ReceiptGenerator 
+                paymentResult={paymentResult}
+                onClose={onClose}
+              />
+            )}
 
             <div className="flex justify-end mt-4 space-x-2">
               <Button variant="outline" onClick={onClose}>Close</Button>
