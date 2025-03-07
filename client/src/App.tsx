@@ -9,10 +9,7 @@ import StaffLogin from "@/pages/staff/login";
 import POSDashboard from "@/pages/pos/dashboard";
 import CustomerPortal from "@/pages/customer/portal";
 import AdminAnalytics from "@/pages/admin/analytics";
-import Header from "@/components/layout/Header";
-import Sidebar from "@/components/layout/Sidebar";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import React from "react";
 
 function Router() {
   return (
@@ -27,7 +24,6 @@ function Router() {
               const userData = localStorage.getItem('user');
               if (userData) {
                 const user = JSON.parse(userData);
-                // Use setLocation instead of window.location for better SPA experience
                 if (user.role === 'admin') {
                   setTimeout(() => window.location.href = '/admin', 100);
                   return <div className="min-h-screen flex items-center justify-center">Redirecting to admin dashboard...</div>;
@@ -43,26 +39,20 @@ function Router() {
           }}
         </Route>
 
-        {/* Protected routes with layout */}
+        {/* Protected routes */}
         <Route path="/pos">
           <ProtectedRoute role="staff">
-            <Layout>
-              <POSDashboard />
-            </Layout>
+            <POSDashboard />
           </ProtectedRoute>
         </Route>
         <Route path="/portal">
           <ProtectedRoute role="customer">
-            <Layout>
-              <CustomerPortal />
-            </Layout>
+            <CustomerPortal />
           </ProtectedRoute>
         </Route>
         <Route path="/admin">
           <ProtectedRoute role="admin">
-            <Layout>
-              <AdminAnalytics />
-            </Layout>
+            <AdminAnalytics />
           </ProtectedRoute>
         </Route>
 
@@ -70,20 +60,6 @@ function Router() {
       </Switch>
       <Toaster />
     </div>
-  );
-}
-
-function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          {children}
-        </main>
-      </div>
-    </>
   );
 }
 
