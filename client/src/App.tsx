@@ -22,18 +22,22 @@ function Router() {
         <Route path="/" component={WelcomePage} />
         <Route path="/login" component={Login} />
         <Route path="/staff/login">
-          {/* Check if we already have a user, if so redirect to dashboard */}
           {() => {
-            const userData = localStorage.getItem('user');
-            if (userData) {
-              const user = JSON.parse(userData);
-              if (user.role === 'admin') {
-                window.location.href = '/admin';
-                return null;
-              } else if (user.role === 'staff') {
-                window.location.href = '/pos';
-                return null;
+            try {
+              const userData = localStorage.getItem('user');
+              if (userData) {
+                const user = JSON.parse(userData);
+                // Use setLocation instead of window.location for better SPA experience
+                if (user.role === 'admin') {
+                  setTimeout(() => window.location.href = '/admin', 100);
+                  return <div className="min-h-screen flex items-center justify-center">Redirecting to admin dashboard...</div>;
+                } else if (user.role === 'staff') {
+                  setTimeout(() => window.location.href = '/pos', 100);
+                  return <div className="min-h-screen flex items-center justify-center">Redirecting to staff dashboard...</div>;
+                }
               }
+            } catch (error) {
+              console.error("Error in auth redirect:", error);
             }
             return <StaffLogin />;
           }}

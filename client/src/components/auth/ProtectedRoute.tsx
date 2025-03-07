@@ -9,6 +9,8 @@ interface Props {
 export default function ProtectedRoute({ children, role }: Props) {
   const { loading, user } = useAuth(role);
 
+  console.log('ProtectedRoute: Checking access...', { role, user, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -18,8 +20,10 @@ export default function ProtectedRoute({ children, role }: Props) {
   }
 
   if (!user) {
+    console.log('ProtectedRoute: No user found, access denied');
     return null; // useAuth will handle redirect
   }
 
+  console.log('ProtectedRoute: Access granted');
   return <>{children}</>;
 }

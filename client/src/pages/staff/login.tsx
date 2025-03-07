@@ -4,10 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { SiGoogle } from "react-icons/si";
-import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
 
 export default function StaffLogin() {
   const [loading, setLoading] = useState(false);
@@ -15,74 +11,36 @@ export default function StaffLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
-
-      // Create user in our backend with selected role
-      const response = await apiRequest("POST", "/api/users", {
-        displayName: result.user.displayName,
-        gamingName: result.user.displayName,
-        phoneNumber: result.user.phoneNumber || "254700000000",
-        role: role
-      });
-      
-      const userData = await response.json();
-
-      // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify({
-        ...userData,
-        role: role // Ensure role is set correctly
-      }));
-
-      // Redirect based on role
-      setLocation(role === "admin" ? "/admin" : "/pos");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Authentication failed",
-        description: error.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleTestLogin = async (testRole: "admin" | "staff") => {
     try {
+      console.log('StaffLogin: Starting test login...', { testRole });
       setLoading(true);
-      // Get the test account
-      const phoneNumber = testRole === "admin" ? "254700000000" : "254700000001";
-      
-      // Create a default user in case API fails
-      let userData = {
-        displayName: testRole === "admin" ? "Admin User" : "Staff User",
-        gamingName: testRole === "admin" ? "Admin User" : "Staff User",
-        phoneNumber: phoneNumber,
-        role: testRole
-      };
-      
-      try {
-        const response = await apiRequest("GET", `/api/users/phone/${phoneNumber}`);
-        if (response.ok) {
-          const user = await response.json();
-          userData = { ...user, role: testRole };
-        }
-      } catch (error) {
-        console.error("Error fetching user, using default test account", error);
-      }
 
-      // Set the role in local state
-      setRole(testRole);
-      
-      // Store user data in localStorage
+      // Create test user data
+      const userData = {
+        id: testRole === "admin" ? 1 : 2,
+        displayName: testRole === "admin" ? "Admin Test" : "Staff Test",
+        gamingName: testRole === "admin" ? "admin" : "staff",
+        phoneNumber: testRole === "admin" ? "254700000000" : "254700000001",
+        role: testRole,
+        points: 0,
+        createdAt: new Date()
+      };
+
+      console.log('StaffLogin: Storing user data...', userData);
+
+      // Store complete user data in localStorage
       localStorage.setItem("user", JSON.stringify(userData));
 
-      // Redirect based on role - immediately
+      // Set role and redirect
+      setRole(testRole);
+      console.log('StaffLogin: Redirecting to dashboard...');
+
+      // Use setLocation instead of window.location for better SPA experience
       setLocation(testRole === "admin" ? "/admin" : "/pos");
 
     } catch (error: any) {
+      console.error('StaffLogin: Error during login:', error);
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -149,16 +107,6 @@ export default function StaffLogin() {
               Test as Staff
             </Button>
           </div>
-
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-          >
-            <SiGoogle className="mr-2 h-4 w-4" />
-            Continue with Google
-          </Button>
 
           <Button
             variant="link"
