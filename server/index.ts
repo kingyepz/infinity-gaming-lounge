@@ -37,6 +37,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Import storage service
+  const { storage } = await import('./storage');
+  
+  // Initialize mock data for testing
+  await storage.initializeMockData();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

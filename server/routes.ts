@@ -153,33 +153,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Transactions Route
   app.get("/api/transactions/user/current", async (req, res) => {
     // This would normally use authentication to get the current user
-    // For now, we'll return some mock data
-    res.json([
-      {
-        id: 1,
-        stationId: 1,
-        customerName: "John Doe",
-        gameName: "FIFA 23",
-        sessionType: "per_game",
-        amount: 500,
-        paymentStatus: "completed",
-        mpesaRef: "MP123456",
-        duration: null,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // yesterday
-      },
-      {
-        id: 2,
-        stationId: 2,
-        customerName: "John Doe",
-        gameName: "Call of Duty",
-        sessionType: "hourly",
-        amount: 1000,
-        paymentStatus: "completed",
-        mpesaRef: "MP123457",
-        duration: 60,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
+    try {
+      const userId = req.headers['user-id'];
+      if (!userId) {
+        // Return mock data for testing if no user ID provided
+        return res.json([
+          {
+            id: 1,
+            stationId: 1,
+            customerName: "John Doe",
+            gameName: "FIFA 24",
+            sessionType: "per_game",
+            amount: 500,
+            paymentStatus: "completed",
+            mpesaRef: "MP123456",
+            duration: null,
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // yesterday
+          },
+          {
+            id: 2,
+            stationId: 2,
+            customerName: "John Doe",
+            gameName: "Call of Duty",
+            sessionType: "hourly",
+            amount: 1000,
+            paymentStatus: "completed",
+            mpesaRef: "MP123457",
+            duration: 60,
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
+          }
+        ]);
       }
-    ]);
+      
+      const transactions = await storage.getTransactionsByUser(Number(userId));
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   });
   
   // Leaderboard Route
@@ -222,18 +232,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Current User Route
-  app.get("/api/users/current", async (_req, res) => {
+  app.get("/api/users/current", async (req, res) => {
     // This would normally use authentication
-    res.json({
-      id: 1,
-      displayName: "John Doe",
-      gamingName: "JDGamer",
-      phoneNumber: "254700000000",
-      role: "customer",
-      points: 750,
-      referralCode: "JDGAM123",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() // 30 days ago
-    });
+    try {
+      const userId = req.headers['user-id'];
+      if (!userId) {
+        // Return mock data for testing if no user ID provided
+        return res.json({
+          id: 1,
+          displayName: "John Doe",
+          gamingName: "JDGamer",
+          phoneNumber: "254700000000",
+          role: "customer",
+          points: 750,
+          referralCode: "JDGAM123",
+          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() // 30 days ago
+        });
+      }
+      
+      const user = await storage.getUserById(Number(userId));
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // User Registration Route
+  app.post("/api/users/register", async (req, res) => {
+    try {
+      const userData = z.object({
+        displayName: z.string(),
+        gamingName: z.string(),
+        phoneNumber: z.string(),
+        referredBy: z.string().optional()
+      }).parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByPhone(userData.phoneNumber);
+      if (existingUser) {
+        return res.status(400).json({ error: "User with this phone number already exists" });
+      }
+      
+      // Create the user
+      const user = await storage.createUser({
+        displayName: userData.displayName,
+        gamingName: userData.gamingName,
+        phoneNumber: userData.phoneNumber,
+        role: "customer"
+      });
+      
+      // If user was referred, award referral points to the referrer
+      if (userData.referredBy) {
+        try {
+          const referrer = await storage.getUserByPhone(userData.referredBy);
+          if (referrer) {
+            await storage.awardLoyaltyPoints(referrer.id, 100); // Award 100 points for referral
+          }
+        } catch (error) {
+          console.error("Error processing referral:", error);
+        }
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Points Management Routes
+  app.post("/api/users/points/award", async (req, res) => {
+    try {
+      const data = z.object({
+        userId: z.number(),
+        points: z.number().positive()
+      }).parse(req.body);
+      
+      const newPoints = await storage.awardLoyaltyPoints(data.userId, data.points);
+      res.json({ success: true, newPoints });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  app.post("/api/users/points/redeem", async (req, res) => {
+    try {
+      const data = z.object({
+        userId: z.number(),
+        points: z.number().positive()
+      }).parse(req.body);
+      
+      const newPoints = await storage.redeemLoyaltyPoints(data.userId, data.points);
+      res.json({ success: true, newPoints });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   // M-Pesa Payment Routes
