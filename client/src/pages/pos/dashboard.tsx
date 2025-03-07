@@ -35,8 +35,8 @@ export default function POSDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { 
-    data: stations, 
+  const {
+    data: stations,
     isLoading: stationsLoading,
     error: stationsError
   } = useQuery({
@@ -45,8 +45,8 @@ export default function POSDashboard() {
     retryDelay: 1000
   });
 
-  const { 
-    data: games, 
+  const {
+    data: games,
     isLoading: gamesLoading,
     error: gamesError
   } = useQuery({
@@ -500,100 +500,99 @@ const generateReport = async (type: ReportType) => {
   }
 };
 
-return (
-  <div className="min-h-screen bg-black overflow-hidden relative">
-    {/* Animated gradient background */}
-    <div className="absolute inset-0 w-full h-full">
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
-    </div>
-
-    {/* Main content */}
-    <div className="relative z-10 p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
-          Gaming Lounge Dashboard
-        </h1>
-        <Button
-          variant="outline"
-          onClick={handleLogout}
-          className="relative group px-4 py-2 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
-        >
-          <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-          <LogOut className="w-4 h-4 mr-2" />
-          <span className="relative z-10">Back to Welcome</span>
-        </Button>
+  return (
+    <div className="min-h-screen bg-black overflow-hidden relative">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-background/20 backdrop-blur-sm border-2 border-primary/20 rounded-lg overflow-hidden">
-          <TabsTrigger
-            value="dashboard"
-            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+      {/* Main content */}
+      <div className="relative z-10 p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
+            Gaming Lounge Dashboard
+          </h1>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="relative group px-4 py-2 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
           >
-            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
-            <LayoutDashboardIcon className="w-4 h-4 mr-2" />
-            <span className="relative z-10">Overview</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="sessions"
-            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-          >
-            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
-            <GamepadIcon className="w-4 h-4 mr-2" />
-            <span className="relative z-10">Gaming Sessions</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="customers"
-            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-          >
-            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
-            <Users className="w-4 h-4 mr-2" />
-            <span className="relative z-10">Customer Portal</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="analytics"
-            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-          >
-            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
-            <BarChart className="w-4 h-4 mr-2" />
-            <span className="relative z-10">Analytics</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="reports"
-            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
-          >
-            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
-            <FileText className="w-4 h-4 mr-2" />
-            <span className="relative z-10">Reports</span>
-          </TabsTrigger>
-        </TabsList>
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+            <LogOut className="w-4 h-4 mr-2" />
+            <span className="relative z-10">Back to Welcome</span>
+          </Button>
+        </div>
 
-        <TabsContent value="dashboard">
-          <DashboardOverview />
-        </TabsContent>
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 bg-background/20 backdrop-blur-sm border-2 border-primary/20 rounded-lg overflow-hidden">
+            <TabsTrigger
+              value="dashboard"
+              className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
+              <LayoutDashboardIcon className="w-4 h-4 mr-2" />
+              <span className="relative z-10">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="sessions"
+              className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
+              <GamepadIcon className="w-4 h-4 mr-2" />
+              <span className="relative z-10">Gaming Sessions</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="customers"
+              className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
+              <Users className="w-4 h-4 mr-2" />
+              <span className="relative z-10">Customer Portal</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="analytics"
+              className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
+              <BarChart className="w-4 h-4 mr-2" />
+              <span className="relative z-10">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="reports"
+              className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
+              <FileText className="w-4 h-4 mr-2" />
+              <span className="relative z-10">Reports</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="sessions">
-          <GamingSessionsTab />
-        </TabsContent>
+          <TabsContent value="dashboard">
+            <DashboardOverview />
+          </TabsContent>
 
-        <TabsContent value="customers">
-          <CustomerRegistrationForm />
-        </TabsContent>
+          <TabsContent value="sessions">
+            <GamingSessionsTab />
+          </TabsContent>
 
-        <TabsContent value="analytics">
-          <div className="text-center text-gray-400 py-8">
-            Analytics dashboard coming soon...
-          </div>
-        </TabsContent>
+          <TabsContent value="customers">
+            <CustomerRegistrationForm />
+          </TabsContent>
 
-        <TabsContent value="reports">
-          <ReportsTab />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="analytics">
+            <div className="text-center text-gray-400 py-8">
+              Analytics dashboard coming soon...
+            </div>
+          </TabsContent>
 
-      {showPayment && selectedStation && (
-          <PaymentModal
+          <TabsContent value="reports">
+            <ReportsTab />
+          </TabsContent>
+        </Tabs>
+
+        {showPayment && selectedStation && (          <PaymentModal
             station={selectedStation}
             onClose={() => {
               setShowPayment(false);
