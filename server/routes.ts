@@ -1,9 +1,10 @@
-import { type Express } from "express";
+import { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
+import cors from 'cors';
 
 const mpesaPaymentSchema = z.object({
   phoneNumber: z.string(),
@@ -19,6 +20,10 @@ const updateStationSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add CORS middleware.  This should ideally be configured more precisely
+  // based on your specific needs (e.g., allowing only certain origins).
+  app.use(cors());
+
   // Add global error logging
   app.use((err: Error, _req: any, _res: any, next: any) => {
     log(`API Error: ${err.message}`);
@@ -75,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stationName: station.name,
           customerName: station.currentCustomer,
           gameName: station.currentGame,
-          duration: station.sessionType === "per_game" 
+          duration: station.sessionType === "per_game"
             ? "1 game"
             : `${Math.ceil(duration / 60)} hour(s)`,
           cost
@@ -100,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const hourAgo = new Date(now.getTime() - (60 * 60 * 1000));
 
-      const hourlyTransactions = transactions.flat().filter(tx => 
+      const hourlyTransactions = transactions.flat().filter(tx =>
         new Date(tx.createdAt) >= hourAgo
       );
 
@@ -131,9 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const now = new Date();
-      const dayStart = new Date(now.setHours(0,0,0,0));
+      const dayStart = new Date(now.setHours(0, 0, 0, 0));
 
-      const dailyTransactions = transactions.flat().filter(tx => 
+      const dailyTransactions = transactions.flat().filter(tx =>
         new Date(tx.createdAt) >= dayStart
       );
 
@@ -246,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter by period
       let startDate = new Date();
-      switch(analyticsPeriod) {
+      switch (analyticsPeriod) {
         case 'weekly':
           startDate.setDate(startDate.getDate() - 7);
           break;
