@@ -57,7 +57,7 @@ export default function POSDashboard() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      <Tabs defaultValue="dashboard" className="flex w-full relative">
+      <Tabs defaultValue="overview" className="flex w-full relative">
         {/* Sidebar */}
         <div className="w-64 border-r border-primary/20 p-4 space-y-2 backdrop-blur-sm bg-black/50">
           <div className="flex items-center justify-between mb-6">
@@ -74,11 +74,11 @@ export default function POSDashboard() {
 
           <TabsList className="flex flex-col w-full space-y-2">
             <TabsTrigger 
-              value="dashboard"
+              value="overview"
               className="w-full justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
             >
               <GamepadIcon className="w-4 h-4 mr-2" />
-              POS Dashboard
+              Overview
             </TabsTrigger>
             <TabsTrigger 
               value="sessions"
@@ -113,7 +113,7 @@ export default function POSDashboard() {
 
         {/* Main Content */}
         <div className="flex-1 p-6 backdrop-blur-sm bg-black/50">
-          <TabsContent value="dashboard">
+          <TabsContent value="overview">
             {/* Dashboard Content */}
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
