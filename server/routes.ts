@@ -1,7 +1,7 @@
 import { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTransactionSchema, insertUserSchema, insertGameSchema } from "@shared/schema";
+import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 
 const mpesaPaymentSchema = z.object({
@@ -10,38 +10,27 @@ const mpesaPaymentSchema = z.object({
   transactionId: z.number()
 });
 
+const updateStationSchema = z.object({
+  currentCustomer: z.string().nullable(),
+  currentGame: z.string().nullable(),
+  sessionType: z.enum(["per_game", "hourly"]).nullable(),
+  sessionStartTime: z.date().nullable()
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // User Routes
-  app.post("/api/users", async (req, res) => {
+  // Game Station Routes
+  app.get("/api/stations", async (_req, res) => {
+    const stations = await storage.getGameStations();
+    res.json(stations);
+  });
+
+  app.patch("/api/stations/:id", async (req, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(userData);
-      res.json(user);
+      const stationData = updateStationSchema.parse(req.body);
+      const station = await storage.updateGameStation(Number(req.params.id), stationData);
+      res.json(station);
     } catch (error) {
       res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/users/:id", async (req, res) => {
-    const user = await storage.getUser(Number(req.params.id));
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.json(user);
-  });
-
-  app.get("/api/users/phone/:phoneNumber", async (req, res) => {
-    try {
-      const users = Array.from(storage.users.values());
-      const user = users.find(u => u.phoneNumber === req.params.phoneNumber);
-
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      res.json(user);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
     }
   });
 
@@ -49,16 +38,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/games", async (_req, res) => {
     const games = await storage.getGames();
     res.json(games);
-  });
-
-  app.post("/api/games", async (req, res) => {
-    try {
-      const gameData = insertGameSchema.parse(req.body);
-      const game = await storage.createGame(gameData);
-      res.json(game);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
   });
 
   // Transaction Routes
@@ -72,8 +51,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/transactions/user/:userId", async (req, res) => {
-    const transactions = await storage.getTransactionsByUser(Number(req.params.userId));
+  app.get("/api/transactions/station/:stationId", async (req, res) => {
+    const transactions = await storage.getTransactionsByStation(Number(req.params.stationId));
     res.json(transactions);
   });
 
@@ -100,14 +79,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
-  });
-
-  app.get("/api/payments/status/:transactionId", async (req, res) => {
-    const transaction = await storage.getTransactionsByUser(Number(req.params.transactionId));
-    if (!transaction) {
-      return res.status(404).json({ error: "Transaction not found" });
-    }
-    res.json({ status: transaction[0].paymentStatus });
   });
 
   const httpServer = createServer(app);

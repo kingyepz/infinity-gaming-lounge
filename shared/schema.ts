@@ -13,23 +13,35 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+export const gameStations = pgTable("game_stations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "Game Station 1" etc
+  isActive: boolean("is_active").default(true),
+  currentCustomer: text("current_customer"),
+  currentGame: text("current_game"),
+  sessionType: text("session_type", { enum: ["per_game", "hourly"] }),
+  sessionStartTime: timestamp("session_start_time"),
+  baseRate: integer("base_rate").default(40), // 40 KES per game
+  hourlyRate: integer("hourly_rate").default(200), // 200 KES per hour
+});
+
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  hourlyRate: integer("hourly_rate").notNull(),
+  name: text("name").notNull(), // FC25, GTA 5, etc.
   isActive: boolean("is_active").default(true)
 });
 
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  gameId: integer("game_id").notNull(),
+  stationId: integer("station_id").notNull(),
+  customerName: text("customer_name").notNull(),
+  gameName: text("game_name").notNull(),
+  sessionType: text("session_type", { enum: ["per_game", "hourly"] }).notNull(),
   amount: integer("amount").notNull(),
   paymentStatus: text("payment_status", { enum: ["pending", "completed", "failed"] }).notNull(),
   mpesaRef: text("mpesa_ref"),
-  duration: integer("duration").notNull(), // in minutes
-  createdAt: timestamp("created_at").defaultNow(),
-  points: integer("points").default(0)
+  duration: integer("duration"), // in minutes, for hourly sessions
+  createdAt: timestamp("created_at").defaultNow()
 });
 
 // Insert Schemas
@@ -40,11 +52,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true
 });
 
+export const insertGameStationSchema = createInsertSchema(gameStations).pick({
+  name: true,
+  isActive: true
+});
+
 export const insertGameSchema = createInsertSchema(games);
 
 export const insertTransactionSchema = createInsertSchema(transactions).pick({
-  userId: true,
-  gameId: true,
+  stationId: true,
+  customerName: true,
+  gameName: true,
+  sessionType: true,
   amount: true,
   duration: true
 });
@@ -52,6 +71,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type GameStation = typeof gameStations.$inferSelect;
+export type InsertGameStation = z.infer<typeof insertGameStationSchema>;
 export type Game = typeof games.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
 export type Transaction = typeof transactions.$inferSelect;
