@@ -18,7 +18,8 @@ import {
   Star,
   Activity,
   LayoutDashboardIcon,
-  LogOut
+  LogOut,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -34,18 +35,70 @@ export default function POSDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: stations, isLoading: stationsLoading } = useQuery({
+  const { 
+    data: stations, 
+    isLoading: stationsLoading,
+    error: stationsError
+  } = useQuery({
     queryKey: ["/api/stations"],
+    retry: 3,
+    retryDelay: 1000
   });
 
-  const { data: games, isLoading: gamesLoading } = useQuery({
+  const { 
+    data: games, 
+    isLoading: gamesLoading,
+    error: gamesError
+  } = useQuery({
     queryKey: ["/api/games"],
+    retry: 3,
+    retryDelay: 1000
   });
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     setLocation('/');
   };
+
+  if (stationsLoading || gamesLoading) {
+    return (
+      <div className="min-h-screen bg-black overflow-hidden relative flex items-center justify-center">
+        <div className="absolute inset-0 w-full h-full">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-gray-400">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (stationsError || gamesError) {
+    return (
+      <div className="min-h-screen bg-black overflow-hidden relative flex items-center justify-center">
+        <div className="absolute inset-0 w-full h-full">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-4 p-8 backdrop-blur-sm bg-white/10 border-2 border-red-500/50 rounded-lg">
+          <AlertCircle className="w-12 h-12 text-red-500" />
+          <h2 className="text-xl font-bold text-white">Unable to Load Dashboard</h2>
+          <p className="text-gray-400 text-center">There was an error connecting to the server. Please try again later.</p>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="relative group px-4 py-2 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
+          >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+            <LogOut className="w-4 h-4 mr-2" />
+            <span className="relative z-10">Return to Welcome Page</span>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const DashboardOverview = () => {
     const activeSessions = stations?.filter(s => s.currentCustomer)?.length || 0;
@@ -54,64 +107,64 @@ export default function POSDashboard() {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Active Sessions Widget */}
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
                 Active Sessions
               </CardTitle>
-              <GamepadIcon className="h-4 w-4 text-muted-foreground" />
+              <GamepadIcon className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeSessions}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-white">{activeSessions}</div>
+              <p className="text-xs text-gray-400">
                 stations in use
               </p>
             </CardContent>
           </Card>
 
           {/* Top Customer Widget */}
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
                 Top Customer Today
               </CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <Trophy className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">John Doe</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-white">John Doe</div>
+              <p className="text-xs text-gray-400">
                 50 points earned today
               </p>
             </CardContent>
           </Card>
 
           {/* Total Points Widget */}
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
                 Points Earned Today
               </CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
+              <Star className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">250</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-white">250</div>
+              <p className="text-xs text-gray-400">
                 across all customers
               </p>
             </CardContent>
           </Card>
 
           {/* Revenue Widget */}
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
                 Today's Revenue
               </CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">KES 12,500</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-white">KES 12,500</div>
+              <p className="text-xs text-gray-400">
                 +15% from yesterday
               </p>
             </CardContent>
@@ -120,10 +173,10 @@ export default function POSDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Top Customers List */}
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
             <CardHeader>
-              <CardTitle>Top Customers</CardTitle>
-              <CardDescription>By points earned this week</CardDescription>
+              <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Top Customers</CardTitle>
+              <CardDescription className="text-gray-400">By points earned this week</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -136,12 +189,12 @@ export default function POSDashboard() {
                 ].map((customer, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <span className="text-muted-foreground">{i + 1}</span>
-                      <span>{customer.name}</span>
+                      <span className="text-gray-400">{i + 1}</span>
+                      <span className="text-white">{customer.name}</span>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right text-white">
                       <div className="font-medium">{customer.points} points</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-400">
                         {customer.sessions} sessions
                       </div>
                     </div>
@@ -152,10 +205,10 @@ export default function POSDashboard() {
           </Card>
 
           {/* Top Games List */}
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
             <CardHeader>
-              <CardTitle>Popular Games</CardTitle>
-              <CardDescription>Most played this week</CardDescription>
+              <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Popular Games</CardTitle>
+              <CardDescription className="text-gray-400">Most played this week</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -168,10 +221,10 @@ export default function POSDashboard() {
                 ].map((game, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <span className="text-muted-foreground">{i + 1}</span>
-                      <span>{game.name}</span>
+                      <span className="text-gray-400">{i + 1}</span>
+                      <span className="text-white">{game.name}</span>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right text-white">
                       <div className="font-medium">{game.plays} plays</div>
                     </div>
                   </div>
@@ -195,7 +248,7 @@ export default function POSDashboard() {
   const ReportsTab = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Session Reports</h2>
+        <h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Session Reports</h2>
         <div className="flex gap-2">
           <Button onClick={() => generateReport("current")} className="bg-green-600 hover:bg-green-700">
             <FileText className="mr-2 h-4 w-4" />
@@ -212,26 +265,26 @@ export default function POSDashboard() {
         </div>
       </div>
 
-      <Card>
+      <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
         <CardHeader>
-          <CardTitle>Report Generation Guide</CardTitle>
+          <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Report Generation Guide</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <h3 className="font-semibold">Current Sessions Report</h3>
-            <p className="text-muted-foreground">
+            <h3 className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Current Sessions Report</h3>
+            <p className="text-gray-400">
               Shows all active gaming sessions with customer details, games being played, and costs.
             </p>
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold">Hourly Report</h3>
-            <p className="text-muted-foreground">
+            <h3 className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Hourly Report</h3>
+            <p className="text-gray-400">
               Summary of gaming sessions from the last hour, including revenue and session counts.
             </p>
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold">Daily Report</h3>
-            <p className="text-muted-foreground">
+            <h3 className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">Daily Report</h3>
+            <p className="text-gray-400">
               Complete overview of today's gaming sessions, total revenue, and station utilization.
             </p>
           </div>
@@ -239,268 +292,280 @@ export default function POSDashboard() {
       </Card>
     </div>
   );
+};
 
-  const startSession = async (station: GameStation, formData: {
-    customerName: string;
-    gameName: string;
-    sessionType: "per_game" | "hourly";
-  }) => {
-    try {
-      await apiRequest("PATCH", `/api/stations/${station.id}`, {
-        currentCustomer: formData.customerName,
-        currentGame: formData.gameName,
-        sessionType: formData.sessionType,
-        sessionStartTime: new Date()
-      });
+const startSession = async (station: GameStation, formData: {
+  customerName: string;
+  gameName: string;
+  sessionType: "per_game" | "hourly";
+}) => {
+  try {
+    await apiRequest("PATCH", `/api/stations/${station.id}`, {
+      currentCustomer: formData.customerName,
+      currentGame: formData.gameName,
+      sessionType: formData.sessionType,
+      sessionStartTime: new Date()
+    });
 
-      setSelectedStation(station);
-      setShowPayment(true);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to start session",
-        description: error.message
-      });
-    }
-  };
-
-  const StationCard = ({ station }: { station: GameStation }) => {
-    const [customerName, setCustomerName] = useState("");
-    const [selectedGame, setSelectedGame] = useState("");
-    const [sessionType, setSessionType] = useState<"per_game" | "hourly">("per_game");
-
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            {station.name}
-            {!station.isActive && (
-              <span className="text-sm font-normal text-muted-foreground">
-                (Unavailable)
-              </span>
-            )}
-          </CardTitle>
-          {station.currentCustomer ? (
-            <CardDescription>
-              Customer: {station.currentCustomer}
-              <br />
-              Game: {station.currentGame}
-              <br />
-              Session: {station.sessionType === "per_game" ? "40 KES/game" : "200 KES/hour"}
-            </CardDescription>
-          ) : (
-            <CardDescription>Available</CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          {station.currentCustomer ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Timer className="h-4 w-4" />
-                <span>Session started at {new Date(station.sessionStartTime!).toLocaleTimeString()}</span>
-              </div>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={async () => {
-                  try {
-                    await apiRequest("PATCH", `/api/stations/${station.id}`, {
-                      currentCustomer: null,
-                      currentGame: null,
-                      sessionType: null,
-                      sessionStartTime: null
-                    });
-                  } catch (error: any) {
-                    toast({
-                      variant: "destructive",
-                      title: "Failed to end session",
-                      description: error.message
-                    });
-                  }
-                }}
-              >
-                End Session
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Customer Name</Label>
-                <Input
-                  placeholder="Enter customer name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Game</Label>
-                <Select value={selectedGame} onValueChange={setSelectedGame}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select game" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {games?.map((game) => (
-                      <SelectItem key={game.id} value={game.name}>
-                        {game.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Session Type</Label>
-                <Select value={sessionType} onValueChange={(value: "per_game" | "hourly") => setSessionType(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="per_game">40 KES/game</SelectItem>
-                    <SelectItem value="hourly">200 KES/hour</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={() => {
-                  try {
-                    startSession(station, {
-                      customerName,
-                      gameName: selectedGame,
-                      sessionType
-                    });
-                  } catch (error: any) {
-                    toast({
-                      variant: "destructive",
-                      title: "Failed to start session",
-                      description: error.message
-                    });
-                  }
-                }}
-                disabled={!customerName || !selectedGame}
-              >
-                Start Session
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const generateReport = async (type: ReportType) => {
-    try {
-      const response = await apiRequest("GET", `/api/reports/${type}`);
-      const report = await response.json();
-
-      // Convert report data to text
-      let reportText = `=== ${type.toUpperCase()} REPORT ===\n\n`;
-
-      if (type === "current") {
-        // Format current active sessions
-        report.forEach((session: any) => {
-          reportText += `Station: ${session.stationName}\n`;
-          reportText += `Customer: ${session.customerName}\n`;
-          reportText += `Game: ${session.gameName}\n`;
-          reportText += `Duration: ${session.duration}\n`;
-          reportText += `Cost: KES ${session.cost}\n\n`;
-        });
-      } else {
-        // Format summary reports
-        reportText += `Total Revenue: KES ${report.totalRevenue}\n`;
-        reportText += `Active Sessions: ${report.activeSessions}\n`;
-        reportText += `Completed Sessions: ${report.completedSessions}\n\n`;
-
-        reportText += "Session Details:\n";
-        report.sessions.forEach((session: any) => {
-          reportText += `- ${session.stationName}: ${session.customerName} (${session.duration})\n`;
-        });
-      }
-
-      // Create and download report file
-      const blob = new Blob([reportText], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `gaming-report-${type}-${new Date().toISOString().split('T')[0]}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Report Generated",
-        description: "The report has been downloaded to your device."
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to generate report",
-        description: error.message
-      });
-    }
-  };
-
-  if (stationsLoading || gamesLoading) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    setSelectedStation(station);
+    setShowPayment(true);
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: "Failed to start session",
+      description: error.message
+    });
   }
+};
+
+const StationCard = ({ station }: { station: GameStation }) => {
+  const [customerName, setCustomerName] = useState("");
+  const [selectedGame, setSelectedGame] = useState("");
+  const [sessionType, setSessionType] = useState<"per_game" | "hourly">("per_game");
 
   return (
-    <div className="space-y-6">
+    <Card className="backdrop-blur-sm bg-white/10 border-2 border-primary/50 hover:border-primary transition-all duration-300">
+      <CardHeader>
+        <CardTitle className="flex justify-between items-center bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
+          {station.name}
+          {!station.isActive && (
+            <span className="text-sm font-normal text-gray-400">
+              (Unavailable)
+            </span>
+          )}
+        </CardTitle>
+        {station.currentCustomer ? (
+          <CardDescription className="text-gray-400">
+            Customer: {station.currentCustomer}
+            <br />
+            Game: {station.currentGame}
+            <br />
+            Session: {station.sessionType === "per_game" ? "40 KES/game" : "200 KES/hour"}
+          </CardDescription>
+        ) : (
+          <CardDescription className="text-gray-400">Available</CardDescription>
+        )}
+      </CardHeader>
+      <CardContent>
+        {station.currentCustomer ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-gray-400">
+              <Timer className="h-4 w-4" />
+              <span>Session started at {new Date(station.sessionStartTime!).toLocaleTimeString()}</span>
+            </div>
+            <Button
+              variant="destructive"
+              className="w-full relative group overflow-hidden"
+              onClick={async () => {
+                try {
+                  await apiRequest("PATCH", `/api/stations/${station.id}`, {
+                    currentCustomer: null,
+                    currentGame: null,
+                    sessionType: null,
+                    sessionStartTime: null
+                  });
+                } catch (error: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Failed to end session",
+                    description: error.message
+                  });
+                }
+              }}
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-red-500/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+              <span className="relative z-10">End Session</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-gray-400">Customer Name</Label>
+              <Input
+                placeholder="Enter customer name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="bg-white/5 border-primary/30 focus:border-primary transition-colors duration-200"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-400">Game</Label>
+              <Select value={selectedGame} onValueChange={setSelectedGame}>
+                <SelectTrigger className="bg-white/5 border-primary/30 focus:border-primary transition-colors duration-200">
+                  <SelectValue placeholder="Select game" />
+                </SelectTrigger>
+                <SelectContent>
+                  {games?.map((game) => (
+                    <SelectItem key={game.id} value={game.name}>
+                      {game.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-400">Session Type</Label>
+              <Select value={sessionType} onValueChange={(value: "per_game" | "hourly") => setSessionType(value)}>
+                <SelectTrigger className="bg-white/5 border-primary/30 focus:border-primary transition-colors duration-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="per_game">40 KES/game</SelectItem>
+                  <SelectItem value="hourly">200 KES/hour</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              className="w-full relative group overflow-hidden bg-primary/10 hover:bg-primary/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
+              onClick={() => {
+                try {
+                  startSession(station, {
+                    customerName,
+                    gameName: selectedGame,
+                    sessionType
+                  });
+                } catch (error: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Failed to start session",
+                    description: error.message
+                  });
+                }
+              }}
+              disabled={!customerName || !selectedGame}
+            >
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+              <span className="relative z-10">Start Session</span>
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const generateReport = async (type: ReportType) => {
+  try {
+    const response = await apiRequest("GET", `/api/reports/${type}`);
+    const report = await response.json();
+
+    // Convert report data to text
+    let reportText = `=== ${type.toUpperCase()} REPORT ===\n\n`;
+
+    if (type === "current") {
+      // Format current active sessions
+      report.forEach((session: any) => {
+        reportText += `Station: ${session.stationName}\n`;
+        reportText += `Customer: ${session.customerName}\n`;
+        reportText += `Game: ${session.gameName}\n`;
+        reportText += `Duration: ${session.duration}\n`;
+        reportText += `Cost: KES ${session.cost}\n\n`;
+      });
+    } else {
+      // Format summary reports
+      reportText += `Total Revenue: KES ${report.totalRevenue}\n`;
+      reportText += `Active Sessions: ${report.activeSessions}\n`;
+      reportText += `Completed Sessions: ${report.completedSessions}\n\n`;
+
+      reportText += "Session Details:\n";
+      report.sessions.forEach((session: any) => {
+        reportText += `- ${session.stationName}: ${session.customerName} (${session.duration})\n`;
+      });
+    }
+
+    // Create and download report file
+    const blob = new Blob([reportText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gaming-report-${type}-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Generated",
+      description: "The report has been downloaded to your device."
+    });
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: "Failed to generate report",
+      description: error.message
+    });
+  }
+};
+
+return (
+  <div className="min-h-screen bg-black overflow-hidden relative">
+    {/* Animated gradient background */}
+    <div className="absolute inset-0 w-full h-full">
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20 animate-gradient-x"></div>
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
+    </div>
+
+    {/* Main content */}
+    <div className="relative z-10 p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gaming Lounge Dashboard</h1>
-        <Button 
-          variant="outline" 
+        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500">
+          Gaming Lounge Dashboard
+        </h1>
+        <Button
+          variant="outline"
           onClick={handleLogout}
-          className="bg-primary/10 hover:bg-primary/20 border-primary/50"
+          className="relative group px-4 py-2 overflow-hidden backdrop-blur-sm bg-white/10 hover:bg-white/20 border-2 border-primary/50 hover:border-primary transition-all duration-300"
         >
+          <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
           <LogOut className="w-4 h-4 mr-2" />
-          Back to Welcome
+          <span className="relative z-10">Back to Welcome</span>
         </Button>
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-background border border-primary/20">
-          <TabsTrigger 
-            value="dashboard" 
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+        <TabsList className="grid w-full grid-cols-5 bg-background/20 backdrop-blur-sm border-2 border-primary/20 rounded-lg overflow-hidden">
+          <TabsTrigger
+            value="dashboard"
+            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
             <LayoutDashboardIcon className="w-4 h-4 mr-2" />
-            Overview
+            <span className="relative z-10">Overview</span>
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="sessions"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
             <GamepadIcon className="w-4 h-4 mr-2" />
-            Gaming Sessions
+            <span className="relative z-10">Gaming Sessions</span>
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="customers"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
             <Users className="w-4 h-4 mr-2" />
-            Customer Portal
+            <span className="relative z-10">Customer Portal</span>
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="analytics"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
             <BarChart className="w-4 h-4 mr-2" />
-            Analytics
+            <span className="relative z-10">Analytics</span>
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="reports"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
+            className="relative group data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200"
           >
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500 opacity-0 group-hover:opacity-100" />
             <FileText className="w-4 h-4 mr-2" />
-            Reports
+            <span className="relative z-10">Reports</span>
           </TabsTrigger>
         </TabsList>
 
@@ -517,7 +582,7 @@ export default function POSDashboard() {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-gray-400 py-8">
             Analytics dashboard coming soon...
           </div>
         </TabsContent>
@@ -528,14 +593,15 @@ export default function POSDashboard() {
       </Tabs>
 
       {showPayment && selectedStation && (
-        <PaymentModal
-          station={selectedStation}
-          onClose={() => {
-            setShowPayment(false);
-            setSelectedStation(null);
-          }}
-        />
-      )}
+          <PaymentModal
+            station={selectedStation}
+            onClose={() => {
+              setShowPayment(false);
+              setSelectedStation(null);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
