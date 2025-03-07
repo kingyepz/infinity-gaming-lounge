@@ -405,6 +405,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Add this endpoint after the existing user-related endpoints
+  app.get("/api/users/customers", asyncHandler(async (_req, res) => {
+    try {
+      const customers = await db.select()
+        .from(users)
+        .where(eq(users.role, "customer"))
+        .orderBy(desc(users.createdAt));
+
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      throw error;
+    }
+  }));
+
+
   // Error handling middleware
   app.use((err: any, _req: any, res: any, _next: any) => {
     log(`API Error: ${err.message}`);
