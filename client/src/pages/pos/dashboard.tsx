@@ -4,9 +4,6 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   GamepadIcon,
   ClockIcon,
@@ -24,8 +21,6 @@ import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerRegistrationForm from "@/components/shared/CustomerRegistrationForm";
 import type { GameStation, Game } from "@shared/schema";
-
-type ReportType = "current" | "hourly" | "daily";
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -178,6 +173,67 @@ export default function POSDashboard() {
                     <p className="text-xs text-muted-foreground">
                       +15% from yesterday
                     </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Top Customers</CardTitle>
+                    <CardDescription>By points earned this week</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { name: "John Doe", points: 150, sessions: 10 },
+                        { name: "Jane Smith", points: 120, sessions: 8 },
+                        { name: "Mike Johnson", points: 90, sessions: 6 },
+                        { name: "Sarah Williams", points: 75, sessions: 5 },
+                        { name: "Tom Brown", points: 60, sessions: 4 }
+                      ].map((customer, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <span className="text-muted-foreground">{i + 1}</span>
+                            <span>{customer.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{customer.points} points</div>
+                            <div className="text-sm text-muted-foreground">
+                              {customer.sessions} sessions
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="backdrop-blur-sm bg-white/10 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Popular Games</CardTitle>
+                    <CardDescription>Most played this week</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { name: "FC25", plays: 45 },
+                        { name: "GTA 5", plays: 38 },
+                        { name: "NBA 2K25", plays: 32 },
+                        { name: "F1 Racing", plays: 28 },
+                        { name: "VR Games", plays: 25 }
+                      ].map((game, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <span className="text-muted-foreground">{i + 1}</span>
+                            <span>{game.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{game.plays} plays</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
