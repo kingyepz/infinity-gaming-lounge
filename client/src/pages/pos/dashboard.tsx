@@ -25,6 +25,7 @@ export default function POSDashboard() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedGame, setSelectedGame] = useState<string | null>(null); // Added game state
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -656,7 +657,7 @@ export default function POSDashboard() {
                             <span className="text-xs">Active</span>
                           </div>
                           <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-primary/20 relative"></div>
+                            <div className="w-3 h-3 rounded-full bgprimary/20 relative"></div>
                             <span className="text-xs">Available</span>
                           </div>
                         </div>
@@ -995,12 +996,16 @@ export default function POSDashboard() {
           </TabsContent>
         </div>
       </Tabs>
-      {showPayment && selectedStation && (
+      {showPayment && (
         <PaymentModal
-          station={selectedStation}
+          station={selectedStation!}
+          selectedCustomer={selectedCustomer}
+          selectedGame={selectedGame}
           onClose={() => {
             setShowPayment(false);
             setSelectedStation(null);
+            setSelectedGame(null);
+            setSelectedCustomer(null);
           }}
         />
       )}
@@ -1044,22 +1049,43 @@ export default function POSDashboard() {
                   >
                     Register New Customer
                   </Button>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Select Game</label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a game" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {games?.map((game) => (
+                          <SelectItem key={game.id} value={game.name} onClick={() => setSelectedGame(game.name)}>
+                            {game.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Select Station</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {stations?.filter(s => !s.currentCustomer).map((station) => (
                         <div
                           key={station.id}
-                          className="p-3 rounded-md bg-primary/10 hover:bg-primary/20 cursor-pointer"
+                          className={`p-3 rounded-md cursor-pointer transition-colors ${
+                            selectedStation?.id === station.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-primary/10 hover:bg-primary/20'
+                          }`}
                           onClick={() => {
-                            if (selectedCustomer) {
+                            if (selectedCustomer && selectedGame) {
                               setSelectedStation(station);
                               setShowPayment(true);
                               setShowNewSessionModal(false);
                             } else {
                               toast({
-                                title: "Select Customer",
-                                description: "Please select a customer first",
+                                title: "Select Customer and Game",
+                                description: "Please select a customer and a game first",
                                 variant: "destructive"
                               });
                             }
@@ -1067,6 +1093,9 @@ export default function POSDashboard() {
                         >
                           <p className="font-medium">{station.name}</p>
                           <p className="text-sm text-primary">Available</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {station.hourlyRate ? `KSH ${station.hourlyRate}/hr` : `KSH ${station.baseRate}/game`}
+                          </p>
                         </div>
                       ))}
                     </div>

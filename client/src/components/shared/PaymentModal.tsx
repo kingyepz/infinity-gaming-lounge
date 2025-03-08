@@ -10,11 +10,11 @@ import { useQuery } from "@tanstack/react-query";
 interface PaymentModalProps {
   station: GameStation;
   selectedCustomer?: User;
+  selectedGame?: string;
   onClose: () => void;
 }
 
-export default function PaymentModal({ station, selectedCustomer, onClose }: PaymentModalProps) {
-  const [selectedGame, setSelectedGame] = useState<string>("");
+export default function PaymentModal({ station, selectedCustomer, selectedGame, onClose }: PaymentModalProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -89,20 +89,9 @@ export default function PaymentModal({ station, selectedCustomer, onClose }: Pay
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Select Game</label>
-            <Select value={selectedGame} onValueChange={setSelectedGame}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a game" />
-              </SelectTrigger>
-              <SelectContent>
-                {games?.map((game) => (
-                  <SelectItem key={game.id} value={game.name}>
-                    {game.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="bg-primary/10 p-3 rounded-md">
+            <p className="text-sm text-muted-foreground">Selected Game</p>
+            <p className="font-medium">{selectedGame}</p>
           </div>
 
           <PaymentForm
