@@ -68,24 +68,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/reports/hourly", asyncHandler(async (_req, res) => {
     try {
       const stations = await db.select().from(gameStations);
-      const transactions = await db.select().from(transactions);
-
+      const transactionsList = await db.select().from(transactions);
 
       const now = new Date();
       const hourAgo = new Date(now.getTime() - (60 * 60 * 1000));
 
-      const hourlyTransactions = transactions.filter(tx =>
-        new Date(tx.createdAt) >= hourAgo
+      const hourlyTransactions = transactionsList.filter(tx =>
+        new Date(tx.createdAt) >= hourAgo && 
+        tx.paymentStatus === "completed"
       );
+
+      // Get current active sessions data
+      const activeStations = stations.filter(s => s.currentCustomer && s.sessionStartTime);
+      const activeSessions = activeStations.map(station => {
+        const duration = station.sessionStartTime
+          ? Math.ceil((Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60))
+          : 0;
+
+        const estimatedAmount = station.sessionType === "per_game"
+          ? station.baseRate
+          : Math.ceil(duration / 60) * station.hourlyRate;
+          
+        return {
+          stationName: station.name,
+          customerName: station.currentCustomer,
+          duration: station.sessionType === "per_game" ? "1 game" : `${duration} minutes`,
+          amount: estimatedAmount
+        };
+      });
 
       const report = {
         totalRevenue: hourlyTransactions.reduce((sum, tx) => sum + tx.amount, 0),
-        activeSessions: stations.filter(s => s.currentCustomer).length,
+        activeSessions: activeStations.length,
         completedSessions: hourlyTransactions.length,
-        sessions: hourlyTransactions.map(tx => ({
+        activeSessionsData: activeSessions,
+        completedSessionsData: hourlyTransactions.map(tx => ({
           stationName: stations.find(s => s.id === tx.stationId)?.name,
           customerName: tx.customerName,
-          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration} minutes`
+          gameName: tx.gameName,
+          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration} minutes`,
+          amount: tx.amount
         }))
       };
 

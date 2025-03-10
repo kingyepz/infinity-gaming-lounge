@@ -130,6 +130,25 @@ class StorageService {
         .where(eq(transactions.id, id))
         .returning();
 
+      // If payment completed, update corresponding user's loyalty points (10% of transaction)
+      if (status === "completed" && result) {
+        const transaction = await db.select()
+          .from(transactions)
+          .where(eq(transactions.id, id))
+          .limit(1)
+          .then(res => res[0]);
+
+        if (transaction && transaction.userId) {
+          try {
+            // Award 10% of transaction amount as loyalty points
+            const pointsToAward = Math.round(transaction.amount * 0.1);
+            await this.awardLoyaltyPoints(transaction.userId, pointsToAward);
+          } catch (error) {
+            console.error("Error awarding loyalty points after payment:", error);
+          }
+        }
+      }
+
       return result;
     } catch (error) {
       console.error("Error updating transaction status:", error);
