@@ -66,17 +66,38 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
       });
 
       // Create transaction record
-      await apiRequest("POST", "/api/transactions", {
+      const response = await apiRequest("POST", "/api/transactions", {
         stationId: station.id,
         customerName: selectedCustomer.displayName,
         gameName: selectedGame,
         amount: paymentInfo.amount,
         sessionType: paymentInfo.sessionType || "hourly",
         duration: paymentInfo.duration || 60, // Default to 1 hour
-        paymentStatus: "completed",
-        userId: selectedCustomer.id
+        paymentStatus: "completed"
       });
 
+      // Update the station with current session info
+      await apiRequest("PATCH", `/api/stations/${station.id}`, {
+        currentCustomer: selectedCustomer.displayName,
+        currentGame: selectedGame,
+        sessionType: paymentInfo.sessionType || "hourly",
+        sessionStartTime: new Date()
+      });
+
+      // Award loyalty points (10% of amount spent)
+      if (selectedCustomer.id) {
+        try {
+          await apiRequest("POST", "/api/users/points/award", {
+            userId: selectedCustomer.id,
+            points: Math.round(paymentInfo.amount * 0.1)  // 10% of amount as points
+          });
+        } catch (error) {
+          console.error("Failed to award loyalty points:", error);
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+      
       toast({
         title: "Session Started",
         description: "Gaming session has been started successfully!"

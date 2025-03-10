@@ -412,3 +412,315 @@ class StorageService {
 }
 
 export const storage = new StorageService();
+import { db } from './db';
+import { transactions, gameStations, games, insertGameSchema, insertGameStationSchema, users, insertUserSchema, insertTransactionSchema } from '@shared/schema';
+import { eq, desc, and, gte, sql } from 'drizzle-orm';
+import { z } from 'zod';
+
+// Storage interface for database operations
+class Storage {
+  async initializeMockData() {
+    console.log("Checking for existing data...");
+
+    // Check if data already exists
+    const existingStations = await db.select().from(gameStations).limit(1);
+    if (existingStations.length > 0) {
+      console.log("Mock data already exists, skipping initialization");
+      return;
+    }
+
+    console.log("Initializing mock data...");
+
+    // Create initial game stations
+    const stationData = [
+      { name: "PlayStation 5 - Station 1", isActive: true },
+      { name: "PlayStation 5 - Station 2", isActive: true },
+      { name: "Xbox Series X - Station 1", isActive: true },
+      { name: "Gaming PC - Station 1", isActive: true },
+      { name: "Gaming PC - Station 2", isActive: true },
+    ];
+
+    // Create initial games
+    const gameData = [
+      { name: "FIFA 24", isActive: true },
+      { name: "Call of Duty: Modern Warfare", isActive: true },
+      { name: "Grand Theft Auto V", isActive: true },
+      { name: "Fortnite", isActive: true },
+      { name: "NBA 2K24", isActive: true },
+    ];
+
+    // Create initial users
+    const userData = [
+      { 
+        displayName: "Admin User", 
+        gamingName: "admin", 
+        phoneNumber: "254700000000", 
+        role: "admin" 
+      },
+      { 
+        displayName: "Staff Test", 
+        gamingName: "staff", 
+        phoneNumber: "254700000001", 
+        role: "staff" 
+      },
+      { 
+        displayName: "John Customer", 
+        gamingName: "johngamer", 
+        phoneNumber: "254700000002", 
+        role: "customer" 
+      },
+    ];
+
+    try {
+      // Insert stations
+      await Promise.all(stationData.map(station => 
+        db.insert(gameStations).values(station)
+      ));
+
+      // Insert games
+      await Promise.all(gameData.map(game => 
+        db.insert(games).values(game)
+      ));
+
+      // Insert users
+      await Promise.all(userData.map(user => 
+        db.insert(users).values(user)
+      ));
+
+      console.log("Mock data initialized successfully");
+    } catch (error) {
+      console.error("Error initializing mock data:", error);
+      throw error;
+    }
+  }
+
+  // Game Stations
+  async getGameStations() {
+    return db.select().from(gameStations);
+  }
+
+  async updateGameStation(id: number, data: any) {
+    await db.update(gameStations)
+      .set(data)
+      .where(eq(gameStations.id, id));
+    
+    return this.getGameStationById(id);
+  }
+
+  async getGameStationById(id: number) {
+    const results = await db.select()
+      .from(gameStations)
+      .where(eq(gameStations.id, id))
+      .limit(1);
+    
+    return results[0] || null;
+  }
+
+  // Games
+  async getGames() {
+    return db.select().from(games);
+  }
+
+  async createGame(gameData: z.infer<typeof insertGameSchema>) {
+    const result = await db.insert(games).values(gameData).returning();
+    return result[0];
+  }
+
+  // Transactions
+  async createTransaction(transactionData: z.infer<typeof insertTransactionSchema>) {
+    // Set default payment status if not provided
+    if (!transactionData.paymentStatus) {
+      transactionData.paymentStatus = "pending";
+    }
+    
+    const result = await db.insert(transactions).values(transactionData).returning();
+    
+    // If this is the start of a session, update the game station
+    if (transactionData.paymentStatus === "completed") {
+      const station = await this.getGameStationById(transactionData.stationId);
+      if (station) {
+        await this.updateGameStation(station.id, {
+          currentCustomer: transactionData.customerName,
+          currentGame: transactionData.gameName,
+          sessionType: transactionData.sessionType,
+          sessionStartTime: new Date()
+        });
+      }
+    }
+    
+    return result[0];
+  }
+
+  async updateTransactionStatus(id: number, status: string, mpesaRef?: string) {
+    const updateData: any = { paymentStatus: status };
+    if (mpesaRef) {
+      updateData.mpesaRef = mpesaRef;
+    }
+    
+    await db.update(transactions)
+      .set(updateData)
+      .where(eq(transactions.id, id));
+    
+    const results = await db.select()
+      .from(transactions)
+      .where(eq(transactions.id, id))
+      .limit(1);
+    
+    return results[0] || null;
+  }
+
+  async getTransactionsByStation(stationId: number) {
+    return db.select()
+      .from(transactions)
+      .where(eq(transactions.stationId, stationId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async getTransactionsByUser(userId: number) {
+    // This is a mock implementation since we don't have a userId in transactions table yet
+    return db.select()
+      .from(transactions)
+      .where(eq(transactions.customerName, "John Doe"))
+      .orderBy(desc(transactions.createdAt))
+      .limit(5);
+  }
+
+  // Users
+  async getUserById(id: number) {
+    const results = await db.select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    
+    return results[0] || null;
+  }
+
+  async getUserByPhone(phoneNumber: string) {
+    const results = await db.select()
+      .from(users)
+      .where(eq(users.phoneNumber, phoneNumber))
+      .limit(1);
+    
+    return results[0] || null;
+  }
+
+  async createUser(userData: z.infer<typeof insertUserSchema>) {
+    // Generate a random referral code
+    const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const result = await db.insert(users).values({
+      ...userData,
+      referralCode
+    }).returning();
+    
+    return result[0];
+  }
+
+  async getAllCustomers() {
+    return db.select()
+      .from(users)
+      .where(eq(users.role, "customer"))
+      .orderBy(users.displayName);
+  }
+
+  async awardLoyaltyPoints(userId: number, points: number) {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    const newPoints = (user.points || 0) + points;
+    await db.update(users)
+      .set({ points: newPoints })
+      .where(eq(users.id, userId));
+    
+    return newPoints;
+  }
+
+  async redeemLoyaltyPoints(userId: number, points: number) {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    if ((user.points || 0) < points) {
+      throw new Error("Insufficient points");
+    }
+    
+    const newPoints = (user.points || 0) - points;
+    await db.update(users)
+      .set({ points: newPoints })
+      .where(eq(users.id, userId));
+    
+    return newPoints;
+  }
+
+  // Reporting
+  async getRevenueByTimeFrame(timeFrame: 'daily' | 'weekly' | 'monthly') {
+    let timeCondition;
+    const now = new Date();
+    
+    if (timeFrame === 'daily') {
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+      timeCondition = gte(transactions.createdAt, startOfDay);
+    } else if (timeFrame === 'weekly') {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      timeCondition = gte(transactions.createdAt, startOfWeek);
+    } else {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      timeCondition = gte(transactions.createdAt, startOfMonth);
+    }
+    
+    const results = await db.select({
+      totalRevenue: sql`SUM(${transactions.amount})`,
+      count: sql`COUNT(*)`
+    })
+    .from(transactions)
+    .where(and(
+      eq(transactions.paymentStatus, "completed"),
+      timeCondition
+    ));
+    
+    return {
+      timeFrame,
+      totalRevenue: results[0]?.totalRevenue || 0,
+      transactionCount: results[0]?.count || 0
+    };
+  }
+
+  async getPopularGames() {
+    // This would be more complex with a real DB query
+    // For now, returning mock data
+    return [
+      { name: "FIFA 24", count: 42, revenue: 16800 },
+      { name: "Call of Duty", count: 38, revenue: 15200 },
+      { name: "GTA V", count: 27, revenue: 10800 },
+      { name: "Fortnite", count: 23, revenue: 9200 },
+    ];
+  }
+
+  async getStationUtilization() {
+    // This would require more complex time calculations
+    // For now, returning mock data
+    return [
+      { name: "PlayStation 5 - Station 1", utilization: 85, revenue: 12750 },
+      { name: "PlayStation 5 - Station 2", utilization: 75, revenue: 11250 },
+      { name: "Xbox Series X - Station 1", utilization: 60, revenue: 9000 },
+      { name: "Gaming PC - Station 1", utilization: 90, revenue: 13500 },
+      { name: "Gaming PC - Station 2", utilization: 80, revenue: 12000 },
+    ];
+  }
+
+  async getCustomerActivity() {
+    // Mock implementation
+    return [
+      { name: "John Doe", visits: 12, spent: 4800, points: 480 },
+      { name: "Jane Smith", visits: 8, spent: 3200, points: 320 },
+      { name: "Alex Johnson", visits: 15, spent: 6000, points: 600 },
+    ];
+  }
+}
+
+export const storage = new Storage();
