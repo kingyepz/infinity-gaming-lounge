@@ -657,7 +657,7 @@ export default function POSDashboard() {
                             <span className="text-xs">Active</span>
                           </div>
                           <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bgprimary/20 relative"></div>
+                            <div className="w3 h-3 rounded-full bgprimary/20 relative"></div>
                             <span className="text-xs">Available</span>
                           </div>
                         </div>
@@ -996,16 +996,12 @@ export default function POSDashboard() {
           </TabsContent>
         </div>
       </Tabs>
-      {showPayment && (
+      {showPayment && selectedStation && (
         <PaymentModal
-          station={selectedStation!}
-          selectedCustomer={selectedCustomer}
-          selectedGame={selectedGame}
+          station={selectedStation}
           onClose={() => {
             setShowPayment(false);
             setSelectedStation(null);
-            setSelectedGame(null);
-            setSelectedCustomer(null);
           }}
         />
       )}
