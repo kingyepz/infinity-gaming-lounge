@@ -25,7 +25,7 @@ export default function POSDashboard() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-  const [selectedGame, setSelectedGame] = useState<string | null>(null); // Added game state
+  const [selectedGame, setSelectedGame] = useState<string | null>(null); 
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -325,7 +325,7 @@ export default function POSDashboard() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gaming Sessions</h2>
-                <Button variant="default" onClick={() => setShowNewSessionModal(true)}>New Session</Button> {/* Updated button */}
+                <Button variant="default" onClick={() => setShowNewSessionModal(true)}>New Session</Button> 
               </div>
 
               <Card className="bg-black/30 border-primary/20">
@@ -1052,18 +1052,33 @@ export default function POSDashboard() {
 
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Select Game</label>
-                    <Select value={selectedGame || ""} onValueChange={setSelectedGame}>
-                      <SelectTrigger>
+                    <Select
+                      value={selectedGame || ""}
+                      onValueChange={(value) => {
+                        console.log("Selected game:", value);
+                        setSelectedGame(value);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose a game" />
                       </SelectTrigger>
                       <SelectContent>
                         {games?.map((game) => (
-                          <SelectItem key={game.id} value={game.name}>
+                          <SelectItem 
+                            key={game.id} 
+                            value={game.name}
+                            className="cursor-pointer"
+                          >
                             {game.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {selectedGame && (
+                      <p className="text-sm text-primary mt-1">
+                        Selected: {selectedGame}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
