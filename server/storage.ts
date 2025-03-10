@@ -356,11 +356,16 @@ class StorageService {
 
       // Create game stations
       await db.insert(gameStations).values([
-        { name: "PlayStation 5 - 1", isActive: true, baseRate: 500, hourlyRate: 800 },
-        { name: "PlayStation 5 - 2", isActive: true, baseRate: 500, hourlyRate: 800 },
-        { name: "Xbox Series X - 1", isActive: true, baseRate: 500, hourlyRate: 800 },
-        { name: "PC Gaming - 1", isActive: true, baseRate: 400, hourlyRate: 600 },
-        { name: "PC Gaming - 2", isActive: true, baseRate: 400, hourlyRate: 600 }
+        { name: "Station 1", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 2", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 3", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 4", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 5", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 6", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 7", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 8", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 9", isActive: true, baseRate: 500, hourlyRate: 800 },
+        { name: "Station 10", isActive: true, baseRate: 500, hourlyRate: 800 }
       ]);
 
       // Create games

@@ -1052,13 +1052,13 @@ export default function POSDashboard() {
 
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Select Game</label>
-                    <Select>
+                    <Select value={selectedGame || ""} onValueChange={setSelectedGame}>
                       <SelectTrigger>
                         <SelectValue placeholder="Choose a game" />
                       </SelectTrigger>
                       <SelectContent>
                         {games?.map((game) => (
-                          <SelectItem key={game.id} value={game.name} onClick={() => setSelectedGame(game.name)}>
+                          <SelectItem key={game.id} value={game.name}>
                             {game.name}
                           </SelectItem>
                         ))}
@@ -1084,8 +1084,8 @@ export default function POSDashboard() {
                               setShowNewSessionModal(false);
                             } else {
                               toast({
-                                title: "Select Customer and Game",
-                                description: "Please select a customer and a game first",
+                                title: "Selection Required",
+                                description: "Please select both a customer and a game before choosing a station",
                                 variant: "destructive"
                               });
                             }
