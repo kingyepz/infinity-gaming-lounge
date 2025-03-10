@@ -385,7 +385,7 @@ export default function POSDashboard() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">Amount</p>
-                              <p className="font-medium">KSH {station.sessionType === "per_game" ? "40" : "200"}</p>
+                              <p className="font-medium">KSH {station.sessionType === "per_game" ? station.baseRate : station.hourlyRate}</p>
                             </div>
                           </div>
 
@@ -499,7 +499,7 @@ export default function POSDashboard() {
                         <div>
                           <p className="font-medium">Station #{transaction.stationId}</p>
                           <p className="text-sm text-muted-foreground">
-                            {transaction.customerName}
+                            {transaction.customerName} - {transaction.gameName}
                           </p>
                         </div>
                         <div className="text-right">
