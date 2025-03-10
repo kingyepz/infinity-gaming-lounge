@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowUp, ArrowDown, Download, Printer, Calendar, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { Transaction } from "@shared/schema";
 
 
 export default function POSDashboard() {
@@ -25,7 +26,7 @@ export default function POSDashboard() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-  const [selectedGame, setSelectedGame] = useState<string | null>(null); // Added game state
+  const [selectedGame, setSelectedGame] = useState<string | null>(null); 
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -41,6 +42,10 @@ export default function POSDashboard() {
 
   const { data: customers } = useQuery({
     queryKey: ["/api/users/customers"],
+  });
+
+  const { data: transactions } = useQuery({
+    queryKey: ["/api/transactions"],
   });
 
   const handleLogout = () => {
@@ -388,7 +393,14 @@ export default function POSDashboard() {
                             <Button size="sm" variant="outline" className="flex-1" onClick={async () => {
                               try {
                                 await apiRequest("PATCH", `/api/stations/${station.id}`, {
-                                  sessionStartTime: new Date().toISOString() 
+                                  sessionStartTime: new Date().toISOString()
+                                });
+
+                                await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+
+                                toast({
+                                  title: "Session Extended",
+                                  description: "The gaming session has been extended successfully!"
                                 });
                               } catch (error: any) {
                                 toast({
@@ -404,12 +416,38 @@ export default function POSDashboard() {
                                   currentCustomer: null,
                                   currentGame: null,
                                   sessionType: null,
-                                  sessionStartTime: null
+                                  sessionStartTime: null,
+                                  lastCustomer: station.currentCustomer,
+                                  lastSessionAmount: station.sessionType === "per_game" ? station.baseRate : station.hourlyRate,
+                                  lastSessionDuration: (() => {
+                                    const startTime = new Date(station.sessionStartTime!);
+                                    const now = new Date();
+                                    const diffMs = now.getTime() - startTime.getTime();
+                                    const diffMins = Math.floor(diffMs / 60000);
+                                    return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
+                                  })()
                                 });
 
+                                await apiRequest("POST", "/api/transactions", {
+                                  stationId: station.id,
+                                  customerName: station.currentCustomer,
+                                  gameName: station.currentGame,
+                                  amount: station.sessionType === "per_game" ? station.baseRate : station.hourlyRate,
+                                  sessionType: station.sessionType,
+                                  duration: (() => {
+                                    const startTime = new Date(station.sessionStartTime!);
+                                    const now = new Date();
+                                    return Math.floor((now.getTime() - startTime.getTime()) / 60000);
+                                  })(),
+                                  paymentStatus: "completed"
+                                });
+
+                                await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+                                await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+
                                 toast({
-                                  title: "Session ended",
-                                  description: "Payment has been added to the pending payments list"
+                                  title: "Session Ended",
+                                  description: "The gaming session has been ended and payment recorded"
                                 });
 
                               } catch (error: any) {
@@ -456,22 +494,20 @@ export default function POSDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {stations?.filter(station => !station.currentCustomer)
-                      .slice(0, 5)
-                      .map((station, i) => (
+                    {transactions?.slice(0, 5).map((transaction, i) => (
                       <div key={i} className="flex justify-between items-center p-3 border border-primary/10 rounded-md">
                         <div>
-                          <p className="font-medium">Station #{station.id}</p>
+                          <p className="font-medium">Station #{transaction.stationId}</p>
                           <p className="text-sm text-muted-foreground">
-                            {station.lastCustomer || "No previous session"}
+                            {transaction.customerName}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium">
-                            KSH {station.lastSessionAmount || "-"}
+                            KSH {transaction.amount}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {station.lastSessionDuration || "-"}
+                            {Math.floor(transaction.duration / 60)}h {transaction.duration % 60}m
                           </p>
                         </div>
                       </div>
@@ -635,8 +671,7 @@ export default function POSDashboard() {
                     </div>
                     <p className="text-xs text-muted-foreground">For active sessions</p>
                   </CardContent>
-                </Card>
-              </div>
+                </Card>              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <Card className="bg-black/40 border-primary/20 col-span-1">
