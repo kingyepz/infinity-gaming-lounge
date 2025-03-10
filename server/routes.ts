@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
+import { db } from "./db";
+import { users, transactions, games, gameStations } from "@shared/schema";
+import { desc, sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -16,14 +19,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Basic API routes
   app.get("/api/stations", asyncHandler(async (_req, res) => {
-    const stations = await storage.getGameStations();
+    const stations = await db.select().from(gameStations);
     res.json(stations);
   }));
 
   app.patch("/api/stations/:id", asyncHandler(async (req, res) => {
     try {
       const stationData = updateStationSchema.parse(req.body);
-      const station = await storage.updateGameStation(Number(req.params.id), stationData);
+      const station = await db.update(gameStations).set(stationData).where(gameStations.id.equals(Number(req.params.id)));
       res.json(station);
     } catch (error) {
       //This will be caught by the global error handler
@@ -33,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/current", asyncHandler(async (_req, res) => {
     try {
-      const stations = await storage.getGameStations();
+      const stations = await db.select().from(gameStations);
       const activeStations = stations.filter(station => station.currentCustomer);
 
       const report = activeStations.map(station => {
@@ -64,15 +67,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/hourly", asyncHandler(async (_req, res) => {
     try {
-      const stations = await storage.getGameStations();
-      const transactions = await Promise.all(
-        stations.map(station => storage.getTransactionsByStation(station.id))
-      );
+      const stations = await db.select().from(gameStations);
+      const transactions = await db.select().from(transactions);
+
 
       const now = new Date();
       const hourAgo = new Date(now.getTime() - (60 * 60 * 1000));
 
-      const hourlyTransactions = transactions.flat().filter(tx =>
+      const hourlyTransactions = transactions.filter(tx =>
         new Date(tx.createdAt) >= hourAgo
       );
 
@@ -95,10 +97,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/daily", asyncHandler(async (_req, res) => {
     try {
-      const stations = await storage.getGameStations();
-      const transactions = await Promise.all(
-        stations.map(station => storage.getTransactionsByStation(station.id))
-      );
+      const stations = await db.select().from(gameStations);
+      const transactions = await db.select().from(transactions);
 
       const now = new Date();
       const dayStart = new Date(now.setHours(0, 0, 0, 0));
@@ -131,6 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid time frame. Use daily, weekly, or monthly." });
       }
 
+      // Implement database query for revenue data based on timeframe
       const revenueData = await storage.getRevenueByTimeFrame(timeFrame);
       res.json(revenueData);
     } catch (error) {
@@ -140,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/popular-games", asyncHandler(async (_req, res) => {
     try {
-      const popularGames = await storage.getPopularGames();
+      const popularGames = await db.select().from(games).orderBy(games.popularity, desc());
       res.json(popularGames);
     } catch (error) {
       throw error;
@@ -149,6 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/station-utilization", asyncHandler(async (_req, res) => {
     try {
+      // Implement database query for station utilization data
       const stationUtilization = await storage.getStationUtilization();
       res.json(stationUtilization);
     } catch (error) {
@@ -158,6 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/customer-activity", asyncHandler(async (_req, res) => {
     try {
+      // Implement database query for customer activity data
       const customerActivity = await storage.getCustomerActivity();
       res.json(customerActivity);
     } catch (error) {
@@ -167,15 +170,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/payment-methods", asyncHandler(async (_req, res) => {
     try {
-      // This is mock data - in a real implementation, you would query from your database
-      res.json({
-        methods: [
-          { name: "Cash", percentage: 35, amount: 20500 },
-          { name: "M-Pesa", percentage: 55, amount: 32450 },
-          { name: "Airtel Money", percentage: 10, amount: 5500 }
-        ],
-        total: 58450
-      });
+      // Implement database query for payment methods data
+      const paymentMethods = await storage.getPaymentMethods();
+      res.json(paymentMethods);
     } catch (error) {
       throw error;
     }
@@ -183,29 +180,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/hourly-distribution", asyncHandler(async (_req, res) => {
     try {
-      // This is mock data - in a real implementation, you would aggregate from your database
-      const hours = Array.from({ length: 12 }, (_, i) => i + 9); // 9am to 8pm
-      const data = hours.map(hour => ({
-        hour: `${hour}:00`,
-        sessions: Math.floor(Math.random() * 20) + 5,
-        revenue: (Math.floor(Math.random() * 20) + 5) * 500
-      }));
-
-      res.json(data);
+      // Implement database query for hourly distribution data
+      const hourlyDistribution = await storage.getHourlyDistribution();
+      res.json(hourlyDistribution);
     } catch (error) {
       throw error;
     }
   }));
 
   app.get("/api/games", asyncHandler(async (_req, res) => {
-    const games = await storage.getGames();
+    const games = await db.select().from(games);
     res.json(games);
   }));
 
   app.post("/api/transactions", asyncHandler(async (req, res) => {
     try {
       const transactionData = insertTransactionSchema.parse(req.body);
-      const transaction = await storage.createTransaction(transactionData);
+      const transaction = await db.insert(transactions).values(transactionData).returning();
       res.json(transaction);
     } catch (error) {
       throw error;
@@ -213,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/transactions/station/:stationId", asyncHandler(async (req, res) => {
-    const transactions = await storage.getTransactionsByStation(Number(req.params.stationId));
+    const transactions = await db.select().from(transactions).where(transactions.stationId.equals(Number(req.params.stationId)));
     res.json(transactions);
   }));
 
@@ -249,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]);
       }
 
-      const transactions = await storage.getTransactionsByUser(Number(userId));
+      const transactions = await db.select().from(transactions).where(transactions.userId.equals(Number(userId)));
       res.json(transactions);
     } catch (error) {
       throw error;
@@ -257,6 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/leaderboard", asyncHandler(async (_req, res) => {
+    // Implement database query for leaderboard data
     res.json([
       { rank: 1, name: "EliteGamer", points: 2500 },
       { rank: 2, name: "VictoryRoad", points: 2300 },
@@ -266,6 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/events", asyncHandler(async (_req, res) => {
+    // Implement database query for events data
     res.json([
       { id: 1, title: "FIFA Tournament", date: "2023-12-15", time: "14:00", prize: "5000 Points" },
       { id: 2, title: "Call of Duty Marathon", date: "2023-12-22", time: "18:00", prize: "Free Hours" },
@@ -274,6 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
+    // Implement database query for rewards data
     res.json([
       { id: 1, title: "1 Hour Free Gaming", points: 500 },
       { id: 2, title: "Gaming Headset", points: 2000 },
@@ -283,6 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/users/friends", asyncHandler(async (_req, res) => {
+    // Implement database query for friends data
     res.json([
       { id: 1, name: "Alex Gaming", points: 980, status: "online" },
       { id: 2, name: "ProPlayer22", points: 750, status: "offline" },
@@ -306,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const user = await storage.getUserById(Number(userId));
+      const user = await db.select().from(users).where(users.id.equals(Number(userId))).limit(1);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -326,21 +321,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referredBy: z.string().optional()
       }).parse(req.body);
 
-      const existingUser = await storage.getUserByPhone(userData.phoneNumber);
+      const existingUser = await db.select().from(users).where(users.phoneNumber.equals(userData.phoneNumber)).limit(1);
       if (existingUser) {
         return res.status(400).json({ error: "User with this phone number already exists" });
       }
 
-      const user = await storage.createUser({
+      const user = await db.insert(users).values({
         displayName: userData.displayName,
         gamingName: userData.gamingName,
         phoneNumber: userData.phoneNumber,
         role: "customer"
-      });
+      }).returning();
 
       if (userData.referredBy) {
         try {
-          const referrer = await storage.getUserByPhone(userData.referredBy);
+          const referrer = await db.select().from(users).where(users.phoneNumber.equals(userData.referredBy)).limit(1);
           if (referrer) {
             await storage.awardLoyaltyPoints(referrer.id, 100); // Award 100 points for referral
           }
@@ -408,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add this endpoint after the existing user-related endpoints
   app.get("/api/users/customers", asyncHandler(async (_req, res) => {
     try {
-      const customers = await storage.getAllCustomers();
+      const customers = await db.select().from(users).where(users.role.equals("customer"));
       res.json(customers);
     } catch (error) {
       console.error("Error fetching customers:", error);

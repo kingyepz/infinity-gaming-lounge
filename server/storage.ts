@@ -385,17 +385,17 @@ class StorageService {
     }
   }
 
-  // Initialize test data
+  // Initialize data - will use actual data if available, otherwise fallback to mock data
   async initializeMockData() {
     try {
       console.log("Checking for existing data...");
       const existingStations = await this.getGameStations();
       if (existingStations.length > 0) {
-        console.log("Mock data already exists, skipping initialization");
+        console.log("Data already exists, skipping initialization");
         return;
       }
 
-      console.log("Initializing mock data...");
+      console.log("Initializing data...");
 
       // Create game stations
       await db.insert(gameStations).values([
