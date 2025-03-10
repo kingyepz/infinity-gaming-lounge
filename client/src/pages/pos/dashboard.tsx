@@ -325,7 +325,18 @@ export default function POSDashboard() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gaming Sessions</h2>
-                <Button variant="default" onClick={() => setShowNewSessionModal(true)}>New Session</Button> {/* Updated button */}
+                <Button variant="default" onClick={() => {
+                  const availableStation = stations?.find(s => !s.currentCustomer);
+                  if (availableStation) {
+                    setSelectedStation(availableStation);
+                    setShowPayment(true);
+                  } else {
+                    toast({
+                      title: "No available stations",
+                      description: "All stations are currently in use."
+                    });
+                  }
+                }}>New Session</Button>
               </div>
 
               <Card className="bg-black/30 border-primary/20">
