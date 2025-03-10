@@ -7,15 +7,19 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "cloudrun"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["sh", "-c", "npm ci && npm run build"]
+run = ["sh", "-c", "node dist/server/index.js"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5001
+externalPort = 3000
+
 [workflows]
-runButton = "Project"
+runButton = "Start Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -40,3 +44,11 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Start Server"
+author = 40282584
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
