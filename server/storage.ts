@@ -84,7 +84,7 @@ class StorageService {
   async updateTransactionStatus(id: number, status: string, mpesaRef?: string) {
     try {
       const [result] = await db.update(transactions)
-        .set({ 
+        .set({
           paymentStatus: status as "pending" | "completed" | "failed",
           mpesaRef
         })
@@ -183,8 +183,8 @@ class StorageService {
     try {
       const now = new Date();
       let startDate: Date;
-      
-      switch(timeFrame) {
+
+      switch (timeFrame) {
         case 'daily':
           startDate = new Date(now.setHours(0, 0, 0, 0));
           break;
@@ -195,17 +195,17 @@ class StorageService {
           startDate = new Date(now.setMonth(now.getMonth() - 1));
           break;
       }
-      
+
       const allTransactions = await db.select().from(transactions);
-      const filteredTransactions = allTransactions.filter(tx => 
+      const filteredTransactions = allTransactions.filter(tx =>
         new Date(tx.createdAt) >= startDate
       );
-      
+
       return {
         totalRevenue: filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0),
         completedSessions: filteredTransactions.length,
-        averageRevenue: filteredTransactions.length > 0 
-          ? filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0) / filteredTransactions.length 
+        averageRevenue: filteredTransactions.length > 0
+          ? filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0) / filteredTransactions.length
           : 0
       };
     } catch (error) {
@@ -213,12 +213,12 @@ class StorageService {
       return { totalRevenue: 0, completedSessions: 0, averageRevenue: 0 };
     }
   }
-  
+
   async getPopularGames() {
     try {
       const allTransactions = await db.select().from(transactions);
       const gameStats = {};
-      
+
       allTransactions.forEach(tx => {
         if (tx.gameName) {
           if (!gameStats[tx.gameName]) {
@@ -228,7 +228,7 @@ class StorageService {
           gameStats[tx.gameName].revenue += tx.amount;
         }
       });
-      
+
       return Object.entries(gameStats)
         .map(([name, stats]: [string, any]) => ({
           name,
@@ -241,14 +241,14 @@ class StorageService {
       return [];
     }
   }
-  
+
   async getStationUtilization() {
     try {
       const stations = await this.getGameStations();
       const allTransactions = await Promise.all(
         stations.map(station => this.getTransactionsByStation(station.id))
       );
-      
+
       return stations.map((station, index) => {
         const stationTransactions = allTransactions[index];
         const totalHours = stationTransactions.reduce((sum, tx) => {
@@ -257,10 +257,10 @@ class StorageService {
           }
           return sum + 0.5; // assume half hour for per_game
         }, 0);
-        
+
         // Assuming 12 operational hours per day
         const utilizationRate = Math.min(100, (totalHours / 12) * 100);
-        
+
         return {
           id: station.id,
           name: station.name,
@@ -274,20 +274,20 @@ class StorageService {
       return [];
     }
   }
-  
+
   async getCustomerActivity() {
     try {
       const allTransactions = await db.select().from(transactions);
       const allUsers = await db.select().from(users);
-      
+
       const now = new Date();
       const yesterday = new Date(now.setDate(now.getDate() - 1));
       const lastWeek = new Date(now.setDate(now.getDate() - 7));
-      
-      const newCustomers = allUsers.filter(user => 
+
+      const newCustomers = allUsers.filter(user =>
         new Date(user.createdAt) >= yesterday
       ).length;
-      
+
       // Calculate returning customers
       const customerVisits = {};
       allTransactions.forEach(tx => {
@@ -298,26 +298,26 @@ class StorageService {
           customerVisits[tx.userId].push(new Date(tx.createdAt));
         }
       });
-      
+
       const returningCustomers = Object.values(customerVisits).filter((visits: any) => {
         if (visits.length < 2) return false;
         visits.sort((a: Date, b: Date) => a.getTime() - b.getTime());
         return visits[visits.length - 1] >= lastWeek && visits[visits.length - 2] >= lastWeek;
       }).length;
-      
-      const returnRate = allUsers.length > 0 
-        ? (returningCustomers / allUsers.length) * 100 
+
+      const returnRate = allUsers.length > 0
+        ? (returningCustomers / allUsers.length) * 100
         : 0;
-      
+
       // Calculate average session duration
-      const hourlyTransactions = allTransactions.filter(tx => 
+      const hourlyTransactions = allTransactions.filter(tx =>
         tx.sessionType === 'hourly' && tx.duration
       );
-      
+
       const avgSessionDuration = hourlyTransactions.length > 0
         ? hourlyTransactions.reduce((sum, tx) => sum + (tx.duration || 0), 0) / hourlyTransactions.length / 60
         : 0; // in hours
-      
+
       return {
         newCustomers,
         returningCustomers,
@@ -370,19 +370,23 @@ class StorageService {
 
       // Create games
       await db.insert(games).values([
-        { name: "FIFA 24", isActive: true },
-        { name: "Call of Duty: Modern Warfare", isActive: true },
+        { name: "FC25", isActive: true },
+        { name: "Mortal Kombat", isActive: true },
         { name: "GTA V", isActive: true },
-        { name: "Fortnite", isActive: true },
-        { name: "Minecraft", isActive: true }
+        { name: "GTA VI", isActive: true },
+        { name: "NBA 2K25", isActive: true },
+        { name: "NBA 2K26", isActive: true },
+        { name: "F1 24", isActive: true },
+        { name: "F1 25", isActive: true },
+        { name: "VR GAMING", isActive: true }
       ]);
 
       // Create test users
       await db.insert(users).values([
-        { 
-          displayName: "John Doe", 
-          gamingName: "JDGamer", 
-          phoneNumber: "254700000000", 
+        {
+          displayName: "John Doe",
+          gamingName: "JDGamer",
+          phoneNumber: "254700000000",
           role: "customer",
           points: 750,
           level: "pro"
