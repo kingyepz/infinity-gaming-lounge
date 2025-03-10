@@ -67,14 +67,32 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
       serveStatic(app);
     }
 
-    const port = 5000;
-    httpServer.listen(port, "0.0.0.0", () => {
-      console.log(`Server is running on http://0.0.0.0:${port}`);
-      console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
-    }).on("error", (error: Error) => {
-      console.error("Failed to start server:", error);
-      process.exit(1);
-    });
+    // Try different ports if the default is in use
+    const tryPort = (port: number, maxAttempts = 3) => {
+      if (maxAttempts <= 0) {
+        console.error("Could not find an available port");
+        process.exit(1);
+        return;
+      }
+
+      httpServer.listen(port, "0.0.0.0")
+        .on("listening", () => {
+          console.log(`Server is running on http://0.0.0.0:${port}`);
+          console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
+        })
+        .on("error", (error: any) => {
+          if (error.code === 'EADDRINUSE') {
+            console.log(`Port ${port} is in use, trying ${port + 1}...`);
+            httpServer.close();
+            tryPort(port + 1, maxAttempts - 1);
+          } else {
+            console.error("Failed to start server:", error);
+            process.exit(1);
+          }
+        });
+    };
+
+    tryPort(5000);
   } catch (error) {
     console.error("Failed to initialize server:", error);
     process.exit(1);
