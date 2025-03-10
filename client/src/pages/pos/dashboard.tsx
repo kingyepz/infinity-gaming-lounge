@@ -456,15 +456,23 @@ export default function POSDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map(i => (
+                    {stations?.filter(station => !station.currentCustomer)
+                      .slice(0, 5)
+                      .map((station, i) => (
                       <div key={i} className="flex justify-between items-center p-3 border border-primary/10 rounded-md">
                         <div>
-                          <p className="font-medium">Station #{Math.floor(Math.random() * 10) + 1}</p>
-                          <p className="text-sm text-muted-foreground">Customer: Alex Smith</p>
+                          <p className="font-medium">Station #{station.id}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {station.lastCustomer || "No previous session"}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">KSH {(Math.random() * 50).toFixed(2)}</p>
-                          <p className="text-sm text-muted-foreground">2 hours</p>
+                          <p className="font-medium">
+                            KSH {station.lastSessionAmount || "-"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {station.lastSessionDuration || "-"}
+                          </p>
                         </div>
                       </div>
                     ))}
