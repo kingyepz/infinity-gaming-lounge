@@ -306,45 +306,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get actual database columns to ensure we only use valid ones
       const actualColumns = Object.keys(transactions);
       console.log("Actual database columns:", actualColumns);
-
-      // Create a base transaction object with mandatory fields
-      const baseTransactionData = {
-        stationId: rawData.stationId,
-        customerName: rawData.customerName,
-        sessionType: rawData.sessionType,
-        amount: rawData.amount,
-        paymentStatus: "pending"
-      };
       
-      // Add optional fields only if they have values
+      // Insert transaction using a simplified approach to avoid column issues
+      const validColumns = [
+        'stationId',
+        'customerName',
+        'gameName',
+        'sessionType',
+        'amount',
+        'paymentStatus',
+        'duration'
+      ];
+      
+      // Create a clean transaction object only with valid columns
+      const transactionData = {};
+      
+      // Add basic fields
+      transactionData.stationId = rawData.stationId;
+      transactionData.customerName = rawData.customerName;
+      transactionData.sessionType = rawData.sessionType;
+      transactionData.amount = rawData.amount;
+      transactionData.paymentStatus = "pending";
+      
+      // Add optional fields
       if (rawData.gameName) {
-        baseTransactionData.gameName = rawData.gameName;
+        transactionData.gameName = rawData.gameName;
       }
       
       if (rawData.duration !== undefined && rawData.duration !== null) {
-        baseTransactionData.duration = rawData.duration;
+        transactionData.duration = rawData.duration;
       }
       
-      // Debug SQL generation
-      const { sql, params } = db.insert(transactions).values([baseTransactionData]).toSQL();
-      console.log("SQL Columns:", sql.match(/\(([^)]+)\)/)?.[1].split(',').map(s => s.trim()));
-      console.log("SQL Values:", params);
+      console.log("Final transaction data:", transactionData);
       
-      // Insert transaction using more reliable approach
-      const [result] = await db.insert(transactions).values({
-        stationId: rawData.stationId,
-        customerName: rawData.customerName,
-        gameName: rawData.gameName || null,
-        sessionType: rawData.sessionType,
-        amount: rawData.amount,
-        paymentStatus: "pending",
-        duration: rawData.duration !== undefined && rawData.duration !== null ? rawData.duration : null
-      }).returning();
+      // Execute insert
+      const [result] = await db.insert(transactions).values(transactionData).returning();
       
       res.json(result);
     } catch (error) {
       console.error("Transaction creation error:", error);
       res.status(500).json({ error: error.message || "Failed to create transaction" });
+    }
+  }));
+  
+  // Add a GET endpoint to retrieve all transactions
+  app.get("/api/transactions", asyncHandler(async (_req, res) => {
+    try {
+      const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.createdAt));
+      res.json(allTransactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      throw error;
     }
   }));
 

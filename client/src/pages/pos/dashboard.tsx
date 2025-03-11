@@ -33,6 +33,72 @@ import {
 import InfinityLogo from "@/components/animations/InfinityLogo";
 import CustomerPortal from "@/pages/customer/portal";
 
+  // Add these imports if not already present
+  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+  import axios from "axios";
+  import { useQuery, useQueryClient } from "@tanstack/react-query";
+  
+  // Inside the Dashboard component, add these variables and functions
+  const queryClient = useQueryClient();
+  
+  // Fetch all transactions
+  const { data: transactions, refetch: refetchTransactions } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: async () => {
+      const response = await axios.get("/api/transactions");
+      return response.data;
+    },
+    refetchInterval: 10000, // Refetch every 10 seconds
+  });
+  
+  // Filter transactions
+  const pendingTransactions = transactions?.filter(tx => tx.paymentStatus === "pending") || [];
+  const completedTransactions = transactions?.filter(tx => tx.paymentStatus === "completed") || [];
+  
+  // Calculate statistics
+  const todayRevenue = completedTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+  const pendingAmount = pendingTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+  
+  // Calculate payment method statistics
+  const paymentMethodStats = completedTransactions.reduce((stats, tx) => {
+    if (tx.mpesaRef) {
+      stats.mpesa = (stats.mpesa || 0) + 1;
+    } else if (tx.airtelRef) {
+      stats.airtel = (stats.airtel || 0) + 1;
+    } else {
+      stats.cash = (stats.cash || 0) + 1;
+    }
+    return stats;
+  }, { cash: 0, mpesa: 0, airtel: 0 });
+  
+  // Function to clear a pending payment
+  const handleClearPayment = async (transactionId) => {
+    try {
+      await axios.post("/api/transactions/payment", {
+        transactionId: transactionId,
+        amount: pendingTransactions.find(tx => tx.id === transactionId)?.amount || 0,
+        paymentMethod: "cash",
+      });
+      
+      toast({
+        title: "Payment Cleared",
+        description: "The payment has been marked as completed",
+      });
+      
+      // Refetch data to update the UI
+      refetchTransactions();
+      refetchStations();
+    } catch (error) {
+      console.error("Error clearing payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear payment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+
 
 export default function POSDashboard() {
     const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -953,26 +1019,149 @@ export default function POSDashboard() {
                     <TabsContent value="payments">
                         <div className="space-y-6">
                             <h3 className="text-2xl font-bold">Payments</h3>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">KES {todayRevenue.toFixed(2)}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            From {completedTransactions?.length || 0} completed transactions
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                                
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{pendingTransactions?.length || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Total: KES {pendingAmount.toFixed(2)}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                                
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">Payment Methods</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between">
+                                            <div className="text-center">
+                                                <div className="text-lg font-semibold">{paymentMethodStats.cash || 0}</div>
+                                                <p className="text-xs">Cash</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg font-semibold">{paymentMethodStats.mpesa || 0}</div>
+                                                <p className="text-xs">M-Pesa</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg font-semibold">{paymentMethodStats.airtel || 0}</div>
+                                                <p className="text-xs">Airtel</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            
+                            <div className="bg-card rounded-lg border shadow-sm">
+                                <div className="p-4">
+                                    <h4 className="text-lg font-semibold mb-4">Recent Transactions</h4>
+                                    <div className="rounded-md border">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Customer</TableHead>
+                                                    <TableHead>Station</TableHead>
+                                                    <TableHead>Amount</TableHead>
+                                                    <TableHead>Method</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>Time</TableHead>
+                                                    <TableHead>Action</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {transactions && transactions.length > 0 ? (
+                                                    transactions.slice(0, 10).map((tx) => (
+                                                        <TableRow key={tx.id}>
+                                                            <TableCell>{tx.customerName}</TableCell>
+                                                            <TableCell>{stations?.find(s => s.id === tx.stationId)?.name || `Station ${tx.stationId}`}</TableCell>
+                                                            <TableCell>KES {Number(tx.amount).toFixed(2)}</TableCell>
+                                                            <TableCell>
+                                                                {tx.mpesaRef ? 'M-Pesa' : 
+                                                                 (tx.airtelRef ? 'Airtel' : 'Cash')}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge variant={tx.paymentStatus === "completed" ? "success" : "warning"}>
+                                                                    {tx.paymentStatus}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>{new Date(tx.createdAt).toLocaleTimeString()}</TableCell>
+                                                            <TableCell>
+                                                                {tx.paymentStatus === "pending" && (
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        variant="outline"
+                                                                        onClick={() => handleClearPayment(tx.id)}
+                                                                    >
+                                                                        Clear
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={7} className="text-center py-4">
+                                                            No transactions found
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            </div>/h3>
 
                             <Card className="border-primary/20">
                                 <CardHeader>
                                     <CardTitle className="flex justify-between items-center">
                                         <span>Pending Payments</span>
-                                        <Badge variant="secondary">3</Badge>
+                                        <Badge variant="secondary">{pendingTransactions?.length || 0}</Badge>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-3">
-                                        {Array.from({ length: 3 }).map((_, i) => (
-                                            <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
-                                                <div>
-                                                    <p className="font-medium">Customer {i+1}</p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Game Station {i+1} • {Math.floor(Math.random() * 60) + 30} min
-                                                    </p>
+                                        {pendingTransactions?.length === 0 ? (
+                                            <p className="text-center text-muted-foreground">No pending payments</p>
+                                        ) : (
+                                            pendingTransactions?.map((tx) => (
+                                                <div key={tx.id} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
+                                                    <div>
+                                                        <p className="font-medium">{tx.customerName}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {stations?.find(s => s.id === tx.stationId)?.name || `Station ${tx.stationId}`} • 
+                                                            {tx.sessionType === "per_game" ? "1 game" : `${tx.duration || 0} min`}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-bold">KES {Number(tx.amount).toFixed(2)}</p>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline" 
+                                                            className="mt-2"
+                                                            onClick={() => handleClearPayment(tx.id)}
+                                                        >
+                                                            Clear
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="font-bold">KES {(Math.random() * 500 + 200).toFixed(2)}</p>
+                                            ))
+                                        )})}</p>
                                                     <div className="flex gap-2 mt-2">
                                                         <select className="text-xs p-1 rounded border border-primary/20 bg-primary/5">
                                                             <option value="">Payment Method</option>
@@ -996,18 +1185,22 @@ export default function POSDashboard() {
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="bg-primary/5 p-3 rounded-md">
-                                            <p className="text-sm text-mutedforeground">Today</p>
-                                            <p className="text-xl font-bold">KES 12,500</p>
-                                            <p className="text-xs text-green-500">+15% from yesterday</p>
+                                            <p className="text-sm text-muted-foreground">Today</p>
+                                            <p className="text-xl font-bold">KES {todayRevenue.toFixed(2)}</p>
+                                            <p className="text-xs text-green-500">{pendingTransactions?.length || 0} pending</p>
                                         </div>
                                         <div className="bg-primary/5 p-3 rounded-md">
-                                            <p className="text-sm text-muted-foreground">This Week</p>
-                                            <p className="text-xl font-bold">KES 68,200</p>
-                                            <p className="text-xs text-green-500">+8% from last week</p>
+                                            <p className="text-sm text-muted-foreground">By Payment Method</p>
+                                            <div className="mt-2">
+                                                <p className="text-sm">Cash: <span className="font-medium">{paymentMethodStats.cash || 0}</span></p>
+                                                <p className="text-sm">M-Pesa: <span className="font-medium">{paymentMethodStats.mpesa || 0}</span></p>
+                                                <p className="text-sm">Airtel: <span className="font-medium">{paymentMethodStats.airtel || 0}</span></p>
+                                            </div>
                                         </div>
                                         <div className="bg-primary/5 p-3 rounded-md">
-                                            <p className="text-sm text-muted-foreground">This Month</p>
-                                            <p className="text-xl font-bold">KES 245,800</p>
+                                            <p className="text-sm text-muted-foreground">Total Transactions</p>
+                                            <p className="text-xl font-bold">{transactions?.length || 0}</p>
+                                            <p className="text-xs">Completed: {completedTransactions?.length || 0}</p>00</p>
                                             <p className="text-xs text-green-500">+12% from last month</p>
                                         </div>
                                     </div>
