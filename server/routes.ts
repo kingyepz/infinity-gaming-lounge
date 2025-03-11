@@ -532,7 +532,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/payments/mpesa", asyncHandler(async (req, res) => {
     try {
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      
+      PaymentDebugger.log('mpesa', 'request', req.body);
       const paymentData = mpesaPaymentSchema.parse(req.body);
+      PaymentDebugger.log('mpesa', 'validated_data', paymentData);
 
       // Initiate STK Push
       const response = await mpesaService.initiateSTKPush({
@@ -541,6 +545,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accountReference: `TXN-${paymentData.transactionId}`,
         transactionDesc: "Payment for gaming services"
       });
+      
+      PaymentDebugger.log('mpesa', 'stk_response', response);
 
       try {
         // Simple update with only the essential fields we know exist
@@ -549,12 +555,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mpesaRef: response.MerchantRequestID
         };
         
-        console.log("Updating transaction with M-Pesa reference:", updateData);
+        PaymentDebugger.log('mpesa', 'update_data', updateData);
         await db.update(transactions)
           .set(updateData)
           .where(eq(transactions.id, paymentData.transactionId));
+          
+        PaymentDebugger.log('mpesa', 'transaction_updated', { transactionId: paymentData.transactionId });
       } catch (dbError) {
-        console.error("Error updating transaction with M-Pesa reference:", dbError);
+        PaymentDebugger.logError('mpesa', 'transaction_update', dbError);
         
         // If the update fails, try with just payment status as a fallback
         try {
@@ -563,15 +571,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               paymentStatus: "pending"
             })
             .where(eq(transactions.id, paymentData.transactionId));
+            
+          PaymentDebugger.log('mpesa', 'transaction_updated_fallback', { transactionId: paymentData.transactionId });
         } catch (fallbackError) {
-          console.error("Fallback update also failed:", fallbackError);
+          PaymentDebugger.logError('mpesa', 'transaction_update_fallback', fallbackError);
           // Continue anyway since we've already initiated the M-Pesa payment
         }
       }
 
       // Create a payment record in the payments table
       try {
-        await db.insert(payments).values([{
+        const paymentRecord = {
           transactionId: paymentData.transactionId,
           amount: String(paymentData.amount),
           paymentMethod: "mpesa",
@@ -579,9 +589,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reference: response.MerchantRequestID,
           phoneNumber: paymentData.phoneNumber,
           createdAt: new Date()
-        } as any]);
+        };
+        
+        PaymentDebugger.log('mpesa', 'payment_record', paymentRecord);
+        await db.insert(payments).values([paymentRecord as any]);
+        PaymentDebugger.log('mpesa', 'payment_record_created', { reference: response.MerchantRequestID });
       } catch (paymentError) {
-        console.error("Error creating payment record:", paymentError);
+        PaymentDebugger.logError('mpesa', 'payment_record_creation', paymentError);
         // This is non-critical, so we won't throw the error
       }
 
@@ -592,7 +606,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         merchantRequestId: response.MerchantRequestID
       });
     } catch (error: any) {
-      console.error("M-Pesa payment error:", error);
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      PaymentDebugger.logError('mpesa', 'payment_initiation', error);
+      
       res.status(500).json({
         success: false,
         error: error.message || "Failed to initiate M-Pesa payment"
@@ -795,30 +811,47 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
   // Cash payment route
   app.post("/api/payments/cash", asyncHandler(async (req, res) => {
     try {
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      PaymentDebugger.log('cash', 'request', req.body);
+      
       const paymentData = cashPaymentSchema.parse(req.body);
+      PaymentDebugger.log('cash', 'validated_data', paymentData);
 
       // Create payment record with status=completed
-      const [payment] = await db.insert(payments).values([{
+      const paymentRecord = {
         transactionId: paymentData.transactionId,
         amount: String(paymentData.amount),
         paymentMethod: "cash",
         status: "completed",
         createdAt: new Date()
-      } as any]).returning();
-
+      };
+      
+      PaymentDebugger.log('cash', 'payment_record', paymentRecord);
+      const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
+      
       if (!payment) {
+        PaymentDebugger.logError('cash', 'payment_record_creation', 'No payment record returned');
         return res.status(500).json({
           success: false,
           error: "Failed to create cash payment record"
         });
       }
+      
+      PaymentDebugger.log('cash', 'payment_record_created', payment);
 
       // Update transaction status to completed
-      await db.update(transactions)
-        .set({ 
-          paymentStatus: "completed" 
-        })
-        .where(eq(transactions.id, paymentData.transactionId));
+      try {
+        await db.update(transactions)
+          .set({ 
+            paymentStatus: "completed" 
+          })
+          .where(eq(transactions.id, paymentData.transactionId));
+          
+        PaymentDebugger.log('cash', 'transaction_updated', { transactionId: paymentData.transactionId });
+      } catch (updateError) {
+        PaymentDebugger.logError('cash', 'transaction_update', updateError);
+        // Even if the update fails, we'll continue since we've created the payment record
+      }
 
       return res.json({
         success: true,
@@ -826,7 +859,9 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         payment
       });
     } catch (error: any) {
-      console.error("Cash payment error:", error);
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      PaymentDebugger.logError('cash', 'payment_processing', error);
+      
       return res.status(500).json({
         success: false,
         error: error.message || "Failed to process cash payment"
@@ -837,41 +872,58 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
   // Airtel Money payment route
   app.post("/api/payments/airtel", asyncHandler(async (req, res) => {
     try {
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      PaymentDebugger.log('airtel', 'request', req.body);
+      
       const paymentData = airtelPaymentSchema.parse(req.body);
-
-      console.log("Initiating Airtel Money payment:", paymentData);
+      PaymentDebugger.log('airtel', 'validated_data', paymentData);
 
       // Initiate Airtel Money payment
       const response = await airtelMoneyService.initiatePayment({
         phoneNumber: paymentData.phoneNumber,
+
+  // Payment debug endpoint (only for development)
+  app.get("/api/debug/payments", asyncHandler(async (_req, res) => {
+    try {
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      const debugInfo = PaymentDebugger.getDebugInfo();
+      res.json(debugInfo);
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to retrieve payment debug information"
+      });
+    }
+  }));
+
         amount: paymentData.amount,
         reference: paymentData.reference || `TXN-${paymentData.transactionId}`,
         transactionDesc: paymentData.transactionDesc || "Payment for gaming services"
       });
 
-      console.log("Airtel Money response:", response);
+      PaymentDebugger.log('airtel', 'service_response', response);
 
       // Store the transaction reference for later verification 
       try {
-        // Get a list of column names in the transactions table from the schema
-        const transactionColumns = Object.keys(transactions);
-        
         // Create update data object with only valid columns
         const updateData: Record<string, any> = {
           paymentStatus: "pending"
         };
         
-        // Only add airtelRef if the column exists
+        // Check if airtelRef column exists in the schema
+        const transactionColumns = Object.keys(transactions);
         if (transactionColumns.includes('airtelRef')) {
           updateData.airtelRef = response.reference;
         }
         
-        console.log("Updating transaction with sanitized fields for Airtel:", updateData);
+        PaymentDebugger.log('airtel', 'update_data', updateData);
         await db.update(transactions)
           .set(updateData)
           .where(eq(transactions.id, paymentData.transactionId));
+          
+        PaymentDebugger.log('airtel', 'transaction_updated', { transactionId: paymentData.transactionId });
       } catch (dbError) {
-        console.error("Error updating transaction for Airtel payment:", dbError);
+        PaymentDebugger.logError('airtel', 'transaction_update', dbError);
         
         // If the update fails, try with just payment status as a fallback
         try {
@@ -880,15 +932,16 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
               paymentStatus: "pending"
             })
             .where(eq(transactions.id, paymentData.transactionId));
+            
+          PaymentDebugger.log('airtel', 'transaction_updated_fallback', { transactionId: paymentData.transactionId });
         } catch (fallbackError) {
-          console.error("Error updating transaction status for Airtel payment (fallback):", fallbackError);
-          // We'll continue even if this fails
+          PaymentDebugger.logError('airtel', 'transaction_update_fallback', fallbackError);
         }
       }
 
       // Create payment record in payments table
       try {
-        const [payment] = await db.insert(payments).values([{
+        const paymentRecord = {
           transactionId: paymentData.transactionId,
           amount: String(paymentData.amount),
           paymentMethod: "airtel",
@@ -896,7 +949,11 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
           reference: response.reference,
           phoneNumber: paymentData.phoneNumber,
           createdAt: new Date()
-        } as any]).returning();
+        };
+        
+        PaymentDebugger.log('airtel', 'payment_record', paymentRecord);
+        const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
+        PaymentDebugger.log('airtel', 'payment_record_created', payment);
 
         res.json({
           success: true,
@@ -906,7 +963,8 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
           payment
         });
       } catch (paymentDbError) {
-        console.error("Error creating payment record:", paymentDbError);
+        PaymentDebugger.logError('airtel', 'payment_record_creation', paymentDbError);
+        
         // Even if payment record creation fails, we still return success as the Airtel Money
         // payment was initiated successfully
         res.json({
@@ -917,7 +975,9 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         });
       }
     } catch (error: any) {
-      console.error("Airtel Money payment error:", error);
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      PaymentDebugger.logError('airtel', 'payment_initiation', error);
+      
       res.status(500).json({
         success: false,
         error: error.message || "Failed to initiate Airtel Money payment"
