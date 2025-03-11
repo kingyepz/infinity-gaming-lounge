@@ -29,6 +29,9 @@ import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerPortal from "@/pages/customer/portal";
 import type { GameStation, Game, User, Transaction } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Types for our queries
 interface DashboardQueries {
@@ -46,6 +49,7 @@ export default function POSDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -79,6 +83,24 @@ export default function POSDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     setLocation('/');
+  };
+
+  const switchTab = (tabValue: string) => {
+    try {
+      const tabTrigger = document.querySelector(`[value="${tabValue}"]`) as HTMLElement;
+      if (tabTrigger) {
+        tabTrigger.click();
+        setActiveTab(tabValue);
+      } else {
+        throw new Error(`Tab ${tabValue} not found`);
+      }
+    } catch (error) {
+      toast({
+        title: "Navigation Error",
+        description: `Could not switch to ${tabValue} tab. Please try again.`,
+        variant: "destructive"
+      });
+    }
   };
 
   if (stationsLoading || gamesLoading || customersLoading) {
@@ -136,7 +158,7 @@ export default function POSDashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="flex flex-col md:flex-row w-full relative">
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full relative">
         <div className="w-full md:w-64 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
           <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
             <TabsTrigger value="overview" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
@@ -291,20 +313,7 @@ export default function POSDashboard() {
                       <Button
                         variant="outline"
                         className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
-                        onClick={() => {
-                          try {
-                            const reportsTab = document.querySelector('[value="reports"]');
-                            if (reportsTab) {
-                              reportsTab.dispatchEvent(new MouseEvent('click'));
-                            }
-                          } catch (error) {
-                            toast({
-                              title: "Navigation Error",
-                              description: "Could not navigate to reports. Please try again.",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
+                        onClick={() => switchTab("reports")}
                       >
                         <BarChart2Icon className="h-6 w-6 mb-2" />
                         <span className="text-sm font-medium">View Reports</span>
@@ -313,20 +322,7 @@ export default function POSDashboard() {
                       <Button
                         variant="outline"
                         className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
-                        onClick={() => {
-                          try {
-                            const sessionsTab = document.querySelector('[value="sessions"]');
-                            if (sessionsTab) {
-                              sessionsTab.dispatchEvent(new MouseEvent('click'));
-                            }
-                          } catch (error) {
-                            toast({
-                              title: "Navigation Error",
-                              description: "Could not navigate to sessions. Please try again.",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
+                        onClick={() => switchTab("sessions")}
                       >
                         <CalendarIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm font-medium">Manage Sessions</span>
@@ -335,20 +331,7 @@ export default function POSDashboard() {
                       <Button
                         variant="outline"
                         className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
-                        onClick={() => {
-                          try {
-                            const customersTab = document.querySelector('[value="customers"]');
-                            if (customersTab) {
-                              customersTab.dispatchEvent(new MouseEvent('click'));
-                            }
-                          } catch (error) {
-                            toast({
-                              title: "Navigation Error",
-                              description: "Could not navigate to customers. Please try again.",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
+                        onClick={() => switchTab("customers")}
                       >
                         <UsersIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm font-medium">Customers</span>
@@ -357,20 +340,7 @@ export default function POSDashboard() {
                       <Button
                         variant="outline"
                         className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
-                        onClick={() => {
-                          try {
-                            const paymentsTab = document.querySelector('[value="payments"]');
-                            if (paymentsTab) {
-                              paymentsTab.dispatchEvent(new MouseEvent('click'));
-                            }
-                          } catch (error) {
-                            toast({
-                              title: "Navigation Error",
-                              description: "Could not navigate to payments. Please try again.",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
+                        onClick={() => switchTab("payments")}
                       >
                         <DollarSignIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm font-medium">Payments</span>
@@ -379,20 +349,7 @@ export default function POSDashboard() {
                       <Button
                         variant="outline"
                         className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
-                        onClick={() => {
-                          try {
-                            const analyticsTab = document.querySelector('[value="analytics"]');
-                            if (analyticsTab) {
-                              analyticsTab.dispatchEvent(new MouseEvent('click'));
-                            }
-                          } catch (error) {
-                            toast({
-                              title: "Navigation Error",
-                              description: "Could not navigate to analytics. Please try again.",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
+                        onClick={() => switchTab("analytics")}
                       >
                         <BarChart2Icon className="h-6 w-6 mb-2" />
                         <span className="text-sm font-medium">Analytics</span>
@@ -403,8 +360,6 @@ export default function POSDashboard() {
                         className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
                         onClick={async () => {
                           try {
-                            // In a real application, this would connect to a receipt printer
-                            // For now, we'll just show a toast
                             toast({
                               title: "Printing Receipt",
                               description: "Receipt printing feature coming soon.",
