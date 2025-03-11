@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -73,17 +72,19 @@ export default function PaymentModal({
 
       if (paymentMethod === "cash") {
         // Process cash payment
-        await axios.post("/api/payments/cash", {
-          transactionId,
-          amount
-        });
+        const { processCashPayment } = await import("@/lib/payment");
+        const result = await processCashPayment(transactionId, amount);
 
-        toast({
-          title: "Payment Successful",
-          description: "Cash payment processed successfully."
-        });
-        onPaymentComplete();
-        onClose();
+        if (result.success) {
+          toast({
+            title: "Payment Successful",
+            description: "Cash payment processed successfully."
+          });
+          onPaymentComplete();
+          onClose();
+        } else {
+          throw new Error(result.error || "Failed to process cash payment");
+        }
       } else if (paymentMethod === "mpesa") {
         if (!mpesaPhoneNumber) {
           setIsProcessing(false);
@@ -98,15 +99,12 @@ export default function PaymentModal({
         setMpesaStatus("processing");
 
         // Process M-Pesa payment
-        const mpesaResponse = await axios.post("/api/payments/mpesa", {
-          phoneNumber: mpesaPhoneNumber,
-          amount,
-          transactionId
-        });
+        const { initiateMpesaPayment } = await import("@/lib/payment");
+        const mpesaResponse = await initiateMpesaPayment(mpesaPhoneNumber, amount, transactionId);
 
-        if (mpesaResponse.data.success) {
+        if (mpesaResponse.success) {
           // Start polling for payment status
-          startPollingMpesaStatus(mpesaResponse.data.checkoutRequestId);
+          startPollingMpesaStatus(mpesaResponse.checkoutRequestId);
           toast({
             title: "M-Pesa Request Sent",
             description: "Please check your phone to complete the payment."
@@ -116,7 +114,7 @@ export default function PaymentModal({
           setIsProcessing(false);
           toast({
             title: "Payment Failed",
-            description: mpesaResponse.data.error || "Failed to initiate M-Pesa payment.",
+            description: mpesaResponse.error || "Failed to initiate M-Pesa payment.",
             variant: "destructive"
           });
         }
@@ -134,16 +132,12 @@ export default function PaymentModal({
         setAirtelStatus("processing");
 
         // Process Airtel Money payment
-        const airtelResponse = await axios.post("/api/payments/airtel", {
-          phoneNumber: airtelPhoneNumber,
-          amount,
-          transactionId
-          // Let server generate the reference
-        });
+        const { initiateAirtelPayment } = await import("@/lib/payment");
+        const airtelResponse = await initiateAirtelPayment(airtelPhoneNumber, amount, transactionId);
 
-        if (airtelResponse.data.success) {
+        if (airtelResponse.success) {
           // Start polling for payment status
-          startPollingAirtelStatus(airtelResponse.data.reference);
+          startPollingAirtelStatus(airtelResponse.reference);
           toast({
             title: "Airtel Money Request Sent",
             description: "Please check your phone to complete the payment."
@@ -153,7 +147,7 @@ export default function PaymentModal({
           setIsProcessing(false);
           toast({
             title: "Payment Failed",
-            description: airtelResponse.data.error || "Failed to initiate Airtel Money payment.",
+            description: airtelResponse.error || "Failed to initiate Airtel Money payment.",
             variant: "destructive"
           });
         }
@@ -174,9 +168,10 @@ export default function PaymentModal({
   const startPollingMpesaStatus = (checkoutRequestId: string) => {
     const pollInterval = setInterval(async () => {
       try {
-        const response = await axios.get(`/api/payments/mpesa/status/${checkoutRequestId}`);
+        const { checkMpesaPaymentStatus } = await import("@/lib/payment");
+        const response = await checkMpesaPaymentStatus(checkoutRequestId);
 
-        if (response.data.status === "COMPLETED") {
+        if (response.status === "COMPLETED") {
           clearInterval(pollInterval);
           setMpesaStatus("completed");
           toast({
@@ -185,13 +180,13 @@ export default function PaymentModal({
           });
           onPaymentComplete();
           onClose();
-        } else if (response.data.status === "FAILED") {
+        } else if (response.status === "FAILED") {
           clearInterval(pollInterval);
           setMpesaStatus("failed");
           setIsProcessing(false);
           toast({
             title: "Payment Failed",
-            description: response.data.message || "M-Pesa payment failed.",
+            description: response.message || "M-Pesa payment failed.",
             variant: "destructive"
           });
         }
@@ -206,9 +201,10 @@ export default function PaymentModal({
   const startPollingAirtelStatus = (referenceId: string) => {
     const pollInterval = setInterval(async () => {
       try {
-        const response = await axios.get(`/api/payments/airtel/status/${referenceId}`);
+        const { checkAirtelPaymentStatus } = await import("@/lib/payment");
+        const response = await checkAirtelPaymentStatus(referenceId);
 
-        if (response.data.transactionStatus === "SUCCESS") {
+        if (response.transactionStatus === "SUCCESS") {
           clearInterval(pollInterval);
           setAirtelStatus("completed");
           toast({
@@ -217,13 +213,13 @@ export default function PaymentModal({
           });
           onPaymentComplete();
           onClose();
-        } else if (response.data.transactionStatus === "FAILED") {
+        } else if (response.transactionStatus === "FAILED") {
           clearInterval(pollInterval);
           setAirtelStatus("failed");
           setIsProcessing(false);
           toast({
             title: "Payment Failed",
-            description: response.data.message || "Airtel Money payment failed.",
+            description: response.message || "Airtel Money payment failed.",
             variant: "destructive"
           });
         }

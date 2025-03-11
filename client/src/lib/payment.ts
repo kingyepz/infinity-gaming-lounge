@@ -1,6 +1,4 @@
 import { apiRequest } from "./queryClient";
-import { useToast } from "@/hooks/use-toast";
-import axios from 'axios';
 
 export type PaymentMethod = "cash" | "mpesa" | "airtel";
 
@@ -9,10 +7,9 @@ export type PaymentMethod = "cash" | "mpesa" | "airtel";
  */
 export async function processCashPayment(transactionId: number, amount: number) {
   try {
-    const response = await axios.post('/api/transactions/payment', {
-      stationId: transactionId,
-      amount,
-      paymentMethod: 'cash'
+    const response = await axios.post('/api/payments/cash', {
+      transactionId,
+      amount
     });
     return response.data;
   } catch (error) {
