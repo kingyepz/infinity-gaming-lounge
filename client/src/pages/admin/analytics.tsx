@@ -1,14 +1,21 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend, LineChart, Line, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import InfinityLogo from "@/components/animations/InfinityLogo";
@@ -23,7 +30,40 @@ import {
   PlusCircleIcon,
   RefreshCwIcon,
   TrophyIcon,
-  CalendarIcon
+  CalendarIcon,
+  PackageIcon,
+  AlertTriangleIcon,
+  FileTextIcon,
+  TicketIcon,
+  BadgePercentIcon,
+  UsersRoundIcon,
+  TrelloIcon,
+  TagIcon,
+  BellIcon,
+  MailIcon,
+  MessagesSquareIcon,
+  CalendarDaysIcon,
+  DatabaseIcon,
+  ShieldIcon,
+  KeyIcon,
+  GlobeIcon,
+  ClockIcon,
+  FileIcon,
+  BriefcaseIcon,
+  HeartIcon,
+  BugIcon,
+  PercentIcon,
+  AwardIcon,
+  BellRingIcon,
+  PhoneIcon,
+  SendIcon,
+  LockIcon,
+  ActivityIcon,
+  LineChartIcon,
+  BookmarkIcon,
+  ServerIcon,
+  ListTodoIcon,
+  UserPlusIcon
 } from "lucide-react";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -31,11 +71,53 @@ import type { GameStation, Game, User, Transaction } from "@shared/schema";
 
 export default function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState("overview");
+  // Add Station Dialog
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
-  const [showAddGameDialog, setShowAddGameDialog] = useState(false);
   const [newStationName, setNewStationName] = useState("");
+  
+  // Add Game Dialog
+  const [showAddGameDialog, setShowAddGameDialog] = useState(false);
   const [newGameName, setNewGameName] = useState("");
   const [newGameDescription, setNewGameDescription] = useState("");
+  
+  // Add Staff Dialog
+  const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
+  const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffPhone, setNewStaffPhone] = useState("");
+  const [newStaffRole, setNewStaffRole] = useState("staff");
+  
+  // Add Inventory Item Dialog
+  const [showAddInventoryDialog, setShowAddInventoryDialog] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemCategory, setNewItemCategory] = useState("accessory");
+  const [newItemQuantity, setNewItemQuantity] = useState("1");
+  const [newItemReorderLevel, setNewItemReorderLevel] = useState("5");
+  
+  // Add Event Dialog
+  const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventDate, setNewEventDate] = useState("");
+  const [newEventDescription, setNewEventDescription] = useState("");
+  const [newEventCapacity, setNewEventCapacity] = useState("20");
+  
+  // Add Promotion Dialog
+  const [showAddPromotionDialog, setShowAddPromotionDialog] = useState(false);
+  const [newPromotionName, setNewPromotionName] = useState("");
+  const [newPromotionDescription, setNewPromotionDescription] = useState("");
+  const [newPromotionDiscount, setNewPromotionDiscount] = useState("10");
+  const [newPromotionStartDate, setNewPromotionStartDate] = useState("");
+  const [newPromotionEndDate, setNewPromotionEndDate] = useState("");
+  
+  // Add Booking/Reservation Dialog
+  const [showAddReservationDialog, setShowAddReservationDialog] = useState(false);
+  const [newReservationCustomer, setNewReservationCustomer] = useState("");
+  const [newReservationStation, setNewReservationStation] = useState("");
+  const [newReservationDate, setNewReservationDate] = useState("");
+  const [newReservationStartTime, setNewReservationStartTime] = useState("");
+  const [newReservationDuration, setNewReservationDuration] = useState("1");
+  
+  // Other state management
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -262,37 +344,92 @@ export default function AdminAnalytics() {
       </div>
 
       <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full relative">
-        <div className="w-full md:w-64 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
-          <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
-            <TabsTrigger value="overview" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <GamepadIcon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <BarChart2Icon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="stations" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Stations</span>
-            </TabsTrigger>
-            <TabsTrigger value="customers" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <UsersIcon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Customers</span>
-            </TabsTrigger>
-            <TabsTrigger value="games" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <GamepadIcon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Games</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <DollarSignIcon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Payments</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <SettingsIcon className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="w-full md:w-72 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
+          <ScrollArea className="h-[calc(100vh-120px)]">
+            <TabsList className="flex flex-col w-full space-y-2">
+              <div className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Dashboard</div>
+              <TabsTrigger value="overview" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <GamepadIcon className="w-4 h-4 mr-2" />
+                <span>Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <BarChart2Icon className="w-4 h-4 mr-2" />
+                <span>Analytics</span>
+              </TabsTrigger>
+              <TabsTrigger value="export" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <FileTextIcon className="w-4 h-4 mr-2" />
+                <span>Reports & Export</span>
+              </TabsTrigger>
+              
+              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Management</div>
+              <TabsTrigger value="stations" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                <span>Game Stations</span>
+              </TabsTrigger>
+              <TabsTrigger value="reservations" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <CalendarDaysIcon className="w-4 h-4 mr-2" />
+                <span>Reservations</span>
+              </TabsTrigger>
+              <TabsTrigger value="games" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <GamepadIcon className="w-4 h-4 mr-2" />
+                <span>Game Catalog</span>
+              </TabsTrigger>
+              <TabsTrigger value="inventory" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <PackageIcon className="w-4 h-4 mr-2" />
+                <span>Inventory</span>
+              </TabsTrigger>
+              <TabsTrigger value="events" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <TicketIcon className="w-4 h-4 mr-2" />
+                <span>Events & Tournaments</span>
+              </TabsTrigger>
+              
+              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Customers</div>
+              <TabsTrigger value="customers" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <UsersIcon className="w-4 h-4 mr-2" />
+                <span>Customer Database</span>
+              </TabsTrigger>
+              <TabsTrigger value="loyalty" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <TrophyIcon className="w-4 h-4 mr-2" />
+                <span>Loyalty Program</span>
+              </TabsTrigger>
+              <TabsTrigger value="promotions" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <BadgePercentIcon className="w-4 h-4 mr-2" />
+                <span>Promotions</span>
+              </TabsTrigger>
+              <TabsTrigger value="communications" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <MessagesSquareIcon className="w-4 h-4 mr-2" />
+                <span>Communications</span>
+              </TabsTrigger>
+              
+              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Financial</div>
+              <TabsTrigger value="payments" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <DollarSignIcon className="w-4 h-4 mr-2" />
+                <span>Payments</span>
+              </TabsTrigger>
+              <TabsTrigger value="finances" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <BriefcaseIcon className="w-4 h-4 mr-2" />
+                <span>Financial Management</span>
+              </TabsTrigger>
+              
+              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Administration</div>
+              <TabsTrigger value="staff" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <UsersRoundIcon className="w-4 h-4 mr-2" />
+                <span>Staff Management</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <ShieldIcon className="w-4 h-4 mr-2" />
+                <span>Security</span>
+              </TabsTrigger>
+              <TabsTrigger value="maintenance" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <ServerIcon className="w-4 h-4 mr-2" />
+                <span>System Maintenance</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                <span>Settings</span>
+              </TabsTrigger>
+            </TabsList>
+          </ScrollArea>
         </div>
 
         <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
@@ -717,6 +854,776 @@ export default function AdminAnalytics() {
             </div>
           </TabsContent>
 
+          {/* Inventory Management Tab */}
+          <TabsContent value="inventory">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Inventory Management</h2>
+                <Button onClick={() => setShowAddInventoryDialog(true)}>
+                  <PlusCircleIcon className="mr-2 h-4 w-4" />
+                  Add Inventory Item
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Inventory Summary Cards */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">128</div>
+                    <p className="text-xs text-gray-400">5 categories</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-500">6</div>
+                    <p className="text-xs text-gray-400">Items below threshold</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-500">2</div>
+                    <p className="text-xs text-gray-400">Require immediate attention</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Value</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KES 235,800</div>
+                    <p className="text-xs text-gray-400">Total inventory value</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Inventory Items</CardTitle>
+                  <CardDescription>Manage your gaming accessories and peripherals</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>In Stock</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Last Updated</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>
+                            <div className="font-medium">PS5 Controller</div>
+                            <div className="text-xs text-gray-400">SKU: CTL-PS5-001</div>
+                          </TableCell>
+                          <TableCell>Peripheral</TableCell>
+                          <TableCell>12</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                              In Stock
+                            </Badge>
+                          </TableCell>
+                          <TableCell>Today, 9:45 AM</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <RefreshCwIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>
+                            <div className="font-medium">Xbox Controller</div>
+                            <div className="text-xs text-gray-400">SKU: CTL-XBX-001</div>
+                          </TableCell>
+                          <TableCell>Peripheral</TableCell>
+                          <TableCell>8</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                              In Stock
+                            </Badge>
+                          </TableCell>
+                          <TableCell>Yesterday, 2:30 PM</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <RefreshCwIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>
+                            <div className="font-medium">Gaming Headset</div>
+                            <div className="text-xs text-gray-400">SKU: AUD-HDT-003</div>
+                          </TableCell>
+                          <TableCell>Accessory</TableCell>
+                          <TableCell>4</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-yellow-900/20 text-yellow-400 border-yellow-800">
+                              Low Stock
+                            </Badge>
+                          </TableCell>
+                          <TableCell>2 days ago</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <RefreshCwIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>
+                            <div className="font-medium">HDMI Cables</div>
+                            <div className="text-xs text-gray-400">SKU: CBL-HDM-002</div>
+                          </TableCell>
+                          <TableCell>Accessory</TableCell>
+                          <TableCell>0</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-red-900/20 text-red-400 border-red-800">
+                              Out of Stock
+                            </Badge>
+                          </TableCell>
+                          <TableCell>5 days ago</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <AlertTriangleIcon className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline">
+                    <FileTextIcon className="mr-2 h-4 w-4" />
+                    Export Inventory
+                  </Button>
+                  <Button variant="outline">
+                    <PlusCircleIcon className="mr-2 h-4 w-4" />
+                    Order New Stock
+                  </Button>
+                </CardFooter>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Stock Movement</CardTitle>
+                    <CardDescription>30-day inventory changes</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={[
+                        { day: '01', controllers: 24, headsets: 18, cables: 12 },
+                        { day: '05', controllers: 22, headsets: 16, cables: 10 },
+                        { day: '10', controllers: 19, headsets: 14, cables: 8 },
+                        { day: '15', controllers: 17, headsets: 11, cables: 6 },
+                        { day: '20', controllers: 20, headsets: 8, cables: 4 },
+                        { day: '25', controllers: 18, headsets: 6, cables: 2 },
+                        { day: '30', controllers: 20, headsets: 4, cables: 0 },
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis dataKey="day" stroke="#888" />
+                        <YAxis stroke="#888" />
+                        <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                        <Line type="monotone" dataKey="controllers" stroke="#8884d8" />
+                        <Line type="monotone" dataKey="headsets" stroke="#82ca9d" />
+                        <Line type="monotone" dataKey="cables" stroke="#ffc658" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Maintenance Schedule</CardTitle>
+                    <CardDescription>Upcoming maintenance tasks</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-4 border-b border-gray-700 pb-2">
+                        <div className="p-2 bg-blue-900/30 rounded-full">
+                          <GamepadIcon className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium">Controller Cleaning</h3>
+                          <p className="text-xs text-gray-400">Scheduled for tomorrow</p>
+                        </div>
+                        <Button variant="outline" size="sm">Mark Complete</Button>
+                      </div>
+                      <div className="flex items-center space-x-4 border-b border-gray-700 pb-2">
+                        <div className="p-2 bg-green-900/30 rounded-full">
+                          <SettingsIcon className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium">Console Maintenance</h3>
+                          <p className="text-xs text-gray-400">Scheduled for next week</p>
+                        </div>
+                        <Button variant="outline" size="sm">View Details</Button>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-purple-900/30 rounded-full">
+                          <ActivityIcon className="h-4 w-4 text-purple-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium">Network Check</h3>
+                          <p className="text-xs text-gray-400">Monthly routine</p>
+                        </div>
+                        <Button variant="outline" size="sm">Schedule</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* Events Management Tab */}
+          <TabsContent value="events">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Events & Tournaments</h2>
+                <Button onClick={() => setShowAddEventDialog(true)}>
+                  <PlusCircleIcon className="mr-2 h-4 w-4" />
+                  Create New Event
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Event Summary Cards */}
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">3</div>
+                    <p className="text-xs text-gray-400">Next 30 days</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Registrations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">48</div>
+                    <p className="text-xs text-gray-400">75% capacity filled</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Revenue Potential</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KES 24,000</div>
+                    <p className="text-xs text-gray-400">From event registrations</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Upcoming Events</CardTitle>
+                  <CardDescription>Manage tournaments and special gaming events</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="border border-primary/20 rounded-lg p-4 bg-black/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                          Upcoming
+                        </Badge>
+                        <div className="text-sm text-gray-400">March 15, 2025</div>
+                      </div>
+                      <h3 className="text-xl font-bold text-primary mb-2">FIFA Tournament</h3>
+                      <p className="text-sm text-gray-300 mb-4">Compete in our monthly FIFA championship with cash prizes for the top 3 winners!</p>
+                      <div className="flex justify-between items-center text-sm mb-4">
+                        <div>
+                          <CalendarIcon className="inline-block w-4 h-4 mr-1" />
+                          2:00 PM - 8:00 PM
+                        </div>
+                        <div>
+                          <UsersIcon className="inline-block w-4 h-4 mr-1" />
+                          18/24 Registered
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div className="bg-green-600 h-full rounded-full" style={{ width: '75%' }}></div>
+                        </div>
+                        <div className="text-xs text-gray-400 text-right">75% Capacity</div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">View Details</Button>
+                        <Button variant="default" size="sm" className="flex-1">Manage</Button>
+                      </div>
+                    </div>
+                    
+                    <div className="border border-primary/20 rounded-lg p-4 bg-black/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                          Upcoming
+                        </Badge>
+                        <div className="text-sm text-gray-400">March 20, 2025</div>
+                      </div>
+                      <h3 className="text-xl font-bold text-primary mb-2">Call of Duty Night</h3>
+                      <p className="text-sm text-gray-300 mb-4">Team-based tournament with 4v4 matches. Bring your squad or join one on-site!</p>
+                      <div className="flex justify-between items-center text-sm mb-4">
+                        <div>
+                          <CalendarIcon className="inline-block w-4 h-4 mr-1" />
+                          6:00 PM - 11:00 PM
+                        </div>
+                        <div>
+                          <UsersIcon className="inline-block w-4 h-4 mr-1" />
+                          20/32 Registered
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div className="bg-green-600 h-full rounded-full" style={{ width: '62.5%' }}></div>
+                        </div>
+                        <div className="text-xs text-gray-400 text-right">62.5% Capacity</div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">View Details</Button>
+                        <Button variant="default" size="sm" className="flex-1">Manage</Button>
+                      </div>
+                    </div>
+                    
+                    <div className="border border-primary/20 rounded-lg p-4 bg-black/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                          Upcoming
+                        </Badge>
+                        <div className="text-sm text-gray-400">March 28, 2025</div>
+                      </div>
+                      <h3 className="text-xl font-bold text-primary mb-2">Fortnite Challenge</h3>
+                      <p className="text-sm text-gray-300 mb-4">Solo battle royale competition with elimination rounds and grand finale!</p>
+                      <div className="flex justify-between items-center text-sm mb-4">
+                        <div>
+                          <CalendarIcon className="inline-block w-4 h-4 mr-1" />
+                          3:00 PM - 9:00 PM
+                        </div>
+                        <div>
+                          <UsersIcon className="inline-block w-4 h-4 mr-1" />
+                          10/20 Registered
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div className="bg-yellow-600 h-full rounded-full" style={{ width: '50%' }}></div>
+                        </div>
+                        <div className="text-xs text-gray-400 text-right">50% Capacity</div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">View Details</Button>
+                        <Button variant="default" size="sm" className="flex-1">Manage</Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline">
+                    <CalendarDaysIcon className="mr-2 h-4 w-4" />
+                    View Calendar
+                  </Button>
+                  <Button variant="outline">
+                    <FileTextIcon className="mr-2 h-4 w-4" />
+                    Event Reports
+                  </Button>
+                </CardFooter>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Prize Management</CardTitle>
+                    <CardDescription>Configure tournament prizes and rewards</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <div className="flex items-center space-x-2">
+                          <TrophyIcon className="h-5 w-5 text-yellow-500" />
+                          <div>
+                            <h3 className="font-medium">FIFA Tournament</h3>
+                            <p className="text-xs text-gray-400">1st Place</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">KES 5,000</div>
+                          <p className="text-xs text-gray-400">+ Gaming Headset</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <div className="flex items-center space-x-2">
+                          <TrophyIcon className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <h3 className="font-medium">FIFA Tournament</h3>
+                            <p className="text-xs text-gray-400">2nd Place</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">KES 2,500</div>
+                          <p className="text-xs text-gray-400">+ 2-hr Free Gaming</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                          <TrophyIcon className="h-5 w-5 text-amber-700" />
+                          <div>
+                            <h3 className="font-medium">FIFA Tournament</h3>
+                            <p className="text-xs text-gray-400">3rd Place</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">KES 1,000</div>
+                          <p className="text-xs text-gray-400">+ 1-hr Free Gaming</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full">
+                      <PlusCircleIcon className="mr-2 h-4 w-4" />
+                      Add New Prize
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Participant Management</CardTitle>
+                    <CardDescription>Track and manage event registrations</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span>FIFA Tournament</span>
+                        <span className="text-green-400">18/24</span>
+                      </div>
+                      <div className="w-full bg-gray-700 h-2 rounded-full">
+                        <div className="bg-green-600 h-full rounded-full" style={{ width: '75%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-4">
+                        <span>Call of Duty Night</span>
+                        <span className="text-green-400">20/32</span>
+                      </div>
+                      <div className="w-full bg-gray-700 h-2 rounded-full">
+                        <div className="bg-green-600 h-full rounded-full" style={{ width: '62.5%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-4">
+                        <span>Fortnite Challenge</span>
+                        <span className="text-yellow-400">10/20</span>
+                      </div>
+                      <div className="w-full bg-gray-700 h-2 rounded-full">
+                        <div className="bg-yellow-600 h-full rounded-full" style={{ width: '50%' }}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 space-y-2">
+                      <h3 className="text-sm font-medium">Recent Registrations</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>JK</AvatarFallback>
+                          </Avatar>
+                          <span className="flex-1">John Kamau</span>
+                          <Badge variant="outline" className="bg-blue-900/20 text-blue-400 border-blue-800">
+                            FIFA
+                          </Badge>
+                          <span className="text-gray-400 text-xs">2 hrs ago</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>MO</AvatarFallback>
+                          </Avatar>
+                          <span className="flex-1">Mary Odhiambo</span>
+                          <Badge variant="outline" className="bg-purple-900/20 text-purple-400 border-purple-800">
+                            COD
+                          </Badge>
+                          <span className="text-gray-400 text-xs">4 hrs ago</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>TN</AvatarFallback>
+                          </Avatar>
+                          <span className="flex-1">Tom Njoroge</span>
+                          <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                            FN
+                          </Badge>
+                          <span className="text-gray-400 text-xs">6 hrs ago</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full">View All Participants</Button>
+                  </CardFooter>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* Staff Management Tab */}
+          <TabsContent value="staff">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Staff Management</h2>
+                <Button onClick={() => setShowAddStaffDialog(true)}>
+                  <UserPlusIcon className="mr-2 h-4 w-4" />
+                  Add Staff Member
+                </Button>
+              </div>
+              
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Staff Directory</CardTitle>
+                  <CardDescription>Manage staff accounts and permissions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Last Active</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar>
+                                <AvatarFallback>JD</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">John Doe</p>
+                                <p className="text-xs text-gray-400">john@infinitygaming.com</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                              Admin
+                            </Badge>
+                          </TableCell>
+                          <TableCell>+254 700 123 456</TableCell>
+                          <TableCell>Today, 2:45 PM</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                              Active
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <KeyIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar>
+                                <AvatarFallback>JM</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">Jane Mwangi</p>
+                                <p className="text-xs text-gray-400">jane@infinitygaming.com</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-900/20 text-blue-400 border-blue-800">
+                              Staff
+                            </Badge>
+                          </TableCell>
+                          <TableCell>+254 700 789 012</TableCell>
+                          <TableCell>Yesterday, 4:30 PM</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-900/20 text-green-400 border-green-800">
+                              Active
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="icon">
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <KeyIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Role Management</CardTitle>
+                    <CardDescription>Define access permissions for different roles</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <div>
+                          <h3 className="font-semibold">Administrator</h3>
+                          <p className="text-sm text-gray-400">Full system access</p>
+                        </div>
+                        <Button variant="outline" size="sm">Edit Permissions</Button>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <div>
+                          <h3 className="font-semibold">Manager</h3>
+                          <p className="text-sm text-gray-400">Limited administrative access</p>
+                        </div>
+                        <Button variant="outline" size="sm">Edit Permissions</Button>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <div>
+                          <h3 className="font-semibold">Staff</h3>
+                          <p className="text-sm text-gray-400">Basic operational access</p>
+                        </div>
+                        <Button variant="outline" size="sm">Edit Permissions</Button>
+                      </div>
+                      <Button variant="default" size="sm" className="mt-2">
+                        <PlusCircleIcon className="mr-2 h-4 w-4" />
+                        Create New Role
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-black/30 border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Staff Performance</CardTitle>
+                    <CardDescription>Track staff activity and performance metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Jane Mwangi</span>
+                          <span>45 sessions</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div className="bg-blue-500 rounded-full h-2" style={{ width: "90%" }}></div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>David Kamau</span>
+                          <span>32 sessions</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div className="bg-blue-500 rounded-full h-2" style={{ width: "65%" }}></div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Sarah Odhiambo</span>
+                          <span>28 sessions</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div className="bg-blue-500 rounded-full h-2" style={{ width: "55%" }}></div>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="w-full mt-2">View Detailed Reports</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader>
+                  <CardTitle>Staff Schedule</CardTitle>
+                  <CardDescription>Manage staff shifts and availability</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-7 gap-2 text-center">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => (
+                      <div key={i} className="font-semibold">{day}</div>
+                    ))}
+                    {Array.from({ length: 28 }).map((_, i) => (
+                      <div key={i} className="h-16 border border-gray-700 rounded-md p-1 text-xs">
+                        {i % 7 === 0 && (
+                          <div className="bg-blue-900/30 border border-blue-800 rounded p-1 mb-1">
+                            Jane M.
+                          </div>
+                        )}
+                        {i % 7 === 2 && (
+                          <div className="bg-green-900/30 border border-green-800 rounded p-1 mb-1">
+                            David K.
+                          </div>
+                        )}
+                        {i % 7 === 5 && (
+                          <div className="bg-purple-900/30 border border-purple-800 rounded p-1 mb-1">
+                            Sarah O.
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2">
+                  <Button variant="outline">Edit Schedule</Button>
+                  <Button>Publish Schedule</Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </TabsContent>
+          
           {/* Settings Tab */}
           <TabsContent value="settings">
             <div className="space-y-4">
@@ -806,6 +1713,210 @@ export default function AdminAnalytics() {
               Cancel
             </Button>
             <Button onClick={handleAddGame}>Add Game</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Staff Dialog */}
+      <Dialog open={showAddStaffDialog} onOpenChange={setShowAddStaffDialog}>
+        <DialogContent className="bg-black/80 border-primary/20">
+          <DialogHeader>
+            <DialogTitle>Add Staff Member</DialogTitle>
+            <DialogDescription>Create a new staff account with role-based permissions</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Full Name</label>
+              <Input
+                placeholder="Enter full name"
+                value={newStaffName}
+                onChange={(e) => setNewStaffName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email Address</label>
+              <Input
+                type="email"
+                placeholder="Enter email address"
+                value={newStaffEmail}
+                onChange={(e) => setNewStaffEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Phone Number</label>
+              <Input
+                placeholder="Enter phone number"
+                value={newStaffPhone}
+                onChange={(e) => setNewStaffPhone(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Role</label>
+              <Select value={newStaffRole} onValueChange={(value) => setNewStaffRole(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90">
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddStaffDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Staff Added",
+                description: `${newStaffName} has been added as ${newStaffRole}`
+              });
+              setShowAddStaffDialog(false);
+              setNewStaffName("");
+              setNewStaffEmail("");
+              setNewStaffPhone("");
+              setNewStaffRole("staff");
+            }}>
+              Add Staff Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Inventory Dialog */}
+      <Dialog open={showAddInventoryDialog} onOpenChange={setShowAddInventoryDialog}>
+        <DialogContent className="bg-black/80 border-primary/20">
+          <DialogHeader>
+            <DialogTitle>Add Inventory Item</DialogTitle>
+            <DialogDescription>Add a new item to the inventory tracking system</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Item Name</label>
+              <Input
+                placeholder="Enter item name"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Select value={newItemCategory} onValueChange={(value) => setNewItemCategory(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90">
+                  <SelectItem value="accessory">Accessory</SelectItem>
+                  <SelectItem value="console">Console</SelectItem>
+                  <SelectItem value="peripheral">Peripheral</SelectItem>
+                  <SelectItem value="snack">Food & Beverage</SelectItem>
+                  <SelectItem value="merchandise">Merchandise</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity</label>
+                <Input
+                  type="number"
+                  placeholder="Enter quantity"
+                  value={newItemQuantity}
+                  onChange={(e) => setNewItemQuantity(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Reorder Level</label>
+                <Input
+                  type="number"
+                  placeholder="Enter reorder level"
+                  value={newItemReorderLevel}
+                  onChange={(e) => setNewItemReorderLevel(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddInventoryDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Item Added",
+                description: `${newItemName} has been added to inventory`
+              });
+              setShowAddInventoryDialog(false);
+              setNewItemName("");
+              setNewItemCategory("accessory");
+              setNewItemQuantity("1");
+              setNewItemReorderLevel("5");
+            }}>
+              Add Item
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Event Dialog */}
+      <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
+        <DialogContent className="bg-black/80 border-primary/20">
+          <DialogHeader>
+            <DialogTitle>Create New Event</DialogTitle>
+            <DialogDescription>Schedule a gaming tournament or special event</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Event Name</label>
+              <Input
+                placeholder="Enter event name"
+                value={newEventName}
+                onChange={(e) => setNewEventName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date</label>
+              <Input
+                type="date"
+                value={newEventDate}
+                onChange={(e) => setNewEventDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                placeholder="Enter event description"
+                value={newEventDescription}
+                onChange={(e) => setNewEventDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Maximum Capacity</label>
+              <Input
+                type="number"
+                placeholder="Enter maximum participants"
+                value={newEventCapacity}
+                onChange={(e) => setNewEventCapacity(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddEventDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Event Created",
+                description: `${newEventName} has been scheduled`
+              });
+              setShowAddEventDialog(false);
+              setNewEventName("");
+              setNewEventDate("");
+              setNewEventDescription("");
+              setNewEventCapacity("20");
+            }}>
+              Create Event
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
