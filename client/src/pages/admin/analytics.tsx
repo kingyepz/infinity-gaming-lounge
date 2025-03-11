@@ -63,7 +63,9 @@ import {
   BookmarkIcon,
   ServerIcon,
   ListTodoIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  LayoutDashboardIcon,
+  MonitorIcon
 } from "lucide-react";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -343,92 +345,152 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full relative">
-        <div className="w-full md:w-72 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
-          <ScrollArea className="h-[calc(100vh-120px)]">
-            <TabsList className="flex flex-col w-full space-y-2">
-              <div className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Dashboard</div>
-              <TabsTrigger value="overview" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <GamepadIcon className="w-4 h-4 mr-2" />
-                <span>Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <BarChart2Icon className="w-4 h-4 mr-2" />
-                <span>Analytics</span>
-              </TabsTrigger>
-              <TabsTrigger value="export" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <FileTextIcon className="w-4 h-4 mr-2" />
-                <span>Reports & Export</span>
-              </TabsTrigger>
+      <div className="flex w-full relative">
+        <div className="w-64 border-r border-primary/20 p-4 space-y-4 backdrop-blur-sm bg-black/50 min-h-[calc(100vh-120px)]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-primary">Admin Portal</h2>
+          </div>
+          
+          <ScrollArea className="h-[calc(100vh-160px)]">
+            <div className="space-y-1">
+              <div className="mb-2 ml-2 mt-4 text-xs font-semibold text-gray-400 uppercase">Dashboard</div>
+              <Button
+                variant={activeTab === "overview" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("overview")}
+              >
+                <LayoutDashboardIcon className="mr-2 h-4 w-4" />
+                Overview
+              </Button>
+              <Button
+                variant={activeTab === "analytics" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("analytics")}
+              >
+                <BarChart2Icon className="mr-2 h-4 w-4" />
+                Analytics
+              </Button>
+              <Button
+                variant={activeTab === "export" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("export")}
+              >
+                <FileTextIcon className="mr-2 h-4 w-4" />
+                Reports & Export
+              </Button>
               
-              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Management</div>
-              <TabsTrigger value="stations" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <CalendarIcon className="w-4 h-4 mr-2" />
-                <span>Game Stations</span>
-              </TabsTrigger>
-              <TabsTrigger value="reservations" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                <span>Reservations</span>
-              </TabsTrigger>
-              <TabsTrigger value="games" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <GamepadIcon className="w-4 h-4 mr-2" />
-                <span>Game Catalog</span>
-              </TabsTrigger>
-              <TabsTrigger value="inventory" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <PackageIcon className="w-4 h-4 mr-2" />
-                <span>Inventory</span>
-              </TabsTrigger>
-              <TabsTrigger value="events" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <TicketIcon className="w-4 h-4 mr-2" />
-                <span>Events & Tournaments</span>
-              </TabsTrigger>
+              <div className="mb-2 ml-2 mt-4 text-xs font-semibold text-gray-400 uppercase">Management</div>
+              <Button
+                variant={activeTab === "stations" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("stations")}
+              >
+                <MonitorIcon className="mr-2 h-4 w-4" />
+                Game Stations
+              </Button>
+              <Button
+                variant={activeTab === "reservations" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("reservations")}
+              >
+                <CalendarDaysIcon className="mr-2 h-4 w-4" />
+                Reservations
+              </Button>
+              <Button
+                variant={activeTab === "games" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("games")}
+              >
+                <GamepadIcon className="mr-2 h-4 w-4" />
+                Game Catalog
+              </Button>
+              <Button
+                variant={activeTab === "inventory" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("inventory")}
+              >
+                <PackageIcon className="mr-2 h-4 w-4" />
+                Inventory
+              </Button>
+              <Button
+                variant={activeTab === "events" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("events")}
+              >
+                <TicketIcon className="mr-2 h-4 w-4" />
+                Events & Tournaments
+              </Button>
               
-              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Customers</div>
-              <TabsTrigger value="customers" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <UsersIcon className="w-4 h-4 mr-2" />
-                <span>Customer Database</span>
-              </TabsTrigger>
-              <TabsTrigger value="loyalty" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <TrophyIcon className="w-4 h-4 mr-2" />
-                <span>Loyalty Program</span>
-              </TabsTrigger>
-              <TabsTrigger value="promotions" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <BadgePercentIcon className="w-4 h-4 mr-2" />
-                <span>Promotions</span>
-              </TabsTrigger>
-              <TabsTrigger value="communications" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <MessagesSquareIcon className="w-4 h-4 mr-2" />
-                <span>Communications</span>
-              </TabsTrigger>
+              <div className="mb-2 ml-2 mt-4 text-xs font-semibold text-gray-400 uppercase">Customers</div>
+              <Button
+                variant={activeTab === "customers" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("customers")}
+              >
+                <UsersIcon className="mr-2 h-4 w-4" />
+                Customer Database
+              </Button>
+              <Button
+                variant={activeTab === "loyalty" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("loyalty")}
+              >
+                <TrophyIcon className="mr-2 h-4 w-4" />
+                Loyalty Program
+              </Button>
+              <Button
+                variant={activeTab === "promotions" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("promotions")}
+              >
+                <BadgePercentIcon className="mr-2 h-4 w-4" />
+                Promotions
+              </Button>
               
-              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Financial</div>
-              <TabsTrigger value="payments" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <DollarSignIcon className="w-4 h-4 mr-2" />
-                <span>Payments</span>
-              </TabsTrigger>
-              <TabsTrigger value="finances" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <BriefcaseIcon className="w-4 h-4 mr-2" />
-                <span>Financial Management</span>
-              </TabsTrigger>
+              <div className="mb-2 ml-2 mt-4 text-xs font-semibold text-gray-400 uppercase">Financial</div>
+              <Button
+                variant={activeTab === "payments" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("payments")}
+              >
+                <DollarSignIcon className="mr-2 h-4 w-4" />
+                Payments
+              </Button>
+              <Button
+                variant={activeTab === "finances" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("finances")}
+              >
+                <BriefcaseIcon className="mr-2 h-4 w-4" />
+                Financial Management
+              </Button>
               
-              <div className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">Administration</div>
-              <TabsTrigger value="staff" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <UsersRoundIcon className="w-4 h-4 mr-2" />
-                <span>Staff Management</span>
-              </TabsTrigger>
-              <TabsTrigger value="security" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <ShieldIcon className="w-4 h-4 mr-2" />
-                <span>Security</span>
-              </TabsTrigger>
-              <TabsTrigger value="maintenance" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <ServerIcon className="w-4 h-4 mr-2" />
-                <span>System Maintenance</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-                <SettingsIcon className="w-4 h-4 mr-2" />
-                <span>Settings</span>
-              </TabsTrigger>
-            </TabsList>
+              <div className="mb-2 ml-2 mt-4 text-xs font-semibold text-gray-400 uppercase">Administration</div>
+              <Button
+                variant={activeTab === "staff" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("staff")}
+              >
+                <UsersRoundIcon className="mr-2 h-4 w-4" />
+                Staff Management
+              </Button>
+              <Button
+                variant={activeTab === "security" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("security")}
+              >
+                <ShieldIcon className="mr-2 h-4 w-4" />
+                Security
+              </Button>
+              <Button
+                variant={activeTab === "settings" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab("settings")}
+              >
+                <SettingsIcon className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </div>
           </ScrollArea>
         </div>
 
@@ -1657,7 +1719,7 @@ export default function AdminAnalytics() {
             </div>
           </TabsContent>
         </div>
-      </Tabs>
+      </div>
 
       {/* Add Station Dialog */}
       <Dialog open={showAddStationDialog} onOpenChange={setShowAddStationDialog}>
