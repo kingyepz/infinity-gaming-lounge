@@ -397,10 +397,32 @@ export default function POSDashboard() {
                                                 </Button>
                                             </div>
                                         )}
+                                        
+                                        <div className="mt-3 flex justify-end">
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm"
+                                                className="text-xs"
+                                                onClick={() => {
+                                                    setSelectedStation(station);
+                                                    setShowTransactionHistoryModal(true);
+                                                }}
+                                            >
+                                                <HistoryIcon className="h-3 w-3 mr-1" />
+                                                Transaction History
+                                            </Button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}
                         </div>
+                        
+                        {/* Transaction History Modal */}
+                        <StationTransactionHistoryModal
+                            open={showTransactionHistoryModal}
+                            onOpenChange={setShowTransactionHistoryModal}
+                            station={selectedStation}
+                        />
                     </TabsContent>
 
                     <TabsContent value="customers">

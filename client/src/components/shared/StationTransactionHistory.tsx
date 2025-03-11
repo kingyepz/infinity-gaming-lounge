@@ -52,9 +52,11 @@ export default function StationTransactionHistory({ stationId, stationName }: St
 
   // Get the count of transactions by payment method
   const paymentMethodCounts = transactions.reduce((counts, tx) => {
+    // Check if tx has mpesaRef that is not null
     if (tx.mpesaRef) {
       counts.mpesa = (counts.mpesa || 0) + 1;
-    } else if (tx.airtelRef) {
+    // For Airtel payments, we need to check a naming convention pattern since airtelRef isn't in the schema
+    } else if (tx.paymentStatus === 'completed' && String(tx.mpesaRef || '').startsWith('AR-')) {
       counts.airtel = (counts.airtel || 0) + 1;
     } else {
       counts.cash = (counts.cash || 0) + 1;
@@ -165,7 +167,7 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                     <TableCell>{tx.customerName}</TableCell>
                     <TableCell>{tx.gameName}</TableCell>
                     <TableCell>{formatCurrency(tx.amount)}</TableCell>
-                    <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'Unknown'}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={
@@ -178,7 +180,9 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {tx.mpesaRef ? "M-Pesa" : tx.airtelRef ? "Airtel" : "Cash"}
+                      {tx.mpesaRef 
+                        ? (String(tx.mpesaRef || '').startsWith('AR-') ? "Airtel" : "M-Pesa") 
+                        : "Cash"}
                     </TableCell>
                   </TableRow>
                 ))}
