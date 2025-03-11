@@ -330,23 +330,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("SQL Columns:", sql.match(/\(([^)]+)\)/)?.[1].split(',').map(s => s.trim()));
       console.log("SQL Values:", params);
       
-      // Execute the insert with direct SQL to avoid parameter issues
-      const result = await db.execute(
-        `INSERT INTO transactions 
-        (station_id, customer_name, session_type, amount, payment_status${rawData.gameName ? ', game_name' : ''}${rawData.duration !== undefined && rawData.duration !== null ? ', duration' : ''}) 
-        VALUES 
-        ($1, $2, $3, $4, $5${rawData.gameName ? ', $6' : ''}${rawData.duration !== undefined && rawData.duration !== null ? rawData.gameName ? ', $7' : ', $6' : ''})
-        RETURNING *`, 
-        [
-          rawData.stationId, 
-          rawData.customerName,
-          rawData.sessionType,
-          rawData.amount,
-          "pending",
-          ...(rawData.gameName ? [rawData.gameName] : []),
-          ...(rawData.duration !== undefined && rawData.duration !== null ? [rawData.duration] : [])
-        ]
-      );
+      // Insert transaction using more reliable approach
+      const [result] = await db.insert(transactions).values({
+        stationId: rawData.stationId,
+        customerName: rawData.customerName,
+        gameName: rawData.gameName || null,
+        sessionType: rawData.sessionType,
+        amount: rawData.amount,
+        paymentStatus: "pending",
+        duration: rawData.duration !== undefined && rawData.duration !== null ? rawData.duration : null
+      }).returning();
       
       res.json(result);
     } catch (error) {
