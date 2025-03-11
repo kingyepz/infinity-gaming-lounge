@@ -40,8 +40,9 @@ export default function POSDashboard() {
     queryKey: ["/api/games"],
   });
 
-  const { data: customers } = useQuery({
+  const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["/api/users/customers"],
+    queryFn: () => apiRequest("/api/users/customers")
   });
 
   const { data: transactions } = useQuery({
@@ -53,7 +54,7 @@ export default function POSDashboard() {
     setLocation('/');
   };
 
-  if (stationsLoading || gamesLoading) {
+  if (stationsLoading || gamesLoading || customersLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -434,12 +435,12 @@ export default function POSDashboard() {
       const now = new Date();
       return Math.floor((now.getTime() - startTime.getTime()) / 60000);
     })();
-    
+
     // Calculate final amount based on session type and duration
     const finalAmount = station.sessionType === "per_game" 
       ? station.baseRate 
       : Math.ceil(duration / 60) * station.hourlyRate;
-    
+
     // Create final transaction record for completed session
     await apiRequest("POST", "/api/transactions", {
       stationId: station.id,
@@ -685,7 +686,7 @@ export default function POSDashboard() {
                         const totalMinutes = activeSessions.reduce((sum, s) => {
                           const startTime = new Date(s.sessionStartTime);
                           const now = new Date();
-                          return sum + Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+                          return sum + Mathfloor((now.getTime() - startTime.getTime()) / (1000 * 60));
                         }, 0);
                         return `${Math.floor(totalMinutes / activeSessions.length)} min`;
                       })()}
@@ -740,7 +741,7 @@ export default function POSDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
 
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>

@@ -31,8 +31,9 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
   const { toast } = useToast();
 
   // Fetch registered customers
-  const { data: customers } = useQuery({
+  const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["/api/users/customers"],
+    queryFn: () => apiRequest("/api/users/customers")
   });
 
   const handlePayment = async (paymentInfo: any) => {
@@ -75,7 +76,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
         sessionType: paymentInfo.sessionType || "hourly",
         sessionStartTime: new Date().toISOString()
       });
-      
+
       // Award loyalty points (10% of amount spent)
       if (selectedCustomer.id) {
         try {
@@ -119,8 +120,8 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
         }
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-      
+      // await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+
       toast({
         title: "Session Started",
         description: "Gaming session has been started successfully!"
@@ -159,11 +160,17 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
                 <SelectValue placeholder="Select a customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers?.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id.toString()}>
-                    {customer.displayName} ({customer.gamingName})
+                {customers && customers.length > 0 ? (
+                  customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.displayName} ({customer.gamingName})
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-customers" disabled>
+                    {customersLoading ? "Loading customers..." : "No customers found"}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
