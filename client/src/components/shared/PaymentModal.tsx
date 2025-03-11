@@ -22,15 +22,16 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
     try {
       setProcessing(true);
 
+      // Create payment record
       const response = await apiRequest("POST", "/api/transactions/payment", {
         stationId: station.id,
         amount,
         paymentMethod,
-        mpesaRef: paymentMethod === "mpesa" ? "Pending" : undefined
+        mpesaRef: paymentMethod === "mpesa" ? `MP${Date.now()}` : undefined
       });
 
-      if (response.error) {
-        throw new Error(response.error);
+      if (!response.success) {
+        throw new Error(response.error || "Payment failed");
       }
 
       // For cash payments, complete immediately
@@ -68,7 +69,7 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
         <div className="grid gap-4 py-4">
           <div>
             <p className="text-lg font-bold">Amount: KSH {amount}</p>
-            <p className="text-sm text-muted-foreground">Station: {station.name}</p>
+            <p className="text-sm text-muted-foreground">{station.name}</p>
             <p className="text-sm text-muted-foreground">
               Rate: KSH {station.sessionType === "per_game" ? "40 per game" : "200 per hour"}
             </p>
@@ -99,7 +100,7 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
                 3. Enter Till Number: 123456<br/>
                 4. Enter Amount: KSH {amount}<br/>
                 5. Enter your M-Pesa PIN<br/>
-                6. Share the confirmation message
+                6. Wait for confirmation message
               </p>
             </div>
           )}
