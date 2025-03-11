@@ -103,7 +103,7 @@ export default function PaymentModal({
 
         // Process M-Pesa payment
         const { initiateMpesaPayment } = await import("@/lib/payment");
-        const mpesaResponse = await initiateMpesaPayment(mpesaPhoneNumber, amount, transactionId);
+        const mpesaResponse = await initiateMpesaPayment(mpesaPhoneNumber, amount, transactionId, userId);
 
         if (mpesaResponse.success && mpesaResponse.checkoutRequestId) {
           // Start polling for payment status
@@ -136,7 +136,7 @@ export default function PaymentModal({
 
         // Process Airtel Money payment
         const { initiateAirtelPayment } = await import("@/lib/payment");
-        const airtelResponse = await initiateAirtelPayment(airtelPhoneNumber, amount, transactionId);
+        const airtelResponse = await initiateAirtelPayment(airtelPhoneNumber, amount, transactionId, userId);
 
         if (airtelResponse.success && airtelResponse.reference) {
           // Start polling for payment status
