@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
+import StationTransactionHistoryModal from "@/components/shared/StationTransactionHistoryModal";
 import type { GameStation, Game, User, Transaction } from "@shared/schema";
 import { useLocation } from "wouter";
 import {
@@ -29,6 +30,7 @@ import {
     DownloadIcon,
     PrinterIcon,
     LogOutIcon,
+    HistoryIcon,
 } from "lucide-react";
 import InfinityLogo from "@/components/animations/InfinityLogo";
 import CustomerPortal from "@/pages/customer/portal";
@@ -48,6 +50,7 @@ export default function POSDashboard() {
     const [, setLocation] = useLocation();
     const queryClient = useQueryClient();
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [showTransactionHistoryModal, setShowTransactionHistoryModal] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState(0);
     const [currentTransaction, setCurrentTransaction] = useState<any>(null);
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash");
