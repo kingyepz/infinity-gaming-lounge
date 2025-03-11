@@ -173,6 +173,19 @@ export default function POSDashboard() {
                 ? 40 // Fixed rate per game
                 : Math.ceil(diffMins / 60) * 200; // 200 KES per hour
 
+            // Look up the customer in the customers list
+            const currentCustomer = customers.find((c: any) => 
+                c.displayName === station.currentCustomer
+            );
+            
+            if (currentCustomer) {
+                console.log("Found customer for payment:", currentCustomer.id, currentCustomer.displayName);
+                setSelectedCustomer(currentCustomer);
+            } else {
+                console.log("No customer found for station:", station.currentCustomer);
+                setSelectedCustomer(null);
+            }
+
             setPaymentAmount(cost);
             setSelectedStation(station);
             setShowPaymentDialog(true);
@@ -298,6 +311,12 @@ export default function POSDashboard() {
                         <TabsTrigger value="payments" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <DollarSignIcon className="w-4 h-4 mr-2" />
                             <span className="hidden sm:inline">Payments</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="loyalty" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                            </svg>
+                            <span className="hidden sm:inline">Loyalty</span>
                         </TabsTrigger>
                     </TabsList>
                 </div>
