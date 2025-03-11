@@ -5,7 +5,7 @@ import type { GameStation, User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentForm from "./PaymentForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface PaymentModalProps {
   station: GameStation;
@@ -29,11 +29,15 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
   const [selectedGame, setSelectedGame] = useState<string>("");
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch registered customers
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["/api/users/customers"],
-    queryFn: () => apiRequest("/api/users/customers")
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/users/customers");
+      return response;
+    }
   });
 
   const handlePayment = async (paymentInfo: any) => {
@@ -58,8 +62,8 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
 
       setLoading(true);
 
-      // Create transaction record first
-      const transaction = await apiRequest("POST", "/api/transactions", {
+      // Create transaction record
+      await apiRequest("POST", "/api/transactions", {
         stationId: station.id,
         customerName: selectedCustomer.displayName,
         gameName: selectedGame,
@@ -89,38 +93,8 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
         }
       }
 
-      // Create transaction record
-      const response = await apiRequest("POST", "/api/transactions", {
-        stationId: station.id,
-        customerName: selectedCustomer.displayName,
-        gameName: selectedGame,
-        amount: paymentInfo.amount,
-        sessionType: paymentInfo.sessionType || "hourly",
-        duration: paymentInfo.duration || 60, // Default to 1 hour
-        paymentStatus: "completed"
-      });
-
-      // Update the station with current session info
-      await apiRequest("PATCH", `/api/stations/${station.id}`, {
-        currentCustomer: selectedCustomer.displayName,
-        currentGame: selectedGame,
-        sessionType: paymentInfo.sessionType || "hourly",
-        sessionStartTime: new Date()
-      });
-
-      // Award loyalty points (10% of amount spent)
-      if (selectedCustomer.id) {
-        try {
-          await apiRequest("POST", "/api/users/points/award", {
-            userId: selectedCustomer.id,
-            points: Math.round(paymentInfo.amount * 0.1)  // 10% of amount as points
-          });
-        } catch (error) {
-          console.error("Failed to award loyalty points:", error);
-        }
-      }
-
-      // await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
 
       toast({
         title: "Session Started",
@@ -152,7 +126,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
             <Select
               value={selectedCustomer?.id?.toString()}
               onValueChange={(value) => {
-                const customer = customers?.find(c => c.id.toString() === value);
+                const customer = customers?.find((c: User) => c.id.toString() === value);
                 setSelectedCustomer(customer || null);
               }}
             >
@@ -161,7 +135,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
               </SelectTrigger>
               <SelectContent>
                 {customers && customers.length > 0 ? (
-                  customers.map((customer) => (
+                  customers.map((customer: User) => (
                     <SelectItem key={customer.id} value={customer.id.toString()}>
                       {customer.displayName} ({customer.gamingName})
                     </SelectItem>
