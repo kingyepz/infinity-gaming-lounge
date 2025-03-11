@@ -58,6 +58,8 @@ export default function POSDashboard() {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [currentTransaction, setCurrentTransaction] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash");
+  let diffMins: number;
+
 
   // Properly typed queries
   const { data: stations = [], isLoading: stationsLoading } = useQuery({
@@ -116,123 +118,27 @@ export default function POSDashboard() {
       const startTime = new Date(station.sessionStartTime);
       const now = new Date();
       const diffMs = now.getTime() - startTime.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
+      diffMins = Math.floor(diffMs / 60000);
 
       const cost = station.sessionType === "per_game"
         ? station.baseRate
         : Math.ceil(diffMins / 60) * (station.hourlyRate || 0);
 
       setPaymentAmount(cost);
-      setCurrentTransaction({
-        stationId: station.id,
-        customerName: station.currentCustomer,
-        gameName: station.currentGame,
-        sessionType: station.sessionType,
-        amount: cost,
-        duration: diffMins
-      });
+      setSelectedStation(station);
       setShowPaymentDialog(true);
+
     } catch (error: any) {
       console.error("Error preparing payment:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to process payment. Please try again.",
+        description: error.message || "Failed to prepare payment. Please try again.",
         variant: "destructive"
       });
     }
   };
 
-  const handlePayment = async () => {
-    try {
-      // Create transaction with payment
-      const response = await apiRequest("POST", "/api/transactions/with-payment", {
-        ...currentTransaction,
-        paymentMethod
-      });
 
-      if (!response) {
-        throw new Error("Failed to process payment");
-      }
-
-      // End the session
-      await apiRequest("POST", "/api/sessions/end", {
-        stationId: currentTransaction.stationId
-      });
-
-      // Refresh data
-      await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-
-      setShowPaymentDialog(false);
-      setCurrentTransaction(null);
-
-      toast({
-        title: "Payment Successful",
-        description: `Session completed. Payment received: KSH ${paymentAmount}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to process payment. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Add Payment Dialog
-  const PaymentDialog = () => (
-    <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-      <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
-        <DialogHeader>
-          <DialogTitle>Process Payment</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div>
-            <p className="text-lg font-bold">Amount: KSH {paymentAmount}</p>
-          </div>
-          <div>
-            <label className="text-sm text-muted-foreground">Payment Method</label>
-            <Select
-              onValueChange={(value) => setPaymentMethod(value as "cash" | "mpesa")}
-              value={paymentMethod}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select payment method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="mpesa">M-Pesa</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {paymentMethod === "mpesa" && (
-            <div>
-              <label className="text-sm text-muted-foreground">M-Pesa Instructions</label>
-              <p className="text-sm mt-1">
-                1. Go to M-Pesa menu<br/>
-                2. Select Lipa na M-Pesa<br/>
-                3. Enter Till Number: 123456<br/>
-                4. Enter Amount: KSH {paymentAmount}<br/>
-                5. Enter your M-Pesa PIN<br/>
-                6. Share the confirmation message
-              </p>
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setShowPaymentDialog(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handlePayment}>
-            {paymentMethod === "cash" ? "Confirm Payment" : "Verify M-Pesa"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Handle start session
   const handleStartSession = async () => {
     try {
       if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
@@ -823,8 +729,7 @@ export default function POSDashboard() {
                     </div>                    <p className="text-xs text-muted-foreground">For active sessions</p>
                   </CardContent>
                 </Card>              </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <Card className="bg-black/40 border-primary/20 col-span-1">
-                  <CardHeader>
+                <Card className="bg-black/40 border-primary/20 col-span-1"><CardHeader>
                     <CardTitle>Station Utilization</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80 relative">
@@ -1290,7 +1195,62 @@ export default function POSDashboard() {
           </div>
         </DialogContent>
       </Dialog>
-      <PaymentDialog />
+      {showPaymentDialog && selectedStation && (
+        <PaymentModal
+          amount={paymentAmount}
+          station={selectedStation}
+          onSuccess={async () => {
+            try {
+              // Create transaction record
+              const transaction = await apiRequest("POST", "/api/transactions", {
+                stationId: selectedStation.id,
+                customerName: selectedStation.currentCustomer,
+                gameName: selectedStation.currentGame,
+                sessionType: selectedStation.sessionType,
+                amount: paymentAmount,
+                duration: diffMins,
+                paymentStatus: "completed"
+              });
+
+              if (!transaction) {
+                throw new Error("Failed to create transaction");
+              }
+
+              // End the session
+              const response = await apiRequest("POST", "/api/sessions/end", {
+                stationId: selectedStation.id
+              });
+
+              if (!response) {
+                throw new Error("Failed to end session");
+              }
+
+              // Refresh data
+              await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+              await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+
+              setShowPaymentDialog(false);
+              setSelectedStation(null);
+
+              toast({
+                title: "Session Ended",
+                description: `Session completed. Payment received: KSH ${paymentAmount}`,
+              });
+            } catch (error: any) {
+              console.error("Error ending session:", error);
+              toast({
+                title: "Error",
+                description: error.message || "Failed to end session. Please try again.",
+                variant: "destructive"
+              });
+            }
+          }}
+          onClose={() => {
+            setShowPaymentDialog(false);
+            setSelectedStation(null);
+          }}
+        />
+      )}
     </div>
   );
 }
