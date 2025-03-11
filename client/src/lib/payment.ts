@@ -3,18 +3,52 @@ import { apiRequest } from "./queryClient";
 export type PaymentMethod = "cash" | "mpesa" | "airtel";
 
 /**
+ * Create a transaction record
+ */
+export async function createTransaction(transactionData: {
+  stationId: number;
+  customerName: string;
+  gameName: string;
+  sessionType: string;
+  amount: string;
+  duration: number | null;
+}) {
+  try {
+    const response = await apiRequest<any[]>(
+      'POST',
+      '/api/transactions',
+      transactionData
+    );
+    return { 
+      success: true, 
+      transactionId: response[0]?.id 
+    };
+  } catch (error) {
+    console.error('Error creating transaction:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
+/**
  * Process a cash payment
  */
 export async function processCashPayment(transactionId: number, amount: number) {
   try {
-    const response = await axios.post('/api/payments/cash', {
-      transactionId,
-      amount
-    });
-    return response.data;
+    const response = await apiRequest<{success: boolean; error?: string}>(
+      'POST',
+      '/api/payments/cash',
+      {
+        transactionId,
+        amount
+      }
+    );
+    return response;
   } catch (error) {
     console.error('Error processing cash payment:', error);
-    throw error;
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -23,15 +57,19 @@ export async function processCashPayment(transactionId: number, amount: number) 
  */
 export async function initiateMpesaPayment(phoneNumber: string, amount: number, transactionId: number) {
   try {
-    const response = await axios.post('/api/payments/mpesa', {
-      phoneNumber,
-      amount,
-      transactionId
-    });
-    return response.data;
+    const response = await apiRequest<{success: boolean; checkoutRequestId?: string; error?: string}>(
+      'POST',
+      '/api/payments/mpesa',
+      {
+        phoneNumber,
+        amount,
+        transactionId
+      }
+    );
+    return response;
   } catch (error) {
     console.error('Error initiating M-Pesa payment:', error);
-    throw error;
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -40,15 +78,19 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
  */
 export async function initiateAirtelPayment(phoneNumber: string, amount: number, transactionId: number) {
   try {
-    const response = await axios.post('/api/payments/airtel', {
-      phoneNumber,
-      amount,
-      transactionId
-    });
-    return response.data;
+    const response = await apiRequest<{success: boolean; reference?: string; error?: string}>(
+      'POST',
+      '/api/payments/airtel',
+      {
+        phoneNumber,
+        amount,
+        transactionId
+      }
+    );
+    return response;
   } catch (error) {
     console.error('Error initiating Airtel Money payment:', error);
-    throw error;
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -57,11 +99,14 @@ export async function initiateAirtelPayment(phoneNumber: string, amount: number,
  */
 export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
   try {
-    const response = await axios.get(`/api/payments/mpesa/status/${checkoutRequestId}`);
-    return response.data;
+    const response = await apiRequest<{status: string; message?: string}>({
+      url: `/api/payments/mpesa/status/${checkoutRequestId}`,
+      method: 'GET'
+    });
+    return response;
   } catch (error) {
     console.error('Error checking M-Pesa payment status:', error);
-    throw error;
+    return { status: 'ERROR', message: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -70,11 +115,14 @@ export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
  */
 export async function checkAirtelPaymentStatus(referenceId: string) {
   try {
-    const response = await axios.get(`/api/payments/airtel/status/${referenceId}`);
-    return response.data;
+    const response = await apiRequest<{transactionStatus: string; message?: string}>({
+      url: `/api/payments/airtel/status/${referenceId}`,
+      method: 'GET'
+    });
+    return response;
   } catch (error) {
     console.error('Error checking Airtel Money payment status:', error);
-    throw error;
+    return { transactionStatus: 'ERROR', message: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 

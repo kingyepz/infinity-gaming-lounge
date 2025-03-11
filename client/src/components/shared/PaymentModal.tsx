@@ -52,6 +52,7 @@ export default function PaymentModal({
       setIsProcessing(true);
 
       // Create a transaction record
+      const { createTransaction } = await import("@/lib/payment");
       const transactionData = {
         stationId: station.id,
         customerName: station.currentCustomer || "Walk-in Customer",
@@ -62,13 +63,13 @@ export default function PaymentModal({
       };
 
       console.log("Sending transaction data:", transactionData);
-      const transactionResponse = await axios.post("/api/transactions", transactionData);
+      const txResult = await createTransaction(transactionData);
 
-      const transactionId = transactionResponse.data[0]?.id;
-
-      if (!transactionId) {
-        throw new Error("Failed to create transaction record");
+      if (!txResult.success || !txResult.transactionId) {
+        throw new Error(txResult.error || "Failed to create transaction record");
       }
+      
+      const transactionId = txResult.transactionId;
 
       if (paymentMethod === "cash") {
         // Process cash payment
@@ -102,7 +103,7 @@ export default function PaymentModal({
         const { initiateMpesaPayment } = await import("@/lib/payment");
         const mpesaResponse = await initiateMpesaPayment(mpesaPhoneNumber, amount, transactionId);
 
-        if (mpesaResponse.success) {
+        if (mpesaResponse.success && mpesaResponse.checkoutRequestId) {
           // Start polling for payment status
           startPollingMpesaStatus(mpesaResponse.checkoutRequestId);
           toast({
@@ -135,7 +136,7 @@ export default function PaymentModal({
         const { initiateAirtelPayment } = await import("@/lib/payment");
         const airtelResponse = await initiateAirtelPayment(airtelPhoneNumber, amount, transactionId);
 
-        if (airtelResponse.success) {
+        if (airtelResponse.success && airtelResponse.reference) {
           // Start polling for payment status
           startPollingAirtelStatus(airtelResponse.reference);
           toast({
