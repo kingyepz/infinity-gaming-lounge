@@ -738,9 +738,7 @@ export default function POSDashboard() {
                       })()}
                     </div>                    <p className="text-xs text-muted-foreground">For active sessions</p>
                   </CardContent>
-                </Card>              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                </Card>              </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <Card className="bg-black/40 border-primary/20 col-span-1">
                   <CardHeader>
                     <CardTitle>Station Utilization</CardTitle>
@@ -1126,176 +1124,88 @@ export default function POSDashboard() {
           }}
         />
       )}
-      {showNewSessionModal && (
-        <Dialog open={true} onOpenChange={() => setShowNewSessionModal(false)}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Start New Gaming Session</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {!showCustomerRegistration ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Customer</label>
-                    <div className="max-h-[200px] overflow-y-auto space-y-2">
-                      {customers?.map((customer) => (
-                        <div
-                          key={customer.id}
-                          className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedCustomer?.id === customer.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-primary/10 hover:bg-primary/20'
-                          }`}
-                          onClick={() => setSelectedCustomer(customer)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{customer.displayName}</p>
-                              <p className="text-sm opacity-80">@{customer.gamingName}</p>
-                            </div>
-                            <Badge>{customer.points} points</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowCustomerRegistration(true)}
-                  >
-                    Register New Customer
-                  </Button>
-
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Game</label>
-                    <Select value={selectedGame || ""} onValueChange={setSelectedGame}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a game" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {games?.map((game) => (
-                          <SelectItem key={game.id} value={game.name}>
-                            {game.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Session Type</label>
-                    <Select value={selectedSessionType || ""} onValueChange={setSelectedSessionType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a session type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={"per_game"}>Per Game</SelectItem>
-                        <SelectItem value={"hourly"}>Hourly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Station</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {stations?.filter(s => !s.currentCustomer).map((station) => (
-                        <div
-                          key={station.id}
-                          className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedStation?.id === station.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-primary/10 hover:bg-primary/20'
-                          }`}
-                          onClick={() => {
-                            if (selectedCustomer && selectedGame && selectedSessionType) {
-                              setSelectedStation(station);
-                              setShowPayment(false);
-                              setShowNewSessionModal(false);
-                            } else {
-                              toast({
-                                title: "Selection Required",
-                                description: "Please select both a customer, game and session type before choosing a station",
-                                variant: "destructive"
-                              });
-                            }
-                          }}
-                        >
-                          <p className="font-medium">{station.name}</p>
-                          <p className="text-sm text-primary">Available</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {station.hourlyRate ? `KSH ${station.hourlyRate}/hr` : `KSH ${station.baseRate}/game`}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target as HTMLFormElement);
-
-                  try {
-                    const response = await apiRequest("POST", "/api/users/register", {
-                      displayName: formData.get("displayName"),
-                      gamingName: formData.get("gamingName"),
-                      phoneNumber: formData.get("phoneNumber"),
-                      role: "customer"
-                    });
-
-                    toast({
-                      title: "Success",
-                      description: "Customer registered successfully!"
-                    });
-
-                    await queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] });
-                    setShowCustomerRegistration(false);
-                    setSelectedCustomer(response);
-
-                  } catch (error: any) {
-                    toast({
-                      variant: "destructive",
-                      title: "Registration failed",
-                      description: error.message || "Failed to register customer"
-                    });
-                  }
-                }}
-                className="space-y-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground">Display Name</label>
-                    <Input name="displayName" required placeholder="John Doe" />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Gaming Name</label>
-                    <Input name="gamingName" required placeholder="ProGamer123" />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Phone Number</label>
-                    <Input
-                      name="phoneNumber"
-                      required
-                      placeholder="254700000000"
-                      pattern="^254[0-9]{9}$"
-                      title="Please enter a valid Kenyan phone number starting with 254"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit">Register Customer</Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowCustomerRegistration(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              )}
+      {/* Inside the Dialog component for new session modal */}
+      <Dialog open={showNewSessionModal} onOpenChange={setShowNewSessionModal}>
+        <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
+          <DialogHeader>
+            <DialogTitle>Start New Gaming Session</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <label className="text-sm text-muted-foreground">Select Game</label>
+              <Select
+                onValueChange={setSelectedGame}
+                value={selectedGame || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a game" />
+                </SelectTrigger>
+                <SelectContent>
+                  {games?.filter(game => game.isActive).map(game => (
+                    <SelectItem key={game.id} value={game.name}>
+                      {game.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+
+            <div>
+              <label className="text-sm text-muted-foreground">Select Customer</label>
+              <Select
+                onValueChange={(value) => {
+                  const customer = customers.find(c => c.id.toString() === value);
+                  setSelectedCustomer(customer || null);
+                }}
+                value={selectedCustomer?.id?.toString() || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map(customer => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.displayName} (@{customer.gamingName})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm text-muted-foreground">Session Type</label>
+              <Select
+                onValueChange={(value) => setSelectedSessionType(value as "per_game" | "hourly")}
+                value={selectedSessionType || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select session type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="per_game">Per Game</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowCustomerRegistration(true)}
+            >
+              Register New Customer
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleStartSession}>
+                Start Session
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
