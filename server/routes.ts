@@ -361,8 +361,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/transactions/station/:stationId", asyncHandler(async (req, res) => {
-    const transactions = await db.select().from(transactions).where(transactions.stationId.equals(Number(req.params.stationId)));
-    res.json(transactions);
+    try {
+      const stationId = Number(req.params.stationId);
+      if (isNaN(stationId)) {
+        return res.status(400).json({ message: "Invalid station ID" });
+      }
+      
+      const stationTransactions = await db.select()
+        .from(transactions)
+        .where(eq(transactions.stationId, stationId))
+        .orderBy(desc(transactions.createdAt));
+      
+      res.json(stationTransactions);
+    } catch (error) {
+      console.error("Error fetching transactions by station:", error);
+      throw error;
+    }
   }));
 
   app.get("/api/transactions/user/current", asyncHandler(async (req, res) => {
