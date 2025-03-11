@@ -279,7 +279,7 @@ export default function PaymentModal({
                     <div className="flex items-center justify-center mb-4">
                       <SmartphoneIcon className="h-12 w-12 text-green-500" />
                     </div>
-                    <p className="text-center mb-4">Enter customer's M-Pesa phone number to initiate payment of <strong>KSH {amount}</strong></p>
+                    <p className="text-center mb-4">Enter customer's M-Pesa phone number to initiate payment of <strong>KES {amount}</strong></p>
                     <Input
                       type="tel"
                       placeholder="Phone Number (e.g. 0712345678)"

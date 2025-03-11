@@ -82,9 +82,9 @@ export async function checkAirtelPaymentStatus(referenceId: string) {
 }
 
 /**
- * Format currency amount as KSH
+ * Format currency amount as KES
  */
 export function formatCurrency(amount: number | string) {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return `KSH ${numAmount.toFixed(0)}`;
+  return `KES ${numAmount.toFixed(0)}`;
 }

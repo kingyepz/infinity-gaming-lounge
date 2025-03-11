@@ -253,7 +253,7 @@ export default function POSDashboard() {
                                         <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-lg sm:text-2xl font-bold">KSH {todayRevenue.toFixed(2)}</div>
+                                        <div className="text-lg sm:text-2xl font-bold">KES {todayRevenue.toFixed(2)}</div>
                                         <p className="text-xs text-muted-foreground">+$350 from yesterday</p>
                                     </CardContent>
                                 </Card>
@@ -519,7 +519,7 @@ export default function POSDashboard() {
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-xs text-muted-foreground">Cost</p>
-                                                                    <p className="font-medium">KSH {cost}</p>
+                                                                    <p className="font-medium">KES {cost}</p>
                                                                 </div>
                                                             </div>
 
@@ -662,7 +662,7 @@ export default function POSDashboard() {
                                         <CardTitle className="text-sm font-medium">Total Revenue (Today)</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">KSH {stations?.reduce((sum, station) => {
+                                        <div className="text-2xl font-bold">KES {stations?.reduce((sum, station) => {
                                             if (station.currentCustomer) {
                                                 return sum + (station.sessionType === "per_game" ? station.baseRate : station.hourlyRate)
                                             }
@@ -972,7 +972,7 @@ export default function POSDashboard() {
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
+                                                    <p className="font-bold">KES {(Math.random() * 500 + 200).toFixed(2)}</p>
                                                     <div className="flex gap-2 mt-2">
                                                         <select className="text-xs p-1 rounded border border-primary/20 bg-primary/5">
                                                             <option value="">Payment Method</option>
@@ -997,17 +997,17 @@ export default function POSDashboard() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="bg-primary/5 p-3 rounded-md">
                                             <p className="text-sm text-mutedforeground">Today</p>
-                                            <p className="text-xl font-bold">KSH 12,500</p>
+                                            <p className="text-xl font-bold">KES 12,500</p>
                                             <p className="text-xs text-green-500">+15% from yesterday</p>
                                         </div>
                                         <div className="bg-primary/5 p-3 rounded-md">
                                             <p className="text-sm text-muted-foreground">This Week</p>
-                                            <p className="text-xl font-bold">KSH 68,200</p>
+                                            <p className="text-xl font-bold">KES 68,200</p>
                                             <p className="text-xs text-green-500">+8% from last week</p>
                                         </div>
                                         <div className="bg-primary/5 p-3 rounded-md">
                                             <p className="text-sm text-muted-foreground">This Month</p>
-                                            <p className="text-xl font-bold">KSH 245,800</p>
+                                            <p className="text-xl font-bold">KES 245,800</p>
                                             <p className="text-xs text-green-500">+12% from last month</p>
                                         </div>
                                     </div>
@@ -1067,7 +1067,7 @@ export default function POSDashboard() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
+                                                    <p className="font-bold">KES {(Math.random() * 500 + 200).toFixed(2)}</p>
                                                     <p className="text-xs text-primary">+{Math.floor(Math.random() * 50 + 20)} points</p>
                                                 </div>
                                             </div>
@@ -1227,7 +1227,7 @@ export default function POSDashboard() {
 
                             toast({
                                 title: "Session Ended",
-                                description: `Session completed. Payment received: KSH ${paymentAmount}`,
+                                description: `Session completed. Payment received: KES ${paymentAmount}`,
                             });
                         } catch (error: any) {
                             console.error("Error ending session:", error);
