@@ -303,80 +303,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rawData.amount = String(rawData.amount);
       }
 
-      // Use a direct SQL query to get the actual columns in the database
-      // This is more reliable than using schema definitions
-      const columnsQuery = await db.execute(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'transactions'
-      `);
-      
-      // Convert column names to an array
-      const actualColumns = columnsQuery.rows.map((row: any) => row.column_name);
-      console.log("Actual database columns:", actualColumns);
-      
-      // Build insertion data using only columns that exist in the database
-      const insertData: Record<string, any> = {};
-      
-      // Map JavaScript property names to database column names
-      const columnMappings: Record<string, string> = {
-        'stationId': 'station_id',
-        'customerName': 'customer_name',
-        'sessionType': 'session_type', 
-        'amount': 'amount',
-        'paymentStatus': 'payment_status',
-        'gameName': 'game_name',
-        'duration': 'duration',
-        'createdAt': 'created_at',
-        'mpesaRef': 'mpesa_ref',
-        'mpesaPhoneNumber': 'mpesa_phone_number'
+      // Create a base transaction object with mandatory fields
+      const baseTransactionData: Record<string, any> = {
+        stationId: rawData.stationId,
+        customerName: rawData.customerName,
+        sessionType: rawData.sessionType,
+        amount: rawData.amount,
+        paymentStatus: "pending"
       };
       
-      // Add mandatory fields if they exist in the database
-      for (const [propName, colName] of Object.entries(columnMappings)) {
-        if (actualColumns.includes(colName)) {
-          if (propName === 'paymentStatus') {
-            insertData[propName] = 'pending';
-          } else if (propName in rawData && rawData[propName] !== undefined) {
-            insertData[propName] = rawData[propName];
-          }
-        }
+      // Add optional fields only if they have values
+      if (rawData.gameName) {
+        baseTransactionData.gameName = rawData.gameName;
+      }
+      
+      if (rawData.duration !== undefined && rawData.duration !== null) {
+        baseTransactionData.duration = rawData.duration;
       }
 
-      // Reuse the same column mappings from above
-      // This variable was already defined above, no need to redefine it
+      console.log("Inserting transaction with sanitized fields:", baseTransactionData);
       
-      // Create arrays of column names and values using proper SQL naming
-      const sqlColumns: string[] = [];
-      const sqlValues: any[] = [];
-      
-      // Add fields with correct SQL column names
-      for (const [propName, value] of Object.entries(insertData)) {
-        // Get corresponding SQL column name
-        const sqlColName = columnMappings[propName];
-        
-        // Only add if we have a mapping and the column exists in database
-        if (sqlColName && actualColumns.includes(sqlColName)) {
-          sqlColumns.push(sqlColName);
-          sqlValues.push(value);
-        }
-      }
-      
-      console.log("SQL Columns:", sqlColumns);
-      console.log("SQL Values:", sqlValues);
-      
-      // Manually craft a SQL query that only includes the fields we know exist
-      const columnNamesSql = sqlColumns.join(', ');
-      const placeholders = sqlColumns.map((_, i) => `$${i+1}`).join(', ');
-      
-      // Execute the query directly to avoid ORM issues
-      const result = await db.execute(
-        `INSERT INTO transactions (${columnNamesSql}) VALUES (${placeholders}) RETURNING *`,
-        sqlValues
-      );
-      
-      console.log("Transaction created successfully:", result.rows[0]);
-      res.json(result.rows);
+      // Ensure we're passing an array of values, as required by drizzle
+      const transaction = await db.insert(transactions).values([baseTransactionData]).returning();
+      res.json(transaction);
     } catch (error) {
       console.error("Transaction creation error:", error);
       res.status(500).json({ error: error.message || "Failed to create transaction" });
@@ -571,58 +520,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        // Use a direct SQL query to get the actual columns in the database
-        const columnsQuery = await db.execute(`
-          SELECT column_name 
-          FROM information_schema.columns 
-          WHERE table_name = 'transactions'
-        `);
+        // Simple update with only the essential fields we know exist
+        const updateData = {
+          paymentStatus: "pending",
+          mpesaRef: response.MerchantRequestID
+        };
         
-        // Convert column names to an array
-        const actualColumns = columnsQuery.rows.map((row: any) => row.column_name);
-        console.log("Actual transaction columns for M-Pesa update:", actualColumns);
-        
-        // Create update data with SQL-friendly column names
-        const updateFields: string[] = [];
-        const updateValues: any[] = [];
-        
-        // Always include payment status
-        updateFields.push('payment_status');
-        updateValues.push('pending');
-        
-        // Add mpesaRef field if it exists
-        if (actualColumns.includes('mpesa_ref')) {
-          updateFields.push('mpesa_ref');
-          updateValues.push(response.MerchantRequestID);
-        }
-        
-        // Execute a direct SQL update query
-        const updateSQL = `
-          UPDATE transactions 
-          SET ${updateFields.map((field, i) => `${field} = $${i+1}`).join(', ')}
-          WHERE id = $${updateFields.length + 1}
-          RETURNING *
-        `;
-        
-        console.log("M-Pesa update SQL:", updateSQL, "Values:", [...updateValues, paymentData.transactionId]);
-        
-        const result = await db.execute(
-          updateSQL,
-          [...updateValues, paymentData.transactionId]
-        );
-        
-        console.log("M-Pesa update result:", result.rows[0]);
+        console.log("Updating transaction with M-Pesa reference:", updateData);
+        await db.update(transactions)
+          .set(updateData)
+          .where(eq(transactions.id, paymentData.transactionId));
       } catch (dbError) {
         console.error("Error updating transaction with M-Pesa reference:", dbError);
         
-        // If the update fails, try with just payment status as a fallback using direct SQL
+        // If the update fails, try with just payment status as a fallback
         try {
-          await db.execute(
-            `UPDATE transactions SET payment_status = 'pending' WHERE id = $1`,
-            [paymentData.transactionId]
-          );
+          await db.update(transactions)
+            .set({ 
+              paymentStatus: "pending"
+            })
+            .where(eq(transactions.id, paymentData.transactionId));
         } catch (fallbackError) {
-          console.error("Error updating transaction payment status (fallback):", fallbackError);
+          console.error("Fallback update also failed:", fallbackError);
+          // Continue anyway since we've already initiated the M-Pesa payment
         }
       }
 
@@ -658,7 +578,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Add M-Pesa verification endpoint
-  app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req, res) => {
+  // Add Airtel Money verification endpoint
+app.get("/api/payments/airtel/status/:referenceId", asyncHandler(async (req, res) => {
+  try {
+    const { referenceId } = req.params;
+
+    // Check transaction status
+    const statusResponse = await airtelMoneyService.checkTransactionStatus(referenceId);
+
+    // If successful, update transaction status
+    if (statusResponse.status === "COMPLETED") {
+      try {
+        // Update transaction using payments table reference
+        const payment = await db.select()
+          .from(payments)
+          .where(eq(payments.reference, referenceId))
+          .limit(1);
+
+        if (payment && payment[0]) {
+          await db.update(transactions)
+            .set({ paymentStatus: "completed" })
+            .where(eq(transactions.id, payment[0].transactionId));
+          
+          // Also update payment status
+          await db.update(payments)
+            .set({ status: "completed" })
+            .where(eq(payments.reference, referenceId));
+        }
+      } catch (dbError) {
+        console.error("Error updating transaction status for Airtel payment:", dbError);
+        // Continue anyway since we want to return the status to the client
+      }
+
+      return res.json({
+        success: true,
+        status: "COMPLETED",
+        message: "Payment completed successfully"
+      });
+    }
+
+    // Return appropriate status
+    return res.json({
+      success: true,
+      status: statusResponse.status,
+      message: statusResponse.message
+    });
+  } catch (error: any) {
+    console.error("Airtel Money status check error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to check payment status"
+    });
+  }
+}));
+
+app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req, res) => {
     try {
       const { checkoutRequestId } = req.params;
 
@@ -856,56 +830,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Store the transaction reference for later verification 
       try {
-        // Use a direct SQL query to get the actual columns in the database
-        const columnsQuery = await db.execute(`
-          SELECT column_name 
-          FROM information_schema.columns 
-          WHERE table_name = 'transactions'
-        `);
+        // Get a list of column names in the transactions table from the schema
+        const transactionColumns = Object.keys(transactions);
         
-        // Convert column names to an array
-        const actualColumns = columnsQuery.rows.map((row: any) => row.column_name);
-        console.log("Actual transaction columns for Airtel update:", actualColumns);
+        // Create update data object with only valid columns
+        const updateData: Record<string, any> = {
+          paymentStatus: "pending"
+        };
         
-        // Create update data with SQL-friendly column names
-        const updateFields: string[] = [];
-        const updateValues: any[] = [];
-        
-        // Always include payment status
-        updateFields.push('payment_status');
-        updateValues.push('pending');
-        
-        // Add airtelRef field if it exists
-        if (actualColumns.includes('airtel_ref')) {
-          updateFields.push('airtel_ref');
-          updateValues.push(response.reference);
+        // Only add airtelRef if the column exists
+        if (transactionColumns.includes('airtelRef')) {
+          updateData.airtelRef = response.reference;
         }
         
-        // Execute a direct SQL update query
-        const updateSQL = `
-          UPDATE transactions 
-          SET ${updateFields.map((field, i) => `${field} = $${i+1}`).join(', ')}
-          WHERE id = $${updateFields.length + 1}
-          RETURNING *
-        `;
-        
-        console.log("Airtel update SQL:", updateSQL, "Values:", [...updateValues, paymentData.transactionId]);
-        
-        const result = await db.execute(
-          updateSQL,
-          [...updateValues, paymentData.transactionId]
-        );
-        
-        console.log("Airtel update result:", result.rows[0]);
+        console.log("Updating transaction with sanitized fields for Airtel:", updateData);
+        await db.update(transactions)
+          .set(updateData)
+          .where(eq(transactions.id, paymentData.transactionId));
       } catch (dbError) {
         console.error("Error updating transaction for Airtel payment:", dbError);
         
-        // If the update fails, try with just payment status as a fallback using direct SQL
+        // If the update fails, try with just payment status as a fallback
         try {
-          await db.execute(
-            `UPDATE transactions SET payment_status = 'pending' WHERE id = $1`,
-            [paymentData.transactionId]
-          );
+          await db.update(transactions)
+            .set({ 
+              paymentStatus: "pending"
+            })
+            .where(eq(transactions.id, paymentData.transactionId));
         } catch (fallbackError) {
           console.error("Error updating transaction status for Airtel payment (fallback):", fallbackError);
           // We'll continue even if this fails

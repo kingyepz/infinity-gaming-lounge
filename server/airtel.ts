@@ -27,11 +27,11 @@ export interface AirtelPaymentResponse {
 }
 
 export class AirtelMoneyService {
-  
+
   private async getAccessToken(): Promise<string> {
     try {
       const auth = Buffer.from(`${AIRTEL_CONFIG.clientId}:${AIRTEL_CONFIG.clientSecret}`).toString('base64');
-      
+
       const response = await axios({
         method: 'post',
         url: `${AIRTEL_CONFIG.baseUrl}/auth/oauth2/token`,
@@ -43,18 +43,18 @@ export class AirtelMoneyService {
           grant_type: 'client_credentials'
         }
       });
-      
+
       return response.data.access_token;
     } catch (error) {
       console.error("Failed to get Airtel access token:", error);
       throw new Error("Failed to get Airtel access token");
     }
   }
-  
+
   public async initiatePayment(request: AirtelPaymentRequest): Promise<AirtelPaymentResponse> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       // Format phone number (remove leading 0 and add country code if needed)
       let phoneNumber = request.phoneNumber;
       if (phoneNumber.startsWith('0')) {
@@ -63,7 +63,7 @@ export class AirtelMoneyService {
       if (!phoneNumber.startsWith('254')) {
         phoneNumber = `254${phoneNumber}`;
       }
-      
+
       const response = await axios({
         method: 'post',
         url: `${AIRTEL_CONFIG.baseUrl}/merchant/v1/payments/`,
@@ -89,7 +89,7 @@ export class AirtelMoneyService {
           description: request.transactionDesc || 'Payment for gaming services'
         }
       });
-      
+
       return {
         status: response.data.status,
         message: response.data.message,
@@ -101,11 +101,11 @@ export class AirtelMoneyService {
       throw new Error(error.response?.data?.message || "Failed to initiate Airtel Money payment");
     }
   }
-  
+
   public async checkTransactionStatus(transactionId: string): Promise<any> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       const response = await axios({
         method: 'get',
         url: `${AIRTEL_CONFIG.baseUrl}/standard/v1/payments/${transactionId}`,
@@ -116,7 +116,7 @@ export class AirtelMoneyService {
           'X-Currency': AIRTEL_CONFIG.currency
         }
       });
-      
+
       return {
         status: response.data.status,
         message: response.data.message,
