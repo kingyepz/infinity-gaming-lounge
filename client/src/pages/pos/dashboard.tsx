@@ -269,83 +269,181 @@ export default function POSDashboard() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       <Button
                         variant="default"
-                        className="h-auto flex flex-col items-center p-3"
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/80"
                         onClick={() => {
                           const availableStation = stations?.find(s => !s.currentCustomer);
                           if (availableStation) {
                             setSelectedStation(availableStation);
-                            setShowPayment(true);
+                            setShowNewSessionModal(true);
                           } else {
                             toast({
-                              title: "No available stations",
-                              description: "All stations are currently in use."
+                              title: "No Available Stations",
+                              description: "All gaming stations are currently occupied.",
+                              variant: "destructive"
                             });
                           }
                         }}
                       >
                         <GamepadIcon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">New Session</span>
+                        <span className="text-sm font-medium">New Session</span>
                       </Button>
+
                       <Button
                         variant="outline"
-                        className="h-auto flex flex-col items-center p-3"
-                        onClick={() => document.querySelector('[value="reports"]')?.dispatchEvent(new MouseEvent('click'))}
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
+                        onClick={() => {
+                          try {
+                            const reportsTab = document.querySelector('[value="reports"]');
+                            if (reportsTab) {
+                              reportsTab.dispatchEvent(new MouseEvent('click'));
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Navigation Error",
+                              description: "Could not navigate to reports. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
                       >
                         <BarChart2Icon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">View Reports</span>
+                        <span className="text-sm font-medium">View Reports</span>
                       </Button>
+
                       <Button
                         variant="outline"
-                        className="h-auto flex flex-col items-center p-3"
-                        onClick={() => document.querySelector('[value="sessions"]')?.dispatchEvent(new MouseEvent('click'))}
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
+                        onClick={() => {
+                          try {
+                            const sessionsTab = document.querySelector('[value="sessions"]');
+                            if (sessionsTab) {
+                              sessionsTab.dispatchEvent(new MouseEvent('click'));
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Navigation Error",
+                              description: "Could not navigate to sessions. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
                       >
                         <CalendarIcon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">Manage Sessions</span>
+                        <span className="text-sm font-medium">Manage Sessions</span>
                       </Button>
+
                       <Button
                         variant="outline"
-                        className="h-auto flex flex-col items-center p-3"
-                        onClick={() => document.querySelector('[value="customers"]')?.dispatchEvent(new MouseEvent('click'))}
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
+                        onClick={() => {
+                          try {
+                            const customersTab = document.querySelector('[value="customers"]');
+                            if (customersTab) {
+                              customersTab.dispatchEvent(new MouseEvent('click'));
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Navigation Error",
+                              description: "Could not navigate to customers. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
                       >
                         <UsersIcon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">Customer Portal</span>
+                        <span className="text-sm font-medium">Customers</span>
                       </Button>
+
                       <Button
                         variant="outline"
-                        className="h-auto flex flex-col items-center p-3"
-                        onClick={() => document.querySelector('[value="payments"]')?.dispatchEvent(new MouseEvent('click'))}
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
+                        onClick={() => {
+                          try {
+                            const paymentsTab = document.querySelector('[value="payments"]');
+                            if (paymentsTab) {
+                              paymentsTab.dispatchEvent(new MouseEvent('click'));
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Navigation Error",
+                              description: "Could not navigate to payments. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
                       >
                         <DollarSignIcon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">Process Payment</span>
+                        <span className="text-sm font-medium">Payments</span>
                       </Button>
+
                       <Button
                         variant="outline"
-                        className="h-auto flex flex-col items-center p-3"
-                        onClick={() => document.querySelector('[value="analytics"]')?.dispatchEvent(new MouseEvent('click'))}
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
+                        onClick={() => {
+                          try {
+                            const analyticsTab = document.querySelector('[value="analytics"]');
+                            if (analyticsTab) {
+                              analyticsTab.dispatchEvent(new MouseEvent('click'));
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Navigation Error",
+                              description: "Could not navigate to analytics. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
                       >
                         <BarChart2Icon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">View Analytics</span>
+                        <span className="text-sm font-medium">Analytics</span>
                       </Button>
+
                       <Button
                         variant="outline"
-                        className="h-auto flex flex-col items-center p-3"
-                        onClick={() => {
-                          toast({
-                            title: "Coming Soon",
-                            description: "This feature is under development."
-                          });
+                        className="h-auto flex flex-col items-center p-3 hover:bg-primary/20"
+                        onClick={async () => {
+                          try {
+                            // In a real application, this would connect to a receipt printer
+                            // For now, we'll just show a toast
+                            toast({
+                              title: "Printing Receipt",
+                              description: "Receipt printing feature coming soon.",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Print Error",
+                              description: "Could not print receipt. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
                         }}
                       >
                         <PrinterIcon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">Print Receipt</span>
+                        <span className="text-sm font-medium">Print Receipt</span>
                       </Button>
+
                       <Button
                         variant="outline"
                         className="h-auto flex flex-col items-center p-3 bg-red-900/20 hover:bg-red-900/30"
-                        onClick={handleLogout}
+                        onClick={() => {
+                          try {
+                            localStorage.removeItem('user');
+                            setLocation('/');
+                            toast({
+                              title: "Logged Out",
+                              description: "You have been successfully logged out.",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Logout Error",
+                              description: "Could not log out. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
                       >
                         <LogOutIcon className="h-6 w-6 mb-2" />
-                        <span className="text-sm">Logout</span>
+                        <span className="text-sm font-medium">Logout</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -650,7 +748,7 @@ export default function POSDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="space-y-6">
+            <div className="space-y6">
               <h2 className="text-3xl font-bold">Analytics Dashboard</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
