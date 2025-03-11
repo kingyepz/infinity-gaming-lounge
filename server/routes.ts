@@ -881,6 +881,94 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
       // Initiate Airtel Money payment
       const response = await airtelMoneyService.initiatePayment({
         phoneNumber: paymentData.phoneNumber,
+        amount: paymentData.amount,
+        reference: paymentData.reference || `TXN-${paymentData.transactionId}`,
+        transactionDesc: paymentData.transactionDesc || "Payment for gaming services"
+      });
+
+      PaymentDebugger.log('airtel', 'service_response', response);
+
+      // Store the transaction reference for later verification 
+      try {
+        // Create update data object with only valid columns
+        const updateData: Record<string, any> = {
+          paymentStatus: "pending"
+        };
+        
+        // Check if airtelRef column exists in the schema
+        const transactionColumns = Object.keys(transactions);
+        if (transactionColumns.includes('airtelRef')) {
+          updateData.airtelRef = response.reference;
+        }
+        
+        PaymentDebugger.log('airtel', 'update_data', updateData);
+        await db.update(transactions)
+          .set(updateData)
+          .where(eq(transactions.id, paymentData.transactionId));
+          
+        PaymentDebugger.log('airtel', 'transaction_updated', { transactionId: paymentData.transactionId });
+      } catch (dbError) {
+        PaymentDebugger.logError('airtel', 'transaction_update', dbError);
+        
+        // If the update fails, try with just payment status as a fallback
+        try {
+          await db.update(transactions)
+            .set({ 
+              paymentStatus: "pending"
+            })
+            .where(eq(transactions.id, paymentData.transactionId));
+            
+          PaymentDebugger.log('airtel', 'transaction_updated_fallback', { transactionId: paymentData.transactionId });
+        } catch (fallbackError) {
+          PaymentDebugger.logError('airtel', 'transaction_update_fallback', fallbackError);
+        }
+      }
+
+      // Create payment record in payments table
+      try {
+        const paymentRecord = {
+          transactionId: paymentData.transactionId,
+          amount: String(paymentData.amount),
+          paymentMethod: "airtel",
+          status: "pending",
+          reference: response.reference,
+          phoneNumber: paymentData.phoneNumber,
+          createdAt: new Date()
+        };
+        
+        PaymentDebugger.log('airtel', 'payment_record', paymentRecord);
+        const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
+        PaymentDebugger.log('airtel', 'payment_record_created', payment);
+
+        res.json({
+          success: true,
+          message: "Airtel Money payment initiated. Please check your phone to complete payment.",
+          reference: response.reference,
+          transactionId: response.transactionId,
+          payment
+        });
+      } catch (paymentDbError) {
+        PaymentDebugger.logError('airtel', 'payment_record_creation', paymentDbError);
+        
+        // Even if payment record creation fails, we still return success as the Airtel Money
+        // payment was initiated successfully
+        res.json({
+          success: true,
+          message: "Airtel Money payment initiated. Please check your phone to complete payment.",
+          reference: response.reference,
+          transactionId: response.transactionId
+        });
+      }
+    } catch (error: any) {
+      const { PaymentDebugger } = await import('./paymentDebugger');
+      PaymentDebugger.logError('airtel', 'payment_initiation', error);
+      
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to initiate Airtel Money payment"
+      });
+    }
+  }));
 
   // Payment debug endpoint (only for development)
   app.get("/api/debug/payments", asyncHandler(async (_req, res) => {
@@ -895,11 +983,6 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
       });
     }
   }));
-
-        amount: paymentData.amount,
-        reference: paymentData.reference || `TXN-${paymentData.transactionId}`,
-        transactionDesc: paymentData.transactionDesc || "Payment for gaming services"
-      });
 
       PaymentDebugger.log('airtel', 'service_response', response);
 
