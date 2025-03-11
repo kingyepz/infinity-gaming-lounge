@@ -162,6 +162,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  app.get("/api/stations/:id", asyncHandler(async (req, res) => {
+    try {
+        const stationId = parseInt(req.params.id);
+        if (isNaN(stationId)) {
+            return res.status(400).json({ error: "Invalid station ID" });
+        }
+
+        const [station] = await db.select()
+            .from(gameStations)
+            .where(eq(gameStations.id, stationId));
+
+        if (!station) {
+            return res.status(404).json({ error: "Station not found" });
+        }
+
+        res.json(station);
+    } catch (error) {
+        console.error("Error fetching station:", error);
+        throw error;
+    }
+}));
+
+
   app.get("/api/reports/current", asyncHandler(async (_req, res) => {
     try {
       const stations = await db.select().from(gameStations);

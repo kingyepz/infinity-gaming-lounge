@@ -129,13 +129,23 @@ export default function POSDashboard() {
         }
     };
 
-
     const handleStartSession = async () => {
         try {
             if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
                 toast({
                     title: "Missing Information",
                     description: "Please select a game, customer, and session type",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Double check station availability before starting
+            const currentStation = await apiRequest("GET", `/api/stations/${selectedStation.id}`);
+            if (currentStation.currentCustomer) {
+                toast({
+                    title: "Station Unavailable",
+                    description: "This station is no longer available. Please select another station.",
                     variant: "destructive"
                 });
                 return;
@@ -161,6 +171,7 @@ export default function POSDashboard() {
             setSelectedGame(null);
             setSelectedCustomer(null);
             setSelectedSessionType(null);
+            setSelectedStation(null);
 
             toast({
                 title: "Session Started",
@@ -215,7 +226,7 @@ export default function POSDashboard() {
                         <Button
                             variant="destructive"
                             className="w-full"
-                            onClick={() => handleEndSession( {id: session.stationId, sessionStartTime: session.sessionStartTime, currentCustomer: session.customerName, currentGame: session.gameName, sessionType: session.sessionType, baseRate: session.baseRate, hourlyRate: session.hourlyRate})}
+                            onClick={() => handleEndSession({ id: session.stationId, sessionStartTime: session.sessionStartTime, currentCustomer: session.customerName, currentGame: session.gameName, sessionType: session.sessionType, baseRate: session.baseRate, hourlyRate: session.hourlyRate })}
                         >
                             End Session
                         </Button>
@@ -224,6 +235,116 @@ export default function POSDashboard() {
             </Card>
         ));
     };
+
+    const StartNewSessionModal = () => (
+        <Dialog open={showNewSessionModal} onOpenChange={setShowNewSessionModal}>
+            <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
+                <DialogHeader>
+                    <DialogTitle>Start New Gaming Session</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div>
+                        <label className="text-sm text-muted-foreground">Select Game</label>
+                        <Select
+                            onValueChange={setSelectedGame}
+                            value={selectedGame || undefined}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Choose a game" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {games?.filter(game => game.isActive).map(game => (
+                                    <SelectItem key={game.id} value={game.name}>
+                                        {game.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <label className="text-sm text-muted-foreground">Select Customer</label>
+                        <Select
+                            onValueChange={(value) => {
+                                const customer = customers.find(c => c.id.toString() === value);
+                                setSelectedCustomer(customer || null);
+                            }}
+                            value={selectedCustomer?.id?.toString() || undefined}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a customer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {customers.map(customer => (
+                                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                                        {customer.displayName} (@{customer.gamingName})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <label className="text-sm text-muted-foreground">Session Type</label>
+                        <Select
+                            onValueChange={(value) => setSelectedSessionType(value as "per_game" | "hourly")}
+                            value={selectedSessionType || undefined}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select session type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="per_game">Per Game (40 KES)</SelectItem>
+                                <SelectItem value="hourly">Hourly (200 KES/hour)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <label className="text-sm text-muted-foreground">Available Stations</label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                            {stations?.filter(s => !s.currentCustomer).map((station) => (
+                                <div
+                                    key={station.id}
+                                    className={`p-3 rounded-md cursor-pointer transition-colors ${
+                                        selectedStation?.id === station.id
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-primary/10 hover:bg-primary/20'
+                                    }`}
+                                    onClick={() => setSelectedStation(station)}
+                                >
+                                    <p className="font-medium">Station {station.id}</p>
+                                    <Badge variant="outline" className="mt-1">Available</Badge>
+                                </div>
+                            ))}
+                        </div>
+                        {stations?.filter(s => !s.currentCustomer).length === 0 && (
+                            <p className="text-sm text-yellow-500 mt-2">No stations currently available</p>
+                        )}
+                    </div>
+                </div>
+                <div className="flex justify-between items-center">
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowCustomerRegistration(true)}
+                    >
+                        Register New Customer
+                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleStartSession}
+                            disabled={!selectedGame || !selectedCustomer || !selectedSessionType || !selectedStation}
+                        >
+                            Start Session
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
 
     if (stationsLoading || gamesLoading || customersLoading) {
         return (
@@ -584,7 +705,7 @@ export default function POSDashboard() {
                                     <CardContent>
                                         <form onSubmit={async (e) => {
                                             e.preventDefault();
-                                            const formData = new FormData(e.target as HTMLFormElement);
+                                            const formData = newFormData(e.target as HTMLFormElement);
 
                                             try {
                                                 const response = await apiRequest("POST", "/api/users/register", {
@@ -1108,87 +1229,7 @@ export default function POSDashboard() {
                     }}
                 />
             )}
-            <Dialog open={showNewSessionModal} onOpenChange={setShowNewSessionModal}>
-                <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
-                    <DialogHeader>
-                        <DialogTitle>Start New Gaming Session</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div>
-                            <label className="text-sm text-muted-foreground">Select Game</label>
-                            <Select
-                                onValueChange={setSelectedGame}
-                                value={selectedGame || undefined}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Choose a game" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {games?.filter(game => game.isActive).map(game => (
-                                        <SelectItem key={game.id} value={game.name}>
-                                            {game.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div>
-                            <label className="text-sm text-muted-foreground">Select Customer</label>
-                            <Select
-                                onValueChange={(value) => {
-                                    const customer = customers.find(c => c.id.toString() === value);
-                                    setSelectedCustomer(customer || null);
-                                }}
-                                value={selectedCustomer?.id?.toString() || undefined}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a customer" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {customers.map(customer => (
-                                        <SelectItem key={customer.id} value={customer.id.toString()}>
-                                            {customer.displayName} (@{customer.gamingName})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div>
-                            <label className="text-sm text-muted-foreground">Session Type</label>
-                            <Select
-                                onValueChange={(value) => setSelectedSessionType(value as "per_game" | "hourly")}
-                                value={selectedSessionType || undefined}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select session type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="per_game">Per Game</SelectItem>
-                                    <SelectItem value="hourly">Hourly</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowCustomerRegistration(true)}
-                        >
-                            Register New Customer
-                        </Button>
-                        <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
-                                Cancel
-                            </Button>
-                            <Button onClick={handleStartSession}>
-                                Start Session
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <StartNewSessionModal/>
             {showPaymentDialog && selectedStation && (
                 <PaymentModal
                     amount={paymentAmount}
