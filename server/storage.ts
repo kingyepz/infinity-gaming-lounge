@@ -1,11 +1,11 @@
-import { gameStations, games, transactions, users, friends, events, rewards, bookings } from "@shared/schema";
+import { gameStations, games, transactions, users } from "@shared/schema";
 import type { GameStation, InsertGameStation, Game, InsertGame, Transaction, InsertTransaction, User, InsertUser } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
-class StorageService {
+export class StorageService {
   // Game Station Methods
-  async getGameStations() {
+  async getGameStations(): Promise<GameStation[]> {
     try {
       return await db.select().from(gameStations);
     } catch (error) {
@@ -14,23 +14,20 @@ class StorageService {
     }
   }
 
-  async updateGameStation(id: number, data: Partial<GameStation>) {
+  async updateGameStation(id: number, data: Partial<GameStation>): Promise<GameStation | null> {
     try {
-      await db.update(gameStations)
+      const [updated] = await db.update(gameStations)
         .set(data)
-        .where(eq(gameStations.id, id));
-
-      return await db.select()
-        .from(gameStations)
         .where(eq(gameStations.id, id))
-        .then(res => res[0]);
+        .returning();
+      return updated;
     } catch (error) {
       console.error("Error updating game station:", error);
       throw error;
     }
   }
 
-  async getGameStationById(id: number) {
+  async getGameStationById(id: number): Promise<GameStation | null> {
     try {
       const results = await db.select()
         .from(gameStations)
@@ -45,7 +42,7 @@ class StorageService {
   }
 
   // Game Methods
-  async getGames() {
+  async getGames(): Promise<Game[]> {
     try {
       return await db.select().from(games);
     } catch (error) {
@@ -54,7 +51,7 @@ class StorageService {
     }
   }
 
-  async createGame(gameData: any) {
+  async createGame(gameData: InsertGame): Promise<Game> {
     try {
       const result = await db.insert(games).values(gameData).returning();
       return result[0];
@@ -64,38 +61,36 @@ class StorageService {
     }
   }
 
+
   // Transaction Methods
-  async createTransaction(data: InsertTransaction) {
+  async getTransactions(): Promise<Transaction[]> {
     try {
-      const [result] = await db.insert(transactions)
+      return await db.select()
+        .from(transactions)
+        .orderBy(desc(transactions.createdAt));
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return [];
+    }
+  }
+
+  async createTransaction(data: InsertTransaction): Promise<Transaction> {
+    try {
+      const [transaction] = await db.insert(transactions)
         .values({
           ...data,
-          paymentStatus: data.paymentStatus || "pending",
+          paymentStatus: "pending",
           createdAt: new Date()
         })
         .returning();
-
-      // If this is the start of a session, update the game station
-      if (data.paymentStatus === "completed") {
-        const station = await this.getGameStationById(data.stationId);
-        if (station) {
-          await this.updateGameStation(station.id, {
-            currentCustomer: data.customerName,
-            currentGame: data.gameName,
-            sessionType: data.sessionType,
-            sessionStartTime: new Date()
-          });
-        }
-      }
-
-      return result;
+      return transaction;
     } catch (error) {
       console.error("Error creating transaction:", error);
       throw error;
     }
   }
 
-  async getTransactionsByStation(stationId: number) {
+  async getTransactionsByStation(stationId: number): Promise<Transaction[]> {
     try {
       return await db.select()
         .from(transactions)
@@ -107,7 +102,7 @@ class StorageService {
     }
   }
 
-  async getTransactionsByUser(userId: number) {
+  async getTransactionsByUser(userId: number): Promise<Transaction[]> {
     try {
       return await db.select()
         .from(transactions)
@@ -118,7 +113,7 @@ class StorageService {
     }
   }
 
-  async updateTransactionStatus(id: number, status: string, mpesaRef?: string) {
+  async updateTransactionStatus(id: number, status: string, mpesaRef?: string): Promise<Transaction | null> {
     try {
       const updateData: any = { paymentStatus: status };
       if (mpesaRef) {
@@ -157,52 +152,7 @@ class StorageService {
   }
 
   // User Methods
-  async createUser(data: InsertUser) {
-    try {
-      // Generate a random referral code
-      const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-      const [result] = await db.insert(users)
-        .values({
-          ...data,
-          points: 0,
-          referralCode,
-          createdAt: new Date()
-        })
-        .returning();
-
-      return result;
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw error;
-    }
-  }
-
-  async getUserByPhone(phoneNumber: string) {
-    try {
-      const result = await db.select()
-        .from(users)
-        .where(eq(users.phoneNumber, phoneNumber));
-      return result[0] || null;
-    } catch (error) {
-      console.error("Error fetching user by phone:", error);
-      return null;
-    }
-  }
-
-  async getUserById(id: number) {
-    try {
-      const result = await db.select()
-        .from(users)
-        .where(eq(users.id, id));
-      return result[0] || null;
-    } catch (error) {
-      console.error("Error fetching user by id:", error);
-      return null;
-    }
-  }
-
-  async getAllCustomers() {
+  async getCustomers(): Promise<User[]> {
     try {
       return await db.select()
         .from(users)
@@ -214,7 +164,47 @@ class StorageService {
     }
   }
 
-  async awardLoyaltyPoints(userId: number, points: number) {
+  async createUser(data: InsertUser): Promise<User> {
+    try {
+      const [user] = await db.insert(users)
+        .values({
+          ...data,
+          points: 0,
+          createdAt: new Date()
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  }
+
+  async getUserByPhone(phoneNumber: string): Promise<User | null> {
+    try {
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.phoneNumber, phoneNumber));
+      return user || null;
+    } catch (error) {
+      console.error("Error fetching user by phone:", error);
+      return null;
+    }
+  }
+
+  async getUserById(id: number): Promise<User | null> {
+    try {
+      const result = await db.select()
+        .from(users)
+        .where(eq(users.id, id));
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching user by id:", error);
+      return null;
+    }
+  }
+
+  async awardLoyaltyPoints(userId: number, points: number): Promise<number | undefined> {
     try {
       const user = await this.getUserById(userId);
       if (!user) throw new Error("User not found");
@@ -233,7 +223,7 @@ class StorageService {
     }
   }
 
-  async redeemLoyaltyPoints(userId: number, points: number) {
+  async redeemLoyaltyPoints(userId: number, points: number): Promise<number> {
     try {
       const user = await this.getUserById(userId);
       if (!user) throw new Error("User not found");
@@ -252,13 +242,12 @@ class StorageService {
     }
   }
 
-  // Report Methods
-  async getRevenueByTimeFrame(timeFrame: 'daily' | 'weekly' | 'monthly') {
+  async getRevenueByTimeFrame(timeFrame: 'daily' | 'weekly' | 'monthly'): Promise<{ totalRevenue: number; completedSessions: number; averageRevenue: number; }> {
     try {
       const now = new Date();
       let startDate: Date;
 
-      switch(timeFrame) {
+      switch (timeFrame) {
         case 'daily':
           startDate = new Date(now.setHours(0, 0, 0, 0));
           break;
@@ -271,15 +260,15 @@ class StorageService {
       }
 
       const allTransactions = await db.select().from(transactions);
-      const filteredTransactions = allTransactions.filter(tx => 
+      const filteredTransactions = allTransactions.filter(tx =>
         new Date(tx.createdAt) >= startDate
       );
 
       return {
         totalRevenue: filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0),
         completedSessions: filteredTransactions.length,
-        averageRevenue: filteredTransactions.length > 0 
-          ? filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0) / filteredTransactions.length 
+        averageRevenue: filteredTransactions.length > 0
+          ? filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0) / filteredTransactions.length
           : 0
       };
     } catch (error) {
@@ -288,7 +277,7 @@ class StorageService {
     }
   }
 
-  async getPopularGames() {
+  async getPopularGames(): Promise<{ name: string; sessions: number; revenue: number; }[]> {
     try {
       const allTransactions = await db.select().from(transactions);
       const gameStats = {};
@@ -316,7 +305,7 @@ class StorageService {
     }
   }
 
-  async getStationUtilization() {
+  async getStationUtilization(): Promise<{ id: number; name: string; totalHours: number; utilizationRate: number; revenue: number; }[]> {
     try {
       const stations = await this.getGameStations();
       const allTransactions = await Promise.all(
@@ -349,7 +338,7 @@ class StorageService {
     }
   }
 
-  async getCustomerActivity() {
+  async getCustomerActivity(): Promise<{ newCustomers: number; returningCustomers: number; returnRate: number; avgSessionDuration: number; }> {
     try {
       const allTransactions = await db.select().from(transactions);
       const allUsers = await db.select().from(users);
@@ -358,7 +347,7 @@ class StorageService {
       const yesterday = new Date(now.setDate(now.getDate() - 1));
       const lastWeek = new Date(now.setDate(now.getDate() - 7));
 
-      const newCustomers = allUsers.filter(user => 
+      const newCustomers = allUsers.filter(user =>
         new Date(user.createdAt) >= yesterday
       ).length;
 
@@ -379,12 +368,12 @@ class StorageService {
         return visits[visits.length - 1] >= lastWeek && visits[visits.length - 2] >= lastWeek;
       }).length;
 
-      const returnRate = allUsers.length > 0 
-        ? (returningCustomers / allUsers.length) * 100 
+      const returnRate = allUsers.length > 0
+        ? (returningCustomers / allUsers.length) * 100
         : 0;
 
       // Calculate average session duration
-      const hourlyTransactions = allTransactions.filter(tx => 
+      const hourlyTransactions = allTransactions.filter(tx =>
         tx.sessionType === 'hourly' && tx.duration
       );
 
@@ -404,7 +393,6 @@ class StorageService {
     }
   }
 
-  // Initialize data - will use actual data if available, otherwise fallback to mock data
   async initializeMockData() {
     try {
       console.log("Checking for existing data...");
@@ -441,10 +429,10 @@ class StorageService {
 
       // Create test users
       await db.insert(users).values([
-        { 
-          displayName: "John Doe", 
-          gamingName: "JDGamer", 
-          phoneNumber: "254700000000", 
+        {
+          displayName: "John Doe",
+          gamingName: "JDGamer",
+          phoneNumber: "254700000000",
           role: "customer",
           points: 750,
           level: "pro"

@@ -17,7 +17,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return Promise.resolve(fn(req, res, next)).catch(next);
   };
 
-  // Basic API routes
+  // User related routes
+  app.get("/api/users/customers", asyncHandler(async (_req, res) => {
+    try {
+      const customers = await db.select()
+        .from(users)
+        .where(eq(users.role, "customer"))
+        .orderBy(desc(users.createdAt));
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      throw error;
+    }
+  }));
+
+  // Gaming session related routes
+  app.get("/api/sessions/active", asyncHandler(async (_req, res) => {
+    try {
+      const activeStations = await db.select()
+        .from(gameStations)
+        .where(eq(gameStations.isActive, true));
+      res.json(activeStations);
+    } catch (error) {
+      console.error("Error fetching active sessions:", error);
+      throw error;
+    }
+  }));
+
+  app.post("/api/sessions/start", asyncHandler(async (req, res) => {
+    try {
+      const { stationId, customerId, gameId, sessionType } = req.body;
+
+      const station = await storage.updateGameStation(stationId, {
+        currentCustomer: customerId,
+        currentGame: gameId,
+        sessionType,
+        sessionStartTime: new Date()
+      });
+
+      if (!station) {
+        throw new Error("Failed to start session");
+      }
+
+      res.json(station);
+    } catch (error) {
+      console.error("Error starting session:", error);
+      throw error;
+    }
+  }));
+
+  app.post("/api/sessions/end", asyncHandler(async (req, res) => {
+    try {
+      const { stationId } = req.body;
+
+      const station = await storage.updateGameStation(stationId, {
+        currentCustomer: null,
+        currentGame: null,
+        sessionType: null,
+        sessionStartTime: null
+      });
+
+      if (!station) {
+        throw new Error("Failed to end session");
+      }
+
+      res.json(station);
+    } catch (error) {
+      console.error("Error ending session:", error);
+      throw error;
+    }
+  }));
+
   app.get("/api/stations", asyncHandler(async (_req, res) => {
     const stations = await db.select().from(gameStations);
     res.json(stations);
@@ -423,17 +493,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mpesaRef
       });
     } catch (error) {
-      throw error;
-    }
-  }));
-
-  // Add this endpoint after the existing user-related endpoints
-  app.get("/api/users/customers", asyncHandler(async (_req, res) => {
-    try {
-      const customers = await db.select().from(users).where(sql`${users.role} = 'customer'`);
-      res.json(customers);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
       throw error;
     }
   }));
