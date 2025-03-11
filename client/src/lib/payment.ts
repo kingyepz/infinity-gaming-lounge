@@ -35,14 +35,15 @@ export async function createTransaction(transactionData: {
 /**
  * Process a cash payment
  */
-export async function processCashPayment(transactionId: number, amount: number) {
+export async function processCashPayment(transactionId: number, amount: number, userId?: number) {
   try {
     const response = await apiRequest<{success: boolean; error?: string}>(
       'POST',
       '/api/payments/cash',
       {
         transactionId,
-        amount
+        amount,
+        userId // Include optional userId for loyalty points
       }
     );
     return response;
@@ -55,7 +56,7 @@ export async function processCashPayment(transactionId: number, amount: number) 
 /**
  * Initiate M-Pesa payment
  */
-export async function initiateMpesaPayment(phoneNumber: string, amount: number, transactionId: number) {
+export async function initiateMpesaPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number) {
   try {
     const response = await apiRequest<{success: boolean; checkoutRequestId?: string; error?: string}>(
       'POST',
@@ -63,7 +64,8 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
       {
         phoneNumber,
         amount,
-        transactionId
+        transactionId,
+        userId // Include optional userId for loyalty points
       }
     );
     return response;
@@ -76,7 +78,7 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
 /**
  * Initiate Airtel Money payment
  */
-export async function initiateAirtelPayment(phoneNumber: string, amount: number, transactionId: number) {
+export async function initiateAirtelPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number) {
   try {
     const response = await apiRequest<{success: boolean; reference?: string; error?: string}>(
       'POST',
@@ -84,7 +86,8 @@ export async function initiateAirtelPayment(phoneNumber: string, amount: number,
       {
         phoneNumber,
         amount,
-        transactionId
+        transactionId,
+        userId // Include optional userId for loyalty points
       }
     );
     return response;

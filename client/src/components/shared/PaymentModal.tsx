@@ -20,12 +20,14 @@ interface PaymentModalProps {
   station: any;
   onClose: () => void;
   onPaymentComplete: () => void;
+  userId?: number; // Add optional user ID for loyalty points
 }
 
 export default function PaymentModal({
   station,
   onClose,
   onPaymentComplete,
+  userId,
 }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState("");
@@ -74,7 +76,7 @@ export default function PaymentModal({
       if (paymentMethod === "cash") {
         // Process cash payment
         const { processCashPayment } = await import("@/lib/payment");
-        const result = await processCashPayment(transactionId, amount);
+        const result = await processCashPayment(transactionId, amount, userId);
 
         if (result.success) {
           toast({
