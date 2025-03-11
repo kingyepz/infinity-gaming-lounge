@@ -411,8 +411,8 @@ export default function POSDashboard() {
                       const hours = Math.floor(diffMins / 60);
                       const mins = diffMins % 60;
 
-                      const cost = station.sessionType === "per_game" 
-                        ? station.baseRate 
+                      const cost = station.sessionType === "per_game"
+                        ? station.baseRate
                         : Math.ceil(diffMins / 60) * (station.hourlyRate || 0);
 
                       return (
@@ -449,8 +449,8 @@ export default function POSDashboard() {
                                 </div>
                               </div>
 
-                              <Button 
-                                variant="destructive" 
+                              <Button
+                                variant="destructive"
                                 className="w-full"
                                 onClick={async () => {
                                   try {
@@ -509,9 +509,9 @@ export default function POSDashboard() {
                         <CardContent className="p-4 text-center">
                           <p className="font-bold text-lg">Station #{station.id}</p>
                           <Badge variant="outline" className="mt-2 bg-green-500/20">Available</Badge>
-                          <Button 
+                          <Button
                             variant="default"
-                            size="sm" 
+                            size="sm"
                             className="w-full mt-3"
                             onClick={() => {
                               setSelectedStation(station);
@@ -520,6 +520,25 @@ export default function POSDashboard() {
                           >
                             Start Session
                           </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-black/30 border-primary/20 mt-6">
+                <CardHeader>
+                  <CardTitle>Available Games</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {games?.map((game) => (
+                      <Card key={game.id} className="bg-primary/5 border-primary/10">
+                        <CardContent className="p-4 text-center">
+                          <p className="font-bold text-lg">{game.name}</p>
+                          <Badge variant="outline" className={`mt-2 ${game.isActive ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                            {game.isActive ? 'Available' : 'Unavailable'}
+                          </Badge>
                         </CardContent>
                       </Card>
                     ))}
@@ -722,7 +741,7 @@ export default function POSDashboard() {
                             <span className="text-xs">Active</span>
                           </div>
                           <div className="flex items-center">
-                            <div className="w3 h-3 rounded-full bgprimary/20 relative"></div>
+                            <div className="w-3 h-3 rounded-full bg-primary/20 relative"></div>
                             <span className="text-xs">Available</span>
                           </div>
                         </div>
@@ -956,7 +975,7 @@ export default function POSDashboard() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-primary/5 p-3 rounded-md">
-                      <p className="text-sm text-mutedforeground">Today</p>
+                      <p className="text-sm text-muted-foreground">Today</p>
                       <p className="text-xl font-bold">KSH 12,500</p>
                       <p className="text-xs text-green-500">+15% from yesterday</p>
                     </div>
@@ -1071,158 +1090,95 @@ export default function POSDashboard() {
         />
       )}
       {showNewSessionModal && (
-        <Dialog open={true} onOpenChange={() => setShowNewSessionModal(false)}>
-          <DialogContent className="sm:max-w-[600px]">
+        <Dialog open={showNewSessionModal} onOpenChange={setShowNewSessionModal}>
+          <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
             <DialogHeader>
               <DialogTitle>Start New Gaming Session</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              {!showCustomerRegistration ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Customer</label>
-                    <div className="max-h-[200px] overflow-y-auto space-y-2">
-                      {customers?.map((customer) => (
-                        <div
-                          key={customer.id}
-                          className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedCustomer?.id === customer.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-primary/10 hover:bg-primary/20'
-                          }`}
-                          onClick={() => setSelectedCustomer(customer)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{customer.displayName}</p>
-                              <p className="text-sm opacity-80">@{customer.gamingName}</p>
-                            </div>
-                            <Badge>{customer.points} points</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowCustomerRegistration(true)}
-                  >
-                    Register New Customer
-                  </Button>
+            <div className="grid gap-4 py-4">
+              <div>
+                <label className="text-sm text-muted-foreground">Select Game</label>
+                <Select
+                  onValueChange={setSelectedGame}
+                  value={selectedGame || undefined}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a game" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {games?.map(game => (
+                      <SelectItem key={game.id} value={game.name}>
+                        {game.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Game</label>
-                    <Select value={selectedGame || ""} onValueChange={setSelectedGame}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a game" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {games?.map((game) => (
-                          <SelectItem key={game.id} value={game.name}>
-                            {game.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Customer Name</label>
+                <Input
+                  id="customerName"
+                  className="col-span-3"
+                  value={selectedCustomer?.displayName || ''}
+                  onChange={(e) => setSelectedCustomer({ ...selectedCustomer, displayName: e.target.value } as User)}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select Station</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {stations?.filter(s => !s.currentCustomer).map((station) => (
-                        <div
-                          key={station.id}
-                          className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedStation?.id === station.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-primary/10 hover:bg-primary/20'
-                          }`}
-                          onClick={() => {
-                            if (selectedCustomer && selectedGame) {
-                              setSelectedStation(station);
-                              setShowPayment(true);
-                              setShowNewSessionModal(false);
-                            } else {
-                              toast({
-                                title: "Selection Required",
-                                description: "Please select both a customer and a game before choosing a station",
-                                variant: "destructive"
-                              });
-                            }
-                          }}
-                        >
-                          <p className="font-medium">{station.name}</p>
-                          <p className="text-sm text-primary">Available</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {station.hourlyRate ? `KSH ${station.hourlyRate}/hr` : `KSH ${station.baseRate}/game`}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target as HTMLFormElement);
-
-                  try {
-                    const response = await apiRequest("POST", "/api/users/register", {
-                      displayName: formData.get("displayName"),
-                      gamingName: formData.get("gamingName"),
-                      phoneNumber: formData.get("phoneNumber"),
-                      role: "customer"
-                    });
-
+              <div>
+                <label className="text-sm text-muted-foreground">Session Type</label>
+                <Select
+                  onValueChange={(value) => selectedStation && storage.updateGameStation(selectedStation.id, { sessionType: value as "per_game" | "hourly" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select session type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="per_game">Per Game</SelectItem>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={async () => {
+                try {
+                  if (!selectedStation || !selectedGame) {
                     toast({
-                      title: "Success",
-                      description: "Customer registered successfully!"
+                      title: "Missing Information",
+                      description: "Please select a game and customer details",
+                      variant: "destructive"
                     });
-
-                    await queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] });
-                    setShowCustomerRegistration(false);
-                    setSelectedCustomer(response);
-
-                  } catch (error: any) {
-                    toast({
-                      variant: "destructive",
-                      title: "Registration failed",
-                      description: error.message || "Failed to register customer"
-                    });
+                    return;
                   }
-                }}
-                className="space-y-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground">Display Name</label>
-                    <Input name="displayName" required placeholder="John Doe" />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Gaming Name</label>
-                    <Input name="gamingName" required placeholder="ProGamer123" />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Phone Number</label>
-                    <Input
-                      name="phoneNumber"
-                      required
-                      placeholder="254700000000"
-                      pattern="^254[0-9]{9}$"
-                      title="Please enter a valid Kenyan phone number starting with 254"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit">Register Customer</Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowCustomerRegistration(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              )}
+
+                  await apiRequest("POST", "/api/sessions/start", {
+                    stationId: selectedStation.id,
+                    customerName: selectedCustomer?.displayName || "Walk-in Customer",
+                    gameId: selectedGame,
+                    sessionType: selectedStation.sessionType || "per_game"
+                  });
+
+                  await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+
+                  setShowNewSessionModal(false);
+                  toast({
+                    title: "Session Started",
+                    description: "Gaming session has been started successfully!"
+                  });
+                } catch (error: any) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to start session. Please try again.",
+                    variant: "destructive"
+                  });
+                }
+              }}>
+                Start Session
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
