@@ -66,55 +66,16 @@ export default function POSDashboard() {
     );
   }
 
-  const handleStartSession = async () => {
-    try {
-      if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
-        toast({
-          title: "Missing Information",
-          description: "Please select a game, customer, and session type",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      await apiRequest("POST", "/api/sessions/start", {
-        stationId: selectedStation.id,
-        customerId: selectedCustomer.id,
-        customerName: selectedCustomer.displayName,
-        gameId: selectedGame,
-        sessionType: selectedSessionType
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-
-      setShowNewSessionModal(false);
-      setSelectedGame(null);
-      setSelectedCustomer(null);
-      setSelectedSessionType(null);
-
-      toast({
-        title: "Session Started",
-        description: "Gaming session has been started successfully!"
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to start session. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <div className="flex h-full">
       <Tabs className="w-full" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="sessions">Gaming Sessions</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sessions">
+        <TabsContent value="sessions" className="p-6">
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Gaming Sessions</h2>
@@ -130,8 +91,30 @@ export default function POSDashboard() {
                     variant: "destructive"
                   });
                 }
-              }}>Start New Session</Button>
+              }}>
+                Start New Session
+              </Button>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Games</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {games?.map((game) => (
+                    <Card key={game.id} className="bg-primary/5">
+                      <CardContent className="p-4 text-center">
+                        <p className="font-bold text-lg">{game.name}</p>
+                        <Badge variant="outline" className={`mt-2 ${game.isActive ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                          {game.isActive ? 'Available' : 'Unavailable'}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>
@@ -259,26 +242,13 @@ export default function POSDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Available Games</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {games?.map((game) => (
-                    <Card key={game.id} className="bg-primary/5">
-                      <CardContent className="p-4 text-center">
-                        <p className="font-bold text-lg">{game.name}</p>
-                        <Badge variant="outline" className={`mt-2 ${game.isActive ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                          {game.isActive ? 'Available' : 'Unavailable'}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+        <TabsContent value="overview">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Overview</h2>
+            {/* Overview content */}
           </div>
         </TabsContent>
 
@@ -286,215 +256,6 @@ export default function POSDashboard() {
           <div>
             <h3 className="text-2xl font-bold mb-4">Customers</h3>
             {/* Customer list will be implemented later */}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
-            <Card className="bg-black/40 border-primary/20 col-span-1">
-              <CardHeader>
-                <CardTitle>Stations Overview</CardTitle>
-                <Button size="sm" variant="default" onClick={() => {
-                  const availableStation = stations.find(s => !s.currentCustomer);
-                  if (availableStation) {
-                    setSelectedStation(availableStation);
-                    setShowNewSessionModal(true);
-                  } else {
-                    toast({
-                      title: "No Available Stations",
-                      description: "All gaming stations are currently occupied.",
-                      variant: "destructive"
-                    });
-                  }
-                }} className="ml-auto">Start New Session</Button>
-              </CardHeader>
-              <CardContent className="relative h-60">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {stations && (
-                    <>
-                      <div
-                        className="absolute inset-0 rounded-full border-8 border-primary"
-                        style={{
-                          clipPath: `polygon(50% 50%, 50% 0%, ${
-                            50 + 50 * Math.sin((stations.filter(s => s.currentCustomer).length / stations.length) * Math.PI * 2)
-                          }% ${
-                            50 - 50 * Math.cos((stations.filter(s => s.currentCustomer).length / stations.length) * Math.PI * 2)
-                          }%, 50% 50%)`
-                        }}
-                      ></div>
-                      <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-3xl font-bold">{
-                          stations?.filter(s => s.currentCustomer)?.length || 0
-                        }/{stations?.length || 0}</span>
-                        <span className="text-xs text-muted-foreground">Stations in use</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-black/40 border-primary/20 col-span-1">
-                <CardHeader>
-                  <CardTitle>Stations Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-60">
-                    <div className="flex justify-between px-4 py-4">
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
-                        <span className="text-xs">Active</span>
-                      </div>
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full bg-primary/20 relative"></div>
-                        <span className="text-xs">Available</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-black/40 border-primary/20 col-span-1">
-                <CardHeader>
-                  <CardTitle>Revenue Trends (7 Days)</CardTitle>
-                </CardHeader>
-                <CardContent className="h-80 relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-full flex flex-col">
-                      <div className="flex-1 flex">
-                        {Array.from({ length: 7 }).map((_, i) => {
-                          const height = 30 + Math.random() * 70;
-                          return (
-                            <div key={i} className="flex-1 flex items-end pb-8">
-                              <div
-                                className="w-full mx-1 rounded-t-sm bg-gradient-to-t from-primary/50 to-primary/80"
-                                style={{ height: `${height}%` }}
-                              ></div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex justify-between px-2 text-xs text-muted-foreground">
-                        <span>Mon</span>
-                        <span>Tue</span>
-                        <span>Wed</span>
-                        <span>Thu</span>
-                        <span>Fri</span>
-                        <span>Sat</span>
-                        <span>Sun</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <Card className="bg-black/40 border-primary/20 col-span-1">
-              <CardHeader>
-                <CardTitle>Game Popularity</CardTitle>
-              </CardHeader>
-              <CardContent className="h-80">
-                <div className="h-full flex flex-col justify-center">
-                  {games?.slice(0, 5).map((game, i) => {
-                    const randomPercent = 20 + Math.random() * 80;
-                    return (
-                      <div key={i} className="mb-6 last:mb-0">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">{game.name}</span>
-                          <span className="text-sm font-medium">{Math.floor(randomPercent)}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-primary/20 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full"
-                            style={{ width: `${randomPercent}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
-            <Card className="bg-black/40 border-primary/20 col-span-1 lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Hourly Traffic</CardTitle>
-              </CardHeader>
-              <CardContent className="h-60 relative">
-                <div className="absolute inset-0 px-4">
-                  <div className="h-full flex items-end">
-                    <svg className="w-full h-full" viewBox="0 0 24 10" preserveAspectRatio="none">
-                      <path
-                        d="M0,10 C1,8 2,9 3,7 C4,5 5,6 6,4 C7,2 8,3 9,3 C10,3 11,5 12,4 C13,3 14,2 15,3 C16,4 17,5 18,4 C19,3 20,2 21,1 C22,0 23,1 24,2"
-                        fill="none"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="0.2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-muted-foreground px-2">
-                    <span>9AM</span>
-                    <span>12PM</span>
-                    <span>3PM</span>
-                    <span>6PM</span>
-                    <span>9PM</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-black/40 border-primary/20 col-span-1">
-              <CardHeader>
-                <CardTitle>Customer Types</CardTitle>
-              </CardHeader>
-              <CardContent className="h-60 flex items-center justify-center">
-                <div className="relative w-36 h-36">
-                  <svg viewBox="0 0 36 36">
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth="2"
-                      strokeDasharray="60, 100"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="hsl(var(--primary) / 0.5)"
-                      strokeWidth="2"
-                      strokeDasharray="25, 100"
-                      strokeDashoffset="-60"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="hsl(var(--primary) / 0.2)"
-                      strokeWidth="2"
-                      strokeDasharray="15, 100"
-                      strokeDashoffset="-85"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-medium">Total: 100</span>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <div className="flex items-center mb-2">
-                    <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
-                    <span className="text-sm">Regular (60%)</span>
-                  </div>
-                  <div className="flex items-center mb-2">
-                    <div className="w-3 h-3 rounded-full bg-primary/50 mr-2"></div>
-                    <span className="text-sm">New (25%)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
-                    <span className="text-sm">VIP (15%)</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
       </Tabs>
@@ -573,7 +334,44 @@ export default function POSDashboard() {
               <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleStartSession}>
+              <Button onClick={async () => {
+                try {
+                  if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
+                    toast({
+                      title: "Missing Information",
+                      description: "Please select a game, customer and session type",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  await apiRequest("POST", "/api/sessions/start", {
+                    stationId: selectedStation.id,
+                    customerId: selectedCustomer.id,
+                    customerName: selectedCustomer.displayName,
+                    gameId: selectedGame,
+                    sessionType: selectedSessionType
+                  });
+
+                  await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+
+                  setShowNewSessionModal(false);
+                  setSelectedGame(null);
+                  setSelectedCustomer(null);
+                  setSelectedSessionType(null);
+
+                  toast({
+                    title: "Session Started",
+                    description: "Gaming session has been started successfully!"
+                  });
+                } catch (error: any) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to start session. Please try again.",
+                    variant: "destructive"
+                  });
+                }
+              }}>
                 Start Session
               </Button>
             </div>
