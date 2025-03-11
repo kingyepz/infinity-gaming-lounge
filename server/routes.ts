@@ -593,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions/payment", asyncHandler(async (req, res) => {
     try {
-      const { stationId, amount, paymentMethod, mpesaRef } = req.body;
+      const { stationId, amount, paymentMethod, phoneNumber, reference } = req.body;
 
       // Validate input
       if (!stationId || !amount || !paymentMethod) {
@@ -609,7 +609,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: String(amount), // Always convert amount to string
         paymentMethod,
         status: paymentMethod === "cash" ? "completed" : "pending",
-        mpesaRef: paymentMethod === "mpesa" ? mpesaRef : null,
+        reference: reference || null,
+        phoneNumber: phoneNumber || null,
         createdAt: new Date()
       }).returning();
 
@@ -660,6 +661,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }));
+  
+  // Cash payment route
+  app.post("/api/payments/cash", asyncHandler(async (req, res) => {
+    try {
+      const paymentData = cashPaymentSchema.parse(req.body);
+      
+      // Create payment record with status=completed
+      const [payment] = await db.insert(payments).values({
+        transactionId: paymentData.transactionId,
+        amount: String(paymentData.amount),
+        paymentMethod: "cash",
+        status: "completed",
+        createdAt: new Date()
+      }).returning();
+      
+      if (!payment) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to create cash payment record"
+        });
+      }
+      
+      // Update transaction status to completed
+      await db.update(transactions)
+        .set({ 
+          paymentStatus: "completed" 
+        })
+        .where(eq(transactions.id, paymentData.transactionId));
+      
+      return res.json({
+        success: true,
+        message: "Cash payment processed successfully",
+        payment
+      });
+    } catch (error: any) {
+      console.error("Cash payment error:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Failed to process cash payment"
+      });
+    }
+  }));
+  
+  // Airtel Money payment route
+  app.post("/api/payments/airtel", asyncHandler(async (req, res) => {
+    try {
+      const paymentData = airtelPaymentSchema.parse(req.body);
+      
+      // Initiate Airtel Money payment
+      const response = await airtelMoneyService.initiatePayment({
+        phoneNumber: paymentData.phoneNumber,
+        amount: paymentData.amount,
+        reference: `TXN-${paymentData.transactionId}`,
+        transactionDesc: "Payment for gaming services"
+      });
+      
+      // Store the transaction reference for later verification
+      await db.update(transactions)
+        .set({ 
+          paymentStatus: "pending"
+        })
+        .where(eq(transactions.id, paymentData.transactionId));
+      
+      // Create payment record
+      const [payment] = await db.insert(payments).values({
+        transactionId: paymentData.transactionId,
+        amount: String(paymentData.amount),
+        paymentMethod: "airtel",
+        status: "pending",
+        reference: response.reference,
+        phoneNumber: paymentData.phoneNumber,
+        createdAt: new Date()
+      }).returning();
+      
+      res.json({
+        success: true,
+        message: "Airtel Money payment initiated. Please check your phone to complete payment.",
+        reference: response.reference,
+        transactionId: response.transactionId,
+        payment
+      });
+    } catch (error: any) {
+      console.error("Airtel Money payment error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to initiate Airtel Money payment"
+      });
+    }
+  }));
 
 
   // Error handling middleware
@@ -673,11 +763,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return server;
 }
 
-const mpesaPaymentSchema = z.object({
-  phoneNumber: z.string(),
+// Common payment schema
+const basePaymentSchema = z.object({
   amount: z.number(),
   transactionId: z.number()
 });
+
+// Mobile money payment schemas
+const mpesaPaymentSchema = basePaymentSchema.extend({
+  phoneNumber: z.string()
+});
+
+const airtelPaymentSchema = basePaymentSchema.extend({
+  phoneNumber: z.string()
+});
+
+// Cash payment schema - no additional fields needed
+const cashPaymentSchema = basePaymentSchema;
 
 const updateStationSchema = z.object({
   currentCustomer: z.string().nullable(),
