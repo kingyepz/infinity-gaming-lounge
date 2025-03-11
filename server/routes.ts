@@ -31,40 +31,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   wss.on('connection', (ws) => {
     const id = Math.random().toString(36).substring(7);
     wsConnections.set(id, ws);
+    console.log('WebSocket client connected:', id);
+
+    // Send initial session data on connection
+    getAndBroadcastSessions();
 
     ws.on('close', () => {
+      console.log('WebSocket client disconnected:', id);
       wsConnections.delete(id);
     });
   });
 
   // Session update interval
-  setInterval(async () => {
+  const getAndBroadcastSessions = async () => {
     try {
-      const activeStations = await db.select()
-        .from(gameStations)
-        .where(eq(gameStations.isActive, true));
+      const activeStations = await db.select().from(gameStations);
 
-      const activeSessionsData = activeStations.map(station => {
-        if (!station.sessionStartTime || !station.currentCustomer) return null;
+      const activeSessionsData = activeStations
+        .filter(station => station.currentCustomer && station.sessionStartTime)
+        .map(station => {
+          const startTime = new Date(station.sessionStartTime!);
+          const now = new Date();
+          const diffMs = now.getTime() - startTime.getTime();
+          const diffMins = Math.floor(diffMs / 60000);
 
-        const startTime = new Date(station.sessionStartTime);
-        const now = new Date();
-        const diffMs = now.getTime() - startTime.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
+          const cost = station.sessionType === "per_game"
+            ? 40 // Fixed rate per game
+            : Math.ceil(diffMins / 60) * 200; // 200 KES per hour
 
-        const cost = station.sessionType === "per_game"
-          ? 40 // Fixed rate per game
-          : Math.ceil(diffMins / 60) * 200; // 200 KES per hour
-
-        return {
-          stationId: station.id,
-          customerName: station.currentCustomer,
-          gameName: station.currentGame,
-          duration: diffMins,
-          cost: cost,
-          sessionType: station.sessionType
-        };
-      }).filter(Boolean);
+          return {
+            stationId: station.id,
+            customerName: station.currentCustomer,
+            gameName: station.currentGame,
+            duration: diffMins,
+            cost: cost,
+            sessionType: station.sessionType,
+            name: station.name,
+            sessionStartTime: station.sessionStartTime
+          };
+        });
 
       broadcast({
         type: 'SESSION_UPDATE',
@@ -73,7 +78,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error broadcasting session updates:', error);
     }
-  }, 1000); // Update every second
+  };
+
+  setInterval(getAndBroadcastSessions, 1000); // Update every second
 
   // User related routes
   app.get("/api/users/customers", asyncHandler(async (_req, res) => {
@@ -182,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching station:", error);
         throw error;
     }
-}));
+  }));
 
 
   app.get("/api/reports/current", asyncHandler(async (_req, res) => {

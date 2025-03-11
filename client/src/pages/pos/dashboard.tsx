@@ -187,6 +187,14 @@ export default function POSDashboard() {
     };
 
     const renderActiveSessions = () => {
+        if (!sessionUpdates || sessionUpdates.length === 0) {
+            return (
+                <div className="text-center py-4 text-muted-foreground">
+                    No active sessions
+                </div>
+            );
+        }
+
         return sessionUpdates.map((session) => (
             <Card key={session.stationId} className="bg-primary/5 border-primary/10">
                 <CardHeader className="pb-2">
@@ -226,7 +234,17 @@ export default function POSDashboard() {
                         <Button
                             variant="destructive"
                             className="w-full"
-                            onClick={() => handleEndSession({ id: session.stationId, sessionStartTime: session.sessionStartTime, currentCustomer: session.customerName, currentGame: session.gameName, sessionType: session.sessionType, baseRate: session.baseRate, hourlyRate: session.hourlyRate })}
+                            onClick={() => handleEndSession({
+                                id: session.stationId,
+                                sessionStartTime: session.sessionStartTime,
+                                currentCustomer: session.customerName,
+                                currentGame: session.gameName, 
+                                sessionType: session.sessionType as "per_game" | "hourly",
+                                name: session.name,
+                                isActive: true,
+                                baseRate: 40,
+                                hourlyRate: 200
+                            })}
                         >
                             End Session
                         </Button>
@@ -406,6 +424,46 @@ export default function POSDashboard() {
                 </div>
 
                 <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
+                    <TabsContent value="sessions">
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-2xl font-bold">Gaming Sessions</h2>
+                                <Button 
+                                    variant="default" 
+                                    onClick={() => {
+                                        const availableStation = stations?.find(s => !s.currentCustomer);
+                                        if (availableStation) {
+                                            setSelectedStation(availableStation);
+                                            setShowNewSessionModal(true);
+                                        } else {
+                                            toast({
+                                                title: "No Available Stations",
+                                                description: "All gaming stations are currently occupied.",
+                                                variant: "destructive"
+                                            });
+                                        }
+                                    }}
+                                >
+                                    Start New Session
+                                </Button>
+                            </div>
+
+                            <Card className="bg-black/30 border-primary/20">
+                                <CardHeader>
+                                    <CardTitle>Active Sessions</CardTitle>
+                                    {connected && (
+                                        <p className="text-sm text-green-500">Real-time updates active</p>
+                                    )}
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {renderActiveSessions()}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+                    
                     <TabsContent value="overview">
                         <div className="space-y-4 sm:space-y-6">
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
