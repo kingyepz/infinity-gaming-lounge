@@ -4,7 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, GamepadIcon, BarChart2Icon, DollarSignIcon, UsersIcon } from "lucide-react";
+import { 
+  CalendarIcon, 
+  GamepadIcon, 
+  BarChart2Icon, 
+  DollarSignIcon, 
+  UsersIcon,
+  DownloadIcon,
+  PrinterIcon,
+  LogOutIcon
+} from "lucide-react";
 import InfinityLogo from "@/components/animations/InfinityLogo";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -139,7 +148,7 @@ export default function POSDashboard() {
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
-              <Download className="w-4 h-4 mr-2" />
+              <DownloadIcon className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
@@ -282,7 +291,7 @@ export default function POSDashboard() {
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => document.querySelector('[value="sessions"]')?.dispatchEvent(new MouseEvent('click'))}
                       >
-                        <Calendar className="h-6 w-6 mb-2" />
+                        <CalendarIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Manage Sessions</span>
                       </Button>
                       <Button 
@@ -319,7 +328,7 @@ export default function POSDashboard() {
                           });
                         }}
                       >
-                        <Printer className="h-6 w-6 mb-2" />
+                        <PrinterIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Print Receipt</span>
                       </Button>
                       <Button 
@@ -327,7 +336,7 @@ export default function POSDashboard() {
                         className="h-auto flex flex-col items-center p-3 bg-red-900/20 hover:bg-red-900/30"
                         onClick={handleLogout}
                       >
-                        <LogOut className="h-6 w-6 mb-2" />
+                        <LogOutIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Logout</span>
                       </Button>
                     </div>
