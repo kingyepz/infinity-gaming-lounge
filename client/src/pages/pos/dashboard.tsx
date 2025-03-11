@@ -101,26 +101,6 @@ export default function POSDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Available Games</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {games?.map((game) => (
-                    <Card key={game.id} className="bg-primary/5">
-                      <CardContent className="p-4 text-center">
-                        <p className="font-bold text-lg">{game.name}</p>
-                        <Badge variant="outline" className={`mt-2 ${game.isActive ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                          {game.isActive ? 'Available' : 'Unavailable'}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Active Sessions</CardTitle>
               </CardHeader>
               <CardContent>
@@ -176,6 +156,7 @@ export default function POSDashboard() {
                               className="w-full"
                               onClick={async () => {
                                 try {
+                                  // First create the transaction record
                                   await apiRequest("POST", "/api/transactions", {
                                     stationId: station.id,
                                     customerName: station.currentCustomer,
@@ -186,10 +167,12 @@ export default function POSDashboard() {
                                     paymentStatus: "completed"
                                   });
 
+                                  // Then end the session
                                   await apiRequest("POST", "/api/sessions/end", {
                                     stationId: station.id
                                   });
 
+                                  // Refresh data
                                   await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
                                   await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
 
@@ -239,6 +222,26 @@ export default function POSDashboard() {
                         >
                           Start Session
                         </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Games</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {games?.map((game) => (
+                    <Card key={game.id} className="bg-primary/5">
+                      <CardContent className="p-4 text-center">
+                        <p className="font-bold text-lg">{game.name}</p>
+                        <Badge variant="outline" className={`mt-2 ${game.isActive ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                          {game.isActive ? 'Available' : 'Unavailable'}
+                        </Badge>
                       </CardContent>
                     </Card>
                   ))}
