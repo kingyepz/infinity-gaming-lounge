@@ -42,7 +42,7 @@ export default function POSDashboard() {
 
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["/api/users/customers"],
-    queryFn: () => apiRequest("/api/users/customers")
+    queryFn: () => apiRequest("GET", "/api/users/customers")
   });
 
   const { data: transactions } = useQuery({
@@ -430,46 +430,46 @@ export default function POSDashboard() {
                                 });
 
                                 // Calculate duration in minutes
-    const duration = (() => {
-      const startTime = new Date(station.sessionStartTime!);
-      const now = new Date();
-      return Math.floor((now.getTime() - startTime.getTime()) / 60000);
-    })();
+                                const duration = (() => {
+                                  const startTime = new Date(station.sessionStartTime!);
+                                  const now = new Date();
+                                  return Math.floor((now.getTime() - startTime.getTime()) / 60000);
+                                })();
 
-    // Calculate final amount based on session type and duration
-    const finalAmount = station.sessionType === "per_game" 
-      ? station.baseRate 
-      : Math.ceil(duration / 60) * station.hourlyRate;
+                                // Calculate final amount based on session type and duration
+                                const finalAmount = station.sessionType === "per_game" 
+                                  ? station.baseRate 
+                                  : Math.ceil(duration / 60) * station.hourlyRate;
 
-    // Create final transaction record for completed session
-    await apiRequest("POST", "/api/transactions", {
-      stationId: station.id,
-      customerName: station.currentCustomer!,
-      gameName: station.currentGame!,
-      amount: finalAmount,
-      sessionType: station.sessionType!,
-      duration: duration,
-      paymentStatus: "completed"
-    });
+                                // Create final transaction record for completed session
+                                await apiRequest("POST", "/api/transactions", {
+                                  stationId: station.id,
+                                  customerName: station.currentCustomer!,
+                                  gameName: station.currentGame!,
+                                  amount: finalAmount,
+                                  sessionType: station.sessionType!,
+                                  duration: duration,
+                                  paymentStatus: "completed"
+                                });
 
-    // Clear the station data
-    await apiRequest("PATCH", `/api/stations/${station.id}`, {
-      currentCustomer: null,
-      currentGame: null,
-      sessionType: null,
-      sessionStartTime: null
-    });
+                                // Clear the station data
+                                await apiRequest("PATCH", `/api/stations/${station.id}`, {
+                                  currentCustomer: null,
+                                  currentGame: null,
+                                  sessionType: null,
+                                  sessionStartTime: null
+                                });
 
-    // Award loyalty points (10% of amount spent) if we had a user ID connection
-    // This would be implemented with user lookup by name in a real system
+                                // Award loyalty points (10% of amount spent) if we had a user ID connection
+                                // This would be implemented with user lookup by name in a real system
 
-    await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/reports/current"] });
+                                await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+                                await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+                                await queryClient.invalidateQueries({ queryKey: ["/api/reports/current"] });
 
-    toast({
-      title: "Session Ended",
-      description: `The gaming session has been ended and payment of KSH ${finalAmount} recorded`
+                                toast({
+                                  title: "Session Ended",
+                                  description: `The gaming session has been ended and payment of KSH ${finalAmount} recorded`
                                 });
 
                               } catch (error: any) {
@@ -686,7 +686,7 @@ export default function POSDashboard() {
                         const totalMinutes = activeSessions.reduce((sum, s) => {
                           const startTime = new Date(s.sessionStartTime);
                           const now = new Date();
-                          return sum + Mathfloor((now.getTime() - startTime.getTime()) / (1000 * 60));
+                          return sum + Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
                         }, 0);
                         return `${Math.floor(totalMinutes / activeSessions.length)} min`;
                       })()}
