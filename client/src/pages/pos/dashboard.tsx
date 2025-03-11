@@ -385,14 +385,15 @@ export default function POSDashboard() {
                   const availableStation = stations?.find(s => !s.currentCustomer);
                   if (availableStation) {
                     setSelectedStation(availableStation);
-                    setShowPayment(true);
+                    setShowNewSessionModal(true);
                   } else {
                     toast({
-                      title: "No available stations",
-                      description: "All stations are currently in use."
+                      title: "No Available Stations",
+                      description: "All gaming stations are currently occupied.",
+                      variant: "destructive"
                     });
                   }
-                }}>New Session</Button>
+                }}>Start New Session</Button>
               </div>
 
               <Card className="bg-black/30 border-primary/20">
@@ -401,139 +402,98 @@ export default function POSDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stations?.filter(station => station.currentCustomer).map((station) => (
-                      <Card key={station.id} className="bg-primary/5 border-primary/10">
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between">
-                            <CardTitle className="text-sm font-medium">Station #{station.id}</CardTitle>
-                            <Badge>Active</Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-xs text-muted-foreground mb-1">Customer</p>
-                          <p className="font-medium">{station.currentCustomer}</p>
+                    {stations?.filter(station => station.currentCustomer).map((station) => {
+                      // Calculate session duration and cost
+                      const startTime = new Date(station.sessionStartTime!);
+                      const now = new Date();
+                      const diffMs = now.getTime() - startTime.getTime();
+                      const diffMins = Math.floor(diffMs / 60000);
+                      const hours = Math.floor(diffMins / 60);
+                      const mins = diffMins % 60;
 
-                          <div className="grid grid-cols-2 gap-2 mt-3">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Game</p>
-                              <p className="font-medium">{station.currentGame}</p>
+                      const cost = station.sessionType === "per_game" 
+                        ? station.baseRate 
+                        : Math.ceil(diffMins / 60) * (station.hourlyRate || 0);
+
+                      return (
+                        <Card key={station.id} className="bg-primary/5 border-primary/10">
+                          <CardHeader className="pb-2">
+                            <div className="flex justify-between">
+                              <CardTitle className="text-sm font-medium">Station #{station.id}</CardTitle>
+                              <Badge variant="outline" className="bg-green-500/20">Active</Badge>
                             </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Time Left</p>
-                              <p className="font-medium">
-                                {(() => {
-                                  const startTime = new Date(station.sessionStartTime!);
-                                  const now = new Date();
-                                  const diffMs = now.getTime() - startTime.getTime();
-                                  const diffMins = Math.floor(diffMs / 60000);
-                                  return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
-                                })()}
-                              </p>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Customer</p>
+                                <p className="font-medium">{station.currentCustomer}</p>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Game</p>
+                                  <p className="font-medium">{station.currentGame}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Duration</p>
+                                  <p className="font-medium">{hours}h {mins}m</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Type</p>
+                                  <p className="font-medium capitalize">{station.sessionType}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Cost</p>
+                                  <p className="font-medium">KSH {cost}</p>
+                                </div>
+                              </div>
+
+                              <Button 
+                                variant="destructive" 
+                                className="w-full"
+                                onClick={async () => {
+                                  try {
+                                    // Create the transaction record
+                                    await apiRequest("POST", "/api/transactions", {
+                                      stationId: station.id,
+                                      customerName: station.currentCustomer,
+                                      gameName: station.currentGame,
+                                      sessionType: station.sessionType,
+                                      amount: cost,
+                                      duration: diffMins,
+                                      paymentStatus: "completed"
+                                    });
+
+                                    // End the session
+                                    await apiRequest("POST", "/api/sessions/end", {
+                                      stationId: station.id
+                                    });
+
+                                    // Refresh data
+                                    await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+                                    await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+
+                                    toast({
+                                      title: "Session Ended",
+                                      description: `Session completed. Total cost: KSH ${cost}`,
+                                    });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to end session. Please try again.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                              >
+                                End Session
+                              </Button>
                             </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Started</p>
-                              <p className="font-medium">{new Date(station.sessionStartTime!).toLocaleTimeString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Amount</p>
-                              <p className="font-medium">KSH {station.sessionType === "per_game" ? station.baseRate : station.hourlyRate}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2 mt-4">
-                            <Button size="sm" variant="outline" className="flex-1" onClick={async () => {
-                              try {
-                                await apiRequest("PATCH", `/api/stations/${station.id}`, {
-                                  sessionStartTime: new Date().toISOString()
-                                });
-
-                                await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-
-                                toast({
-                                  title: "Session Extended",
-                                  description: "The gaming session has been extended successfully!"
-                                });
-                              } catch (error: any) {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Failed to extend session",
-                                  description: error.message
-                                });
-                              }
-                            }}>Extend</Button>
-                            <Button size="sm" variant="destructive" className="flex-1" onClick={async () => {
-                              try {
-                                await apiRequest("PATCH", `/api/stations/${station.id}`, {
-                                  currentCustomer: null,
-                                  currentGame: null,
-                                  sessionType: null,
-                                  sessionStartTime: null,
-                                  lastCustomer: station.currentCustomer,
-                                  lastSessionAmount: station.sessionType === "per_game" ? station.baseRate : station.hourlyRate,
-                                  lastSessionDuration: (() => {
-                                    const startTime = new Date(station.sessionStartTime!);
-                                    const now = new Date();
-                                    const diffMs = now.getTime() - startTime.getTime();
-                                    const diffMins = Math.floor(diffMs / 60000);
-                                    return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
-                                  })()
-                                });
-
-                                // Calculate duration in minutes
-                                const duration = (() => {
-                                  const startTime = new Date(station.sessionStartTime!);
-                                  const now = new Date();
-                                  return Math.floor((now.getTime() - startTime.getTime()) / 60000);
-                                })();
-
-                                // Calculate final amount based on session type and duration
-                                const finalAmount = station.sessionType === "per_game"
-                                  ? station.baseRate
-                                  : Math.ceil(duration / 60) * station.hourlyRate;
-
-                                // Create final transaction record for completed session
-                                await apiRequest("POST", "/api/transactions", {
-                                  stationId: station.id,
-                                  customerName: station.currentCustomer!,
-                                  gameName: station.currentGame!,
-                                  amount: finalAmount,
-                                  sessionType: station.sessionType!,
-                                  duration: duration,
-                                  paymentStatus: "completed"
-                                });
-
-                                // Clear the station data
-                                await apiRequest("PATCH", `/api/stations/${station.id}`, {
-                                  currentCustomer: null,
-                                  currentGame: null,
-                                  sessionType: null,
-                                  sessionStartTime: null
-                                });
-
-                                // Award loyalty points (10% of amount spent) if we had a user ID connection
-                                // This would be implemented with user lookup by name in a real system
-
-                                await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-                                await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-                                await queryClient.invalidateQueries({ queryKey: ["/api/reports/current"] });
-
-                                toast({
-                                  title: "Session Ended",
-                                  description: `The gaming session has been ended and payment of KSH ${finalAmount} recorded`
-                                });
-
-                              } catch (error: any) {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Failed to end session",
-                                  description: error.message
-                                });
-                              }
-                            }}>End</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -543,46 +503,25 @@ export default function POSDashboard() {
                   <CardTitle>Available Stations</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {stations?.filter(station => !station.currentCustomer).map((station) => (
                       <Card key={station.id} className="bg-green-900/20 border-green-500/20">
                         <CardContent className="p-4 text-center">
                           <p className="font-bold text-lg">Station #{station.id}</p>
                           <Badge variant="outline" className="mt-2 bg-green-500/20">Available</Badge>
-                          <Button size="sm" className="w-full mt-3" onClick={() => {
-                            setSelectedStation(station);
-                            setShowPayment(true);
-                          }}>Start Session</Button>
+                          <Button 
+                            variant="default"
+                            size="sm" 
+                            className="w-full mt-3"
+                            onClick={() => {
+                              setSelectedStation(station);
+                              setShowNewSessionModal(true);
+                            }}
+                          >
+                            Start Session
+                          </Button>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-black/30 border-primary/20">
-                <CardHeader>
-                  <CardTitle>Recent Sessions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {transactions?.slice(0, 5).map((transaction, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 border border-primary/10 rounded-md">
-                        <div>
-                          <p className="font-medium">Station #{transaction.stationId}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {transaction.customerName} - {transaction.gameName}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">
-                            KSH {transaction.amount}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {Math.floor(transaction.duration / 60)}h {transaction.duration % 60}m
-                          </p>
-                        </div>
-                      </div>
                     ))}
                   </div>
                 </CardContent>
