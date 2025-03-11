@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Banknote, SmartphoneIcon, CheckCircle, XCircle } from "lucide-react";
+import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon } from "lucide-react";
+import QRCodePayment from "./QRCodePayment";
 
-type PaymentMethod = "cash" | "mpesa" | "airtel";
+type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode" | "qr-mpesa" | "qr-airtel";
 
 type PaymentStatus = "idle" | "processing" | "completed" | "failed";
 
@@ -250,10 +251,11 @@ export default function PaymentModal({
             </p>
           </div>
           <Tabs defaultValue="cash" className="w-full" onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="cash">Cash</TabsTrigger>
               <TabsTrigger value="mpesa">M-Pesa</TabsTrigger>
-              <TabsTrigger value="airtel">Airtel Money</TabsTrigger>
+              <TabsTrigger value="airtel">Airtel</TabsTrigger>
+              <TabsTrigger value="qrcode">QR Code</TabsTrigger>
             </TabsList>
             <TabsContent value="cash" className="mt-4">
               {/* Cash Payment UI */}
@@ -371,6 +373,103 @@ export default function PaymentModal({
                     <Button onClick={() => setAirtelStatus("idle")} variant="outline">Try Again</Button>
                   </div>
                 )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="qrcode" className="mt-4">
+              {/* QR Code Payment UI */}
+              <div className="space-y-4">
+                <div className="border p-4 rounded-md">
+                  <div className="flex items-center justify-center mb-4">
+                    <QrCodeIcon className="h-12 w-12 text-primary mb-2" />
+                  </div>
+                  <p className="text-center mb-4">
+                    Select your preferred payment method and scan the QR code
+                  </p>
+                  
+                  <div className="flex justify-center space-x-4 mb-4">
+                    <Button
+                      variant={paymentMethod === "qr-mpesa" ? "default" : "outline"}
+                      onClick={() => {
+                        setMpesaStatus("idle");
+                        setPaymentMethod("qr-mpesa" as PaymentMethod);
+                      }}
+                      className="flex-1"
+                    >
+                      M-Pesa
+                    </Button>
+                    <Button
+                      variant={paymentMethod === "qr-airtel" ? "default" : "outline"}
+                      onClick={() => {
+                        setAirtelStatus("idle");
+                        setPaymentMethod("qr-airtel" as PaymentMethod);
+                      }}
+                      className="flex-1"
+                    >
+                      Airtel Money
+                    </Button>
+                  </div>
+                  
+                  {paymentMethod === "qr-mpesa" && (
+                    <div className="mt-4">
+                      <QRCodePayment
+                        amount={amount}
+                        transactionId={0} // Will be set after creating transaction
+                        paymentType="mpesa"
+                        onCheckStatus={async () => {
+                          try {
+                            // Mock implementation - in real app would check status from server
+                            return { status: "COMPLETED" };
+                          } catch (error) {
+                            console.error("Error checking payment status:", error);
+                            return { status: "ERROR", message: "Failed to check payment status" };
+                          }
+                        }}
+                        onComplete={() => {
+                          toast({
+                            title: "Payment Successful",
+                            description: "QR payment processed successfully."
+                          });
+                          onPaymentComplete();
+                          onClose();
+                        }}
+                        onRetry={() => {
+                          setMpesaStatus("idle");
+                        }}
+                      />
+                    </div>
+                  )}
+                  
+                  {paymentMethod === "qr-airtel" && (
+                    <div className="mt-4">
+                      <QRCodePayment
+                        amount={amount}
+                        transactionId={0} // Will be set after creating transaction
+                        paymentType="airtel"
+                        onCheckStatus={async () => {
+                          try {
+                            // Mock implementation - in real app would check status from server
+                            return { status: "COMPLETED" };
+                          } catch (error) {
+                            console.error("Error checking payment status:", error);
+                            return { status: "ERROR", message: "Failed to check payment status" };
+                          }
+                        }}
+                        onComplete={() => {
+                          toast({
+                            title: "Payment Successful",
+                            description: "QR payment processed successfully."
+                          });
+                          onPaymentComplete();
+                          onClose();
+                        }}
+                        onRetry={() => {
+                          setAirtelStatus("idle");
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </TabsContent>
           </Tabs>
