@@ -206,7 +206,7 @@ class StorageService {
     try {
       return await db.select()
         .from(users)
-        .where(users.role === "customer") //Corrected to ===
+        .where(eq(users.role, "customer"))
         .orderBy(desc(users.createdAt));
     } catch (error) {
       console.error("Error fetching customers:", error);
