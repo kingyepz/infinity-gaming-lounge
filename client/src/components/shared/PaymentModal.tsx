@@ -5,54 +5,71 @@ import type { GameStation } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface PaymentModalProps {
   amount: number;
-  station: GameStation;
-  onSuccess: () => void;
+  station: any;
+  onSuccess: () => Promise<void>;
   onClose: () => void;
 }
 
 export default function PaymentModal({ amount, station, onSuccess, onClose }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash");
+  const [mpesaRef, setMpesaRef] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
   const handlePayment = async () => {
     try {
       setProcessing(true);
-      const response = await apiRequest("POST", "/api/transactions/payment", {
-        stationId: station.id,
-        amount,
-        paymentMethod,
-        mpesaRef: paymentMethod === "mpesa" ? `MP${Date.now()}` : null
+
+      // Create payment record through API
+      const response = await fetch("/api/transactions/payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          stationId: station.id,
+          amount: amount,
+          paymentMethod: paymentMethod,
+          mpesaRef: paymentMethod === "mpesa" ? mpesaRef : null
+        }),
       });
 
-      if (!response?.success) {
-        throw new Error(response?.error || "Payment processing failed");
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Payment processing failed");
       }
 
+      // Show appropriate success message
       if (paymentMethod === "cash") {
         toast({
-          title: "Payment Successful",
-          description: `Cash payment of KSH ${amount} received`
+          title: "Cash Payment Processed",
+          description: `KSH ${amount} received successfully.`,
         });
-        onSuccess();
-      } else {
+      } else if (paymentMethod === "mpesa") {
         toast({
-          title: "M-Pesa Payment",
-          description: "Please follow the M-Pesa instructions to complete payment"
+          title: "M-Pesa Payment Verified",
+          description: `Payment of KSH ${amount} verified with reference: ${mpesaRef}.`,
         });
       }
-    } catch (error: any) {
+
+      // Call success callback
+      await onSuccess();
+
+      setProcessing(false);
+      onClose();
+    } catch (error) {
       console.error("Payment error:", error);
+      setProcessing(false);
       toast({
-        title: "Payment Failed",
-        description: error.message || "Failed to process payment. Please try again.",
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : "Failed to process payment. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -89,14 +106,20 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
 
           {paymentMethod === "mpesa" && (
             <div>
-              <label className="text-sm text-muted-foreground">M-Pesa Instructions</label>
+              <label className="text-sm text-muted-foreground">M-Pesa Reference</label>
+              <Input
+                placeholder="Enter M-Pesa Reference Number"
+                type="text"
+                onChange={(e) => setMpesaRef(e.target.value)}
+                value={mpesaRef || ""}
+              />
               <p className="text-sm mt-1">
                 1. Go to M-Pesa menu<br/>
                 2. Select Lipa na M-Pesa<br/>
                 3. Enter Till Number: 123456<br/>
                 4. Enter Amount: KSH {amount}<br/>
                 5. Enter your M-Pesa PIN<br/>
-                6. Wait for confirmation SMS
+                6. Wait for confirmation SMS and enter the reference number above.
               </p>
             </div>
           )}
@@ -106,10 +129,10 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
             Cancel
           </Button>
           <Button onClick={handlePayment} disabled={processing}>
-            {processing 
-              ? "Processing..." 
-              : paymentMethod === "cash" 
-                ? "Confirm Payment" 
+            {processing
+              ? "Processing..."
+              : paymentMethod === "cash"
+                ? "Confirm Payment"
                 : "Verify M-Pesa"
             }
           </Button>

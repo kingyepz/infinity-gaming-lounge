@@ -1204,8 +1204,6 @@ export default function POSDashboard() {
                                 sessionType: selectedStation.sessionType,
                                 amount: paymentAmount,
                                 duration: diffMins,
-                                baseRate: 40,
-                                hourlyRate: 200,
                                 paymentStatus: "completed"
                             });
 
