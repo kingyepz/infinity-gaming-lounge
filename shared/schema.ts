@@ -82,8 +82,9 @@ export const transactions = pgTable("transactions", {
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull().default("0"),
   paymentStatus: text("payment_status", { enum: ["pending", "completed", "failed"] }).notNull(),
   mpesaRef: text("mpesa_ref"),
-  mpesaCheckoutId: text("mpesa_checkout_id"),
-  mpesaPhoneNumber: text("mpesa_phone_number"),
+  // Note: These columns are in the schema but not in the database
+  // mpesaCheckoutId: text("mpesa_checkout_id"),
+  // mpesaPhoneNumber: text("mpesa_phone_number"),
   duration: integer("duration"),
   createdAt: timestamp("created_at").defaultNow(),
 });
