@@ -5,7 +5,7 @@ import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
-import { games, transactions, gameStations, users, payments } from "../shared/schema"; // Added 'payments' import
+import { games, transactions, gameStations, users, payments, rewards } from "../shared/schema";
 import { desc, eq } from "drizzle-orm";
 import { mpesaService } from "./mpesa";
 import { airtelMoneyService } from "./airtel";
