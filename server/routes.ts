@@ -1235,6 +1235,7 @@ const airtelPaymentSchema = z.object({
   phoneNumber: z.string(),
   amount: z.number(),
   transactionId: z.number(),
+  userId: z.number().optional(), // Optional user ID for loyalty points
   reference: z.string().optional(), // Make reference optional since it might be generated server-side
   transactionDesc: z.string().optional()
 });
