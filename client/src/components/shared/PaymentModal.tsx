@@ -29,6 +29,7 @@ export default function PaymentModal({
   onPaymentComplete,
   userId,
 }: PaymentModalProps) {
+  console.log("PaymentModal userId:", userId); // Log userId to verify it's being passed
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState("");
   const [airtelPhoneNumber, setAirtelPhoneNumber] = useState("");

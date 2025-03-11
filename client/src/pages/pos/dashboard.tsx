@@ -639,6 +639,7 @@ export default function POSDashboard() {
                         setSelectedStation(null);
                     }}
                     onPaymentComplete={handlePaymentComplete}
+                    userId={selectedCustomer?.id}
                 />
             )}
         </div>
