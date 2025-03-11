@@ -72,6 +72,9 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
         if (!response?.success) {
           throw new Error(response?.error || "Payment processing failed");
         }
+        
+        // Set payment status to completed for cash payments
+        setPaymentStatus("completed");
 
         toast({
           title: "Payment Successful",

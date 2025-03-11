@@ -293,7 +293,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", asyncHandler(async (req, res) => {
     try {
-      const transactionData = insertTransactionSchema.parse(req.body);
+      // Ensure payment status is set to "pending" by default
+      const transactionData = {
+        ...insertTransactionSchema.parse(req.body),
+        paymentStatus: "pending" 
+      };
       const transaction = await db.insert(transactions).values(transactionData).returning();
       res.json(transaction);
     } catch (error) {
@@ -608,11 +612,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Update transaction status if it's a cash payment
+      // Find all transactions for this station and update their status if it's a cash payment
       if (paymentMethod === "cash") {
-        await db.update(transactions)
+        // First try with stationId
+        const updated = await db.update(transactions)
           .set({ paymentStatus: "completed" })
-          .where(eq(transactions.stationId, stationId));
+          .where(eq(transactions.stationId, stationId))
+          .returning();
+          
+        // If no rows updated, try with id
+        if (!updated || updated.length === 0) {
+          await db.update(transactions)
+            .set({ paymentStatus: "completed" })
+            .where(eq(transactions.id, stationId))
+            .returning();
+        }
       }
 
       return res.json({
