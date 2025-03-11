@@ -438,13 +438,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
-    // Implement database query for rewards data
-    res.json([
-      { id: 1, title: "1 Hour Free Gaming", points: 500 },
-      { id: 2, title: "Gaming Headset", points: 2000 },
-      { id: 3, title: "Premium Snack Pack", points: 300 },
-      { id: 4, title: "Controller Skin", points: 800 }
-    ]);
+    try {
+      // Fetch available rewards from the database
+      const rewardsList = await db.select()
+        .from(rewards)
+        .where(eq(rewards.available, true))
+        .orderBy(rewards.points);
+      
+      res.json(rewardsList);
+    } catch (error) {
+      console.error("Error fetching rewards:", error);
+      res.status(500).json({ error: "Failed to fetch rewards" });
+    }
+  }));
+  
+  // Add reward redemption endpoint
+  app.post("/api/rewards/redeem", asyncHandler(async (req, res) => {
+    try {
+      const { userId, rewardId } = req.body;
+      
+      if (!userId || !rewardId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      // Get the reward
+      const [reward] = await db.select()
+        .from(rewards)
+        .where(eq(rewards.id, rewardId));
+      
+      if (!reward) {
+        return res.status(404).json({ error: "Reward not found" });
+      }
+      
+      if (!reward.available) {
+        return res.status(400).json({ error: "Reward is not available" });
+      }
+      
+      // Check if user has enough points
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if ((user.points || 0) < reward.points) {
+        return res.status(400).json({ 
+          error: "Insufficient points", 
+          required: reward.points,
+          available: user.points || 0
+        });
+      }
+      
+      // Redeem points
+      const newPointsBalance = await storage.redeemLoyaltyPoints(userId, reward.points);
+      
+      res.json({
+        success: true,
+        message: `Successfully redeemed ${reward.title}`,
+        newPointsBalance,
+        reward
+      });
+    } catch (error: any) {
+      console.error("Error redeeming reward:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to redeem reward" 
+      });
+    }
   }));
 
   app.get("/api/users/friends", asyncHandler(async (_req, res) => {
@@ -744,9 +805,45 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
       // If payment was successful
       if (ResultCode === 0) {
         // Update transaction status using Merchant Request ID
-        await db.update(transactions)
+        const [updatedTransaction] = await db.update(transactions)
           .set({ paymentStatus: "completed" })
-          .where(eq(transactions.mpesaRef, MerchantRequestID));
+          .where(eq(transactions.mpesaRef, MerchantRequestID))
+          .returning();
+        
+        // If we have a transaction and the customer is a registered user, award loyalty points
+        if (updatedTransaction) {
+          try {
+            // Find the payment with this transaction ID
+            const payment = await db.select()
+              .from(payments)
+              .where(eq(payments.transactionId, updatedTransaction.id))
+              .limit(1);
+            
+            if (payment[0]) {
+              // Find the user by phone number 
+              if (payment[0].phoneNumber) {
+                const user = await db.select()
+                  .from(users)
+                  .where(eq(users.phoneNumber, payment[0].phoneNumber))
+                  .limit(1);
+                
+                if (user[0]) {
+                  // Award points based on payment amount (1 point for every 10 KES)
+                  const amountNum = parseFloat(payment[0].amount);
+                  const pointsToAward = Math.floor(amountNum / 10);
+                  
+                  if (pointsToAward > 0) {
+                    await storage.awardLoyaltyPoints(user[0].id, pointsToAward);
+                    console.log(`Awarded ${pointsToAward} points to user ${user[0].id} for M-Pesa transaction`);
+                  }
+                }
+              }
+            }
+          } catch (pointsError) {
+            console.error("Error awarding points for M-Pesa payment:", pointsError);
+            // Continue even if points award fails
+          }
+        }
       }
 
       res.status(200).json({ success: true });
@@ -872,6 +969,27 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         // Even if the update fails, we'll continue since we've created the payment record
       }
 
+      // Award loyalty points if userId is provided
+      if (paymentData.userId) {
+        try {
+          // Award points based on payment amount (1 point for every 10 KES)
+          const pointsToAward = Math.floor(paymentData.amount / 10);
+          
+          if (pointsToAward > 0) {
+            const newPoints = await storage.awardLoyaltyPoints(paymentData.userId, pointsToAward);
+            
+            PaymentDebugger.log('cash', 'loyalty_points_awarded', {
+              userId: paymentData.userId,
+              pointsAwarded: pointsToAward,
+              newTotalPoints: newPoints
+            });
+          }
+        } catch (pointsError) {
+          PaymentDebugger.logError('cash', 'loyalty_points_award', pointsError);
+          // Continue even if points award fails, as the payment was successful
+        }
+      }
+
       return res.json({
         success: true,
         message: "Cash payment processed successfully",
@@ -986,6 +1104,69 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         success: false,
         error: error.message || "Failed to initiate Airtel Money payment"
       });
+    }
+  }));
+
+  // Add Airtel Money callback endpoint
+  app.post("/api/airtel/callback", asyncHandler(async (req, res) => {
+    try {
+      const callbackData = req.body;
+      console.log("Airtel Money callback received:", JSON.stringify(callbackData));
+
+      // Extract the reference ID from the callback data
+      const { reference, status } = callbackData;
+
+      // If payment was successful
+      if (status === "SUCCESS") {
+        // Find the payment with this reference
+        const payment = await db.select()
+          .from(payments)
+          .where(eq(payments.reference, reference))
+          .limit(1);
+
+        if (payment[0]) {
+          // Update payment status
+          await db.update(payments)
+            .set({ status: "completed" })
+            .where(eq(payments.reference, reference));
+
+          // Update transaction status
+          const [updatedTransaction] = await db.update(transactions)
+            .set({ paymentStatus: "completed" })
+            .where(eq(transactions.id, payment[0].transactionId))
+            .returning();
+          
+          // Award loyalty points if the customer can be identified by phone number
+          if (payment[0].phoneNumber) {
+            try {
+              // Find the user by phone number
+              const user = await db.select()
+                .from(users)
+                .where(eq(users.phoneNumber, payment[0].phoneNumber))
+                .limit(1);
+              
+              if (user[0]) {
+                // Award points based on payment amount (1 point for every 10 KES)
+                const amountNum = parseFloat(payment[0].amount);
+                const pointsToAward = Math.floor(amountNum / 10);
+                
+                if (pointsToAward > 0) {
+                  await storage.awardLoyaltyPoints(user[0].id, pointsToAward);
+                  console.log(`Awarded ${pointsToAward} points to user ${user[0].id} for Airtel Money transaction`);
+                }
+              }
+            } catch (pointsError) {
+              console.error("Error awarding points for Airtel Money payment:", pointsError);
+              // Continue even if points award fails
+            }
+          }
+        }
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error("Airtel Money callback error:", error);
+      res.status(200).json({ success: true }); // Always return 200 to payment provider
     }
   }));
 
