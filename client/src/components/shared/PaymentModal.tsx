@@ -19,29 +19,30 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
 
   const handlePayment = async () => {
     try {
+      // Create payment record
+      const response = await apiRequest("POST", "/api/transactions/payment", {
+        stationId: station.id,
+        amount,
+        paymentMethod,
+        mpesaRef: paymentMethod === "mpesa" ? "Pending" : undefined
+      });
+
+      if (!response) {
+        throw new Error(`Failed to process ${paymentMethod} payment`);
+      }
+
+      // For cash payments, complete immediately
       if (paymentMethod === "cash") {
-        // Process cash payment
-        const response = await apiRequest("POST", "/api/transactions/payment", {
-          stationId: station.id,
-          amount,
-          paymentMethod: "cash"
-        });
-
-        if (!response) {
-          throw new Error("Failed to process cash payment");
-        }
-
         toast({
           title: "Payment Successful",
           description: `Cash payment of KSH ${amount} received`
         });
-
         onSuccess();
       } else {
-        // M-Pesa payment instructions
+        // For M-Pesa, show instructions and wait for verification
         toast({
-          title: "M-Pesa Payment",
-          description: "Please follow the M-Pesa instructions to complete payment",
+          title: "M-Pesa Payment Instructions",
+          description: "Please complete the payment using M-Pesa",
         });
       }
     } catch (error: any) {
@@ -63,6 +64,10 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
         <div className="grid gap-4 py-4">
           <div>
             <p className="text-lg font-bold">Amount: KSH {amount}</p>
+            <p className="text-sm text-muted-foreground">Station: {station.name}</p>
+            <p className="text-sm text-muted-foreground">
+              Rate: KSH {station.sessionType === "per_game" ? "40 per game" : "200 per hour"}
+            </p>
           </div>
           <div>
             <label className="text-sm text-muted-foreground">Payment Method</label>
