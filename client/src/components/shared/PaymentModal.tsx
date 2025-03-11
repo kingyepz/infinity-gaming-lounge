@@ -32,12 +32,8 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
   const queryClient = useQueryClient();
 
   // Fetch registered customers
-  const { data: customers, isLoading: customersLoading } = useQuery({
-    queryKey: ["/api/users/customers"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/users/customers");
-      return response;
-    }
+  const { data: customers = [], isLoading: customersLoading } = useQuery<User[]>({
+    queryKey: ["/api/users/customers"]
   });
 
   const handlePayment = async (paymentInfo: any) => {
@@ -126,7 +122,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
             <Select
               value={selectedCustomer?.id?.toString()}
               onValueChange={(value) => {
-                const customer = customers?.find((c: User) => c.id.toString() === value);
+                const customer = customers.find((c: User) => c.id.toString() === value);
                 setSelectedCustomer(customer || null);
               }}
             >
@@ -134,7 +130,7 @@ export default function PaymentModal({ station, onClose }: PaymentModalProps) {
                 <SelectValue placeholder="Select a customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers && customers.length > 0 ? (
+                {customers.length > 0 ? (
                   customers.map((customer: User) => (
                     <SelectItem key={customer.id} value={customer.id.toString()}>
                       {customer.displayName} ({customer.gamingName})

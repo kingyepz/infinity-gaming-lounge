@@ -31,6 +31,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const res = await fetch(queryKey[0] as string, {
       method: "GET",
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
 
