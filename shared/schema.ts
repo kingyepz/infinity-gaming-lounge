@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -77,13 +77,15 @@ export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   stationId: integer("station_id").notNull(),
   customerName: text("customer_name").notNull(),
-  gameName: text("game_name").notNull(),
+  gameName: text("game_name"),
   sessionType: text("session_type", { enum: ["per_game", "hourly"] }).notNull(),
-  amount: integer("amount").notNull(),
+  amount: numeric("amount").notNull().default("0"),
   paymentStatus: text("payment_status", { enum: ["pending", "completed", "failed"] }).notNull(),
   mpesaRef: text("mpesa_ref"),
-  duration: integer("duration"), // in minutes, for hourly sessions
-  createdAt: timestamp("created_at").defaultNow()
+  mpesaCheckoutId: text("mpesa_checkout_id"),
+  mpesaPhoneNumber: text("mpesa_phone_number"),
+  duration: integer("duration"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const payments = pgTable("payments", {

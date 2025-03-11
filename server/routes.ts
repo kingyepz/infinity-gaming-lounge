@@ -7,6 +7,7 @@ import { log } from "./vite";
 import { db } from "./db";
 import { games, transactions, gameStations, users, payments } from "../shared/schema"; // Added 'payments' import
 import { desc, eq } from "drizzle-orm";
+import { mpesaService } from "./mpesa";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -478,22 +479,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments/mpesa", asyncHandler(async (req, res) => {
     try {
       const paymentData = mpesaPaymentSchema.parse(req.body);
-
-      const mpesaRef = `MP${Date.now()}`;
-
-      await storage.updateTransactionStatus(
-        paymentData.transactionId,
-        "completed",
-        mpesaRef
-      );
-
+      
+      // Initiate STK Push
+      const response = await mpesaService.initiateSTKPush({
+        phoneNumber: paymentData.phoneNumber,
+        amount: paymentData.amount,
+        accountReference: `TXN-${paymentData.transactionId}`,
+        transactionDesc: "Payment for gaming services"
+      });
+      
+      // Store the checkout request ID for later verification
+      await db.update(transactions)
+        .set({ 
+          mpesaCheckoutId: response.CheckoutRequestID,
+          mpesaRef: response.MerchantRequestID,
+          paymentStatus: "pending"
+        })
+        .where(eq(transactions.id, paymentData.transactionId));
+      
       res.json({
         success: true,
-        message: "Payment initiated",
-        mpesaRef
+        message: "M-Pesa payment initiated. Please check your phone to complete payment.",
+        checkoutRequestId: response.CheckoutRequestID,
+        merchantRequestId: response.MerchantRequestID
       });
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      console.error("M-Pesa payment error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to initiate M-Pesa payment"
+      });
+    }
+  }));
+  
+  // Add M-Pesa verification endpoint
+  app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req, res) => {
+    try {
+      const { checkoutRequestId } = req.params;
+      
+      // Check transaction status
+      const statusResponse = await mpesaService.checkTransactionStatus(checkoutRequestId);
+      
+      // If successful, update transaction status
+      if (statusResponse.ResultCode === "0") {
+        const transaction = await db.select()
+          .from(transactions)
+          .where(eq(transactions.mpesaCheckoutId, checkoutRequestId))
+          .limit(1);
+          
+        if (transaction) {
+          await db.update(transactions)
+            .set({ paymentStatus: "completed" })
+            .where(eq(transactions.mpesaCheckoutId, checkoutRequestId));
+        }
+        
+        return res.json({
+          success: true,
+          status: "COMPLETED",
+          message: "Payment completed successfully"
+        });
+      }
+      
+      // Return appropriate status
+      return res.json({
+        success: true,
+        status: statusResponse.ResultCode === "0" ? "COMPLETED" : "PENDING",
+        message: statusResponse.ResultDesc
+      });
+    } catch (error: any) {
+      console.error("M-Pesa status check error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to check payment status"
+      });
+    }
+  }));
+  
+  // Add M-Pesa callback endpoint
+  app.post("/api/mpesa/callback", asyncHandler(async (req, res) => {
+    try {
+      const callbackData = req.body;
+      console.log("M-Pesa callback received:", JSON.stringify(callbackData));
+      
+      // Extract the checkout request ID
+      const { CheckoutRequestID, ResultCode } = callbackData.Body.stkCallback;
+      
+      // If payment was successful
+      if (ResultCode === 0) {
+        // Update transaction status
+        await db.update(transactions)
+          .set({ paymentStatus: "completed" })
+          .where(eq(transactions.mpesaCheckoutId, CheckoutRequestID));
+      }
+      
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error("M-Pesa callback error:", error);
+      res.status(200).json({ success: true }); // Always return 200 to M-Pesa
     }
   }));
 
