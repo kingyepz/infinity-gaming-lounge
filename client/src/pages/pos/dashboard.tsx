@@ -116,17 +116,14 @@ export default function POSDashboard() {
             console.log("Payment cleared successfully:", response.data);
 
             // Refresh transactions list
-            fetchTransactions();
+            refetchTransactions();
 
             toast({
                 title: "Payment Cleared",
                 description: "The payment has been marked as completed",
             });
 
-            // Refresh data
-            fetchTransactions();
-
-            // Refetch data to update the UI
+            // Refresh data and update the UI
             refetchTransactions();
             refetchStations();
         } catch (error: any) {
@@ -589,6 +586,137 @@ export default function POSDashboard() {
                                             ))}
                                         </TableBody>
                                     </Table>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="loyalty">
+                        <div className="flex flex-col space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl sm:text-2xl font-bold">Loyalty Program</h2>
+                                <Button onClick={() => setActiveTab("customers")} size="sm">
+                                    View Customers
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Card className="overflow-hidden bg-black/30 border-primary/20">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Points Awarded</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">1,850</div>
+                                        <p className="text-sm text-muted-foreground">All time</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="overflow-hidden bg-black/30 border-primary/20">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">Points Redeemed</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">780</div>
+                                        <p className="text-sm text-muted-foreground">All time</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="overflow-hidden bg-black/30 border-primary/20">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">Points Exchange Rate</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">1 KES = 0.1 points</div>
+                                        <p className="text-sm text-muted-foreground">10 KES = 1 point</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <Card className="overflow-hidden bg-black/30 border-primary/20">
+                                <CardHeader>
+                                    <CardTitle>Top Customers by Points</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[50px]">Rank</TableHead>
+                                                <TableHead>Customer</TableHead>
+                                                <TableHead>Gaming Name</TableHead>
+                                                <TableHead>Total Points</TableHead>
+                                                <TableHead>Points Used</TableHead>
+                                                <TableHead>Available</TableHead>
+                                                <TableHead className="text-right">Action</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {customers
+                                                .sort((a: any, b: any) => b.points - a.points)
+                                                .slice(0, 10)
+                                                .map((customer: any, index: number) => (
+                                                    <TableRow key={customer.id}>
+                                                        <TableCell className="font-medium">{index + 1}</TableCell>
+                                                        <TableCell>{customer.displayName}</TableCell>
+                                                        <TableCell>{customer.gamingName}</TableCell>
+                                                        <TableCell>{customer.totalPoints || customer.points}</TableCell>
+                                                        <TableCell>{customer.pointsUsed || 0}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant="default" className="bg-primary/30">
+                                                                {customer.points || 0}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button variant="outline" size="sm" className="text-xs">
+                                                                Redeem Points
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                            
+                            <Card className="overflow-hidden bg-black/30 border-primary/20">
+                                <CardHeader>
+                                    <CardTitle>How Points Work</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <div className="flex items-start space-x-3">
+                                            <div className="rounded-full bg-primary/30 text-primary p-2">
+                                                <TrophyIcon className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium">Earning Points</h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Customers earn 1 point for every 10 KES spent on gaming sessions.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-start space-x-3">
+                                            <div className="rounded-full bg-primary/30 text-primary p-2">
+                                                <GiftIcon className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium">Redeeming Points</h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    100 points can be redeemed for a free 30-minute gaming session on any station.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-start space-x-3">
+                                            <div className="rounded-full bg-primary/30 text-primary p-2">
+                                                <UserIcon className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium">Membership Tiers</h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Bronze (0-500 pts), Silver (501-1000 pts), Gold (1001+ pts) with increasing benefits.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
