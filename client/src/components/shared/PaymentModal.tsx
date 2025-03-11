@@ -15,11 +15,13 @@ interface PaymentModalProps {
 
 export default function PaymentModal({ amount, station, onSuccess, onClose }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash");
+  const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
   const handlePayment = async () => {
     try {
-      // Create payment record
+      setProcessing(true);
+
       const response = await apiRequest("POST", "/api/transactions/payment", {
         stationId: station.id,
         amount,
@@ -27,8 +29,8 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
         mpesaRef: paymentMethod === "mpesa" ? "Pending" : undefined
       });
 
-      if (!response) {
-        throw new Error(`Failed to process ${paymentMethod} payment`);
+      if (response.error) {
+        throw new Error(response.error);
       }
 
       // For cash payments, complete immediately
@@ -52,6 +54,8 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
         description: error.message || "Failed to process payment",
         variant: "destructive"
       });
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -74,6 +78,7 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
             <Select
               onValueChange={(value) => setPaymentMethod(value as "cash" | "mpesa")}
               value={paymentMethod}
+              disabled={processing}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select payment method" />
@@ -100,11 +105,16 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
           )}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={processing}>
             Cancel
           </Button>
-          <Button onClick={handlePayment}>
-            {paymentMethod === "cash" ? "Confirm Payment" : "Verify M-Pesa"}
+          <Button onClick={handlePayment} disabled={processing}>
+            {processing 
+              ? "Processing..." 
+              : paymentMethod === "cash" 
+                ? "Confirm Payment" 
+                : "Verify M-Pesa"
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

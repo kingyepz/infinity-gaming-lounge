@@ -5,7 +5,7 @@ import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
-import { games, transactions, gameStations, users } from "../shared/schema";
+import { games, transactions, gameStations, users, payments } from "../shared/schema"; // Added 'payments' import
 import { desc, eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -494,6 +494,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       throw error;
+    }
+  }));
+
+  app.post("/api/transactions/payment", asyncHandler(async (req, res) => {
+    try {
+      const { stationId, amount, paymentMethod, mpesaRef } = req.body;
+
+      // Create payment record
+      const payment = await db.insert(payments).values({
+        transactionId: stationId, // Using stationId temporarily as transactionId
+        amount,
+        paymentMethod,
+        status: paymentMethod === "cash" ? "completed" : "pending",
+        mpesaRef,
+        createdAt: new Date()
+      }).returning();
+
+      if (!payment) {
+        return res.status(400).json({ error: "Failed to create payment record" });
+      }
+
+      res.json({
+        success: true,
+        payment: payment[0],
+        message: `${paymentMethod.toUpperCase()} payment processed successfully`
+      });
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      res.status(500).json({
+        error: error.message || "Failed to process payment"
+      });
     }
   }));
 
