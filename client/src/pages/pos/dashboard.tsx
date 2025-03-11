@@ -89,7 +89,7 @@ export default function POSDashboard() {
     const pendingTransactions = transactions.filter((tx: any) => tx.paymentStatus === "pending") || [];
     const completedTransactions = transactions.filter((tx: any) => tx.paymentStatus === "completed") || [];
     const pendingAmount = pendingTransactions.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0);
-    
+
     const paymentMethodStats = completedTransactions.reduce((stats: any, tx: any) => {
         if (tx.mpesaRef) {
             stats.mpesa = (stats.mpesa || 0) + 1;
@@ -106,15 +106,15 @@ export default function POSDashboard() {
         try {
             console.log("Clearing payment for transaction ID:", transactionId);
             const transaction = pendingTransactions.find((tx: any) => tx.id === transactionId);
-            
+
             const response = await axios.post("/api/transactions/payment", {
                 transactionId: transactionId,
                 amount: transaction?.amount || 0,
                 paymentMethod: "cash",
             });
-            
+
             console.log("Payment cleared successfully:", response.data);
-            
+
             // Refresh transactions list
             fetchTransactions();
 
@@ -122,18 +122,20 @@ export default function POSDashboard() {
                 title: "Payment Cleared",
                 description: "The payment has been marked as completed",
             });
-            
+
             // Refresh data
             fetchTransactions();
 
             // Refetch data to update the UI
             refetchTransactions();
             refetchStations();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error clearing payment:", error);
+            console.error("Error details:", error.response?.data || "No response data");
+
             toast({
                 title: "Error",
-                description: "Failed to clear payment. Please try again.",
+                description: error.response?.data?.error || "Failed to clear payment",
                 variant: "destructive"
             });
         }
@@ -408,7 +410,7 @@ export default function POSDashboard() {
                                                 </Button>
                                             </div>
                                         )}
-                                        
+
                                         <div className="mt-3 flex justify-end">
                                             <Button 
                                                 variant="ghost" 
@@ -427,7 +429,7 @@ export default function POSDashboard() {
                                 </Card>
                             ))}
                         </div>
-                        
+
                         {/* Transaction History Modal */}
                         <StationTransactionHistoryModal
                             open={showTransactionHistoryModal}
