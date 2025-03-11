@@ -343,17 +343,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log("Inserting transaction with only existing columns:", insertData);
+      // Reuse the same column mappings from above
+      // This variable was already defined above, no need to redefine it
+      
+      // Create arrays of column names and values using proper SQL naming
+      const sqlColumns: string[] = [];
+      const sqlValues: any[] = [];
+      
+      // Add fields with correct SQL column names
+      for (const [propName, value] of Object.entries(insertData)) {
+        // Get corresponding SQL column name
+        const sqlColName = columnMappings[propName];
+        
+        // Only add if we have a mapping and the column exists in database
+        if (sqlColName && actualColumns.includes(sqlColName)) {
+          sqlColumns.push(sqlColName);
+          sqlValues.push(value);
+        }
+      }
+      
+      console.log("SQL Columns:", sqlColumns);
+      console.log("SQL Values:", sqlValues);
       
       // Manually craft a SQL query that only includes the fields we know exist
-      const columnNames = Object.keys(insertData).join(', ');
-      const placeholders = Object.keys(insertData).map((_, i) => `$${i+1}`).join(', ');
-      const values = Object.values(insertData);
+      const columnNamesSql = sqlColumns.join(', ');
+      const placeholders = sqlColumns.map((_, i) => `$${i+1}`).join(', ');
       
       // Execute the query directly to avoid ORM issues
       const result = await db.execute(
-        `INSERT INTO transactions (${columnNames}) VALUES (${placeholders}) RETURNING *`,
-        values
+        `INSERT INTO transactions (${columnNamesSql}) VALUES (${placeholders}) RETURNING *`,
+        sqlValues
       );
       
       console.log("Transaction created successfully:", result.rows[0]);
