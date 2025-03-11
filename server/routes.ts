@@ -1017,7 +1017,8 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 // Common payment schema
 const basePaymentSchema = z.object({
   amount: z.number(),
-  transactionId: z.number()
+  transactionId: z.number(),
+  userId: z.number().optional() // Optional user ID for loyalty points
 });
 
 // Mobile money payment schemas
