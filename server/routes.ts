@@ -598,7 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create payment record
       const [payment] = await db.insert(payments).values({
         transactionId: stationId,
-        amount,
+        amount: typeof amount === 'number' ? String(amount) : amount, // Convert to string if it's a number
         paymentMethod,
         status: paymentMethod === "cash" ? "completed" : "pending",
         mpesaRef: paymentMethod === "mpesa" ? mpesaRef : null,

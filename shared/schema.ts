@@ -79,7 +79,7 @@ export const transactions = pgTable("transactions", {
   customerName: text("customer_name").notNull(),
   gameName: text("game_name"),
   sessionType: text("session_type", { enum: ["per_game", "hourly"] }).notNull(),
-  amount: numeric("amount").notNull().default("0"),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull().default("0"),
   paymentStatus: text("payment_status", { enum: ["pending", "completed", "failed"] }).notNull(),
   mpesaRef: text("mpesa_ref"),
   mpesaCheckoutId: text("mpesa_checkout_id"),
