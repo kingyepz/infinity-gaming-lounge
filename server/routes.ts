@@ -5,7 +5,7 @@ import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
-import { users, transactions, games, gameStations } from "@shared/schema";
+import { users, transactions, games, gameStations } from "../shared/schema";
 import { desc, sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -134,9 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeSessions: stations.filter(s => s.currentCustomer).length,
         completedSessions: dailyTransactions.length,
         sessions: dailyTransactions.map(tx => ({
-          stationName: stations.find(s => s.id === tx.stationId)?.name,
-          customerName: tx.customerName,
-          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration} minutes`
+          stationName: stations.find(s => s.id === tx.stationId)?.name || "Unknown",
+          customerName: tx.customerName || "Unknown",
+          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration || 0} minutes`
         }))
       };
 

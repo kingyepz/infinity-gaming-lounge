@@ -63,7 +63,7 @@ export default function FallingButtons() {
         return "A";
       case "b":
         return "B";
-      case "x":
+      case "c":
         return "X";
       case "y":
         return "Y";
@@ -88,7 +88,7 @@ export default function FallingButtons() {
         return "text-green-400";
       case "b":
         return "text-red-400";
-      case "x":
+      case "c":
         return "text-blue-400";
       case "y":
         return "text-yellow-400";
