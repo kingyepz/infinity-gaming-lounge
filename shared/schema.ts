@@ -122,11 +122,17 @@ export const insertTransactionSchema = createInsertSchema(transactions)
     amount: true,
     duration: true
   })
-  .transform((data) => ({
-    ...data,
+  .transform((data) => {
+    // Create a new object to avoid modifying the original
+    const result = { ...data };
+    
     // Ensure amount is always a string
-    amount: typeof data.amount === 'number' ? String(data.amount) : data.amount
-  }));
+    if (data.amount !== undefined) {
+      result.amount = typeof data.amount === 'number' ? String(data.amount) : data.amount;
+    }
+    
+    return result;
+  });
 
 export const insertPaymentSchema = createInsertSchema(payments).pick({
   transactionId: true,

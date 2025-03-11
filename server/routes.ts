@@ -303,8 +303,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rawData.amount = String(rawData.amount);
       }
 
+      // Get actual database columns to ensure we only use valid ones
+      const actualColumns = Object.keys(transactions);
+      console.log("Actual database columns:", actualColumns);
+
       // Create a base transaction object with mandatory fields
-      const baseTransactionData: Record<string, any> = {
+      const baseTransactionData = {
         stationId: rawData.stationId,
         customerName: rawData.customerName,
         sessionType: rawData.sessionType,
@@ -320,12 +324,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (rawData.duration !== undefined && rawData.duration !== null) {
         baseTransactionData.duration = rawData.duration;
       }
-
-      console.log("Inserting transaction with sanitized fields:", baseTransactionData);
       
-      // Ensure we're passing an array of values, as required by drizzle
-      const transaction = await db.insert(transactions).values([baseTransactionData]).returning();
-      res.json(transaction);
+      // Debug SQL generation
+      const { sql, params } = db.insert(transactions).values([baseTransactionData]).toSQL();
+      console.log("SQL Columns:", sql.match(/\(([^)]+)\)/)?.[1].split(',').map(s => s.trim()));
+      console.log("SQL Values:", params);
+      
+      // Execute the insert with direct SQL to avoid parameter issues
+      const result = await db.execute(
+        `INSERT INTO transactions 
+        (station_id, customer_name, session_type, amount, payment_status${rawData.gameName ? ', game_name' : ''}${rawData.duration !== undefined && rawData.duration !== null ? ', duration' : ''}) 
+        VALUES 
+        ($1, $2, $3, $4, $5${rawData.gameName ? ', $6' : ''}${rawData.duration !== undefined && rawData.duration !== null ? rawData.gameName ? ', $7' : ', $6' : ''})
+        RETURNING *`, 
+        [
+          rawData.stationId, 
+          rawData.customerName,
+          rawData.sessionType,
+          rawData.amount,
+          "pending",
+          ...(rawData.gameName ? [rawData.gameName] : []),
+          ...(rawData.duration !== undefined && rawData.duration !== null ? [rawData.duration] : [])
+        ]
+      );
+      
+      res.json(result);
     } catch (error) {
       console.error("Transaction creation error:", error);
       res.status(500).json({ error: error.message || "Failed to create transaction" });

@@ -1,133 +1,128 @@
+
+// Airtel Money Service Implementation
 import axios from 'axios';
-import { Buffer } from 'buffer';
+import { z } from 'zod';
 
-// Airtel Money API configuration
-const AIRTEL_CONFIG = {
-  clientId: process.env.AIRTEL_CLIENT_ID || 'your-client-id',
-  clientSecret: process.env.AIRTEL_CLIENT_SECRET || 'your-client-secret',
-  publicKey: process.env.AIRTEL_PUBLIC_KEY || 'your-public-key',
-  countryCode: process.env.AIRTEL_COUNTRY_CODE || 'KE',
-  currency: process.env.AIRTEL_CURRENCY || 'KES',
-  callbackUrl: process.env.AIRTEL_CALLBACK_URL || 'https://your-callback-url.com/api/airtel/callback',
-  baseUrl: process.env.AIRTEL_BASE_URL || 'https://openapi.airtel.africa'
-};
+// Config schema
+const airtelConfigSchema = z.object({
+  baseUrl: z.string().default('https://openapiuat.airtel.africa'),
+  clientId: z.string().default('test-client-id'),
+  clientSecret: z.string().default('test-client-secret'),
+  environment: z.enum(['sandbox', 'production']).default('sandbox'),
+  currency: z.string().default('KES'),
+  country: z.string().default('KE')
+});
 
-export interface AirtelPaymentRequest {
-  phoneNumber: string;
-  amount: number;
-  reference: string;
-  transactionDesc: string;
-}
+// For mock implementation in development
+const mockTransactions = new Map();
 
-export interface AirtelPaymentResponse {
-  status: string;
-  message: string;
-  reference: string;
-  transactionId: string;
-}
+class AirtelMoneyService {
+  private config: z.infer<typeof airtelConfigSchema>;
+  private accessToken: string | null = null;
+  private tokenExpiry: Date | null = null;
 
-export class AirtelMoneyService {
+  constructor(config: Partial<z.infer<typeof airtelConfigSchema>> = {}) {
+    this.config = airtelConfigSchema.parse(config);
+  }
 
-  private async getAccessToken(): Promise<string> {
+  /**
+   * Generate a mock reference
+   */
+  private generateReference() {
+    return `AIR${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 1000)}`;
+  }
+
+  /**
+   * Mock implementation for development
+   */
+  async initiatePayment(params: { 
+    phoneNumber: string; 
+    amount: number | string; 
+    reference?: string;
+    transactionDesc?: string;
+  }) {
+    // Ensure amount is a number
+    const amount = typeof params.amount === 'string' ? parseFloat(params.amount) : params.amount;
+    
+    // Generate a reference if not provided
+    const reference = params.reference || this.generateReference();
+    
+    // Store mock transaction
+    mockTransactions.set(reference, {
+      phoneNumber: params.phoneNumber,
+      amount,
+      status: 'PENDING',
+      createdAt: new Date(),
+      reference
+    });
+    
+    console.log(`[MOCK] Airtel Money payment initiated: ${amount} to ${params.phoneNumber}, ref: ${reference}`);
+    
+    // In development, automatically complete payment after a delay (for testing)
+    setTimeout(() => {
+      if (mockTransactions.has(reference)) {
+        const tx = mockTransactions.get(reference);
+        tx.status = 'COMPLETED';
+        mockTransactions.set(reference, tx);
+        console.log(`[MOCK] Airtel Money payment completed: ${reference}`);
+      }
+    }, 10000); // 10 seconds delay
+    
+    return {
+      status: 'PENDING',
+      message: 'Payment request sent to customer',
+      reference,
+      transactionId: `TX${Date.now()}`
+    };
+  }
+
+  /**
+   * Check transaction status - mock implementation
+   */
+  async checkTransactionStatus(reference: string) {
+    // Get mock transaction
+    const tx = mockTransactions.get(reference);
+    
+    if (!tx) {
+      return {
+        status: 'NOT_FOUND',
+        message: 'Transaction not found'
+      };
+    }
+    
+    return {
+      status: tx.status,
+      message: tx.status === 'COMPLETED' 
+        ? 'Transaction completed successfully' 
+        : 'Transaction is being processed',
+      reference,
+      amount: tx.amount,
+      phoneNumber: tx.phoneNumber
+    };
+  }
+
+  /**
+   * In a real implementation, these methods would integrate with Airtel API
+   */
+  private async authenticate() {
     try {
-      const auth = Buffer.from(`${AIRTEL_CONFIG.clientId}:${AIRTEL_CONFIG.clientSecret}`).toString('base64');
-
-      const response = await axios({
-        method: 'post',
-        url: `${AIRTEL_CONFIG.baseUrl}/auth/oauth2/token`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${auth}`
-        },
-        data: {
-          grant_type: 'client_credentials'
-        }
-      });
-
-      return response.data.access_token;
+      // For actual implementation
+      // const response = await axios.post(...);
+      // this.accessToken = response.data.access_token;
+      this.accessToken = 'mock-token';
+      
+      // Set token expiry to 1 hour from now
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 1);
+      this.tokenExpiry = expiry;
+      
+      return this.accessToken;
     } catch (error) {
-      console.error("Failed to get Airtel access token:", error);
-      throw new Error("Failed to get Airtel access token");
-    }
-  }
-
-  public async initiatePayment(request: AirtelPaymentRequest): Promise<AirtelPaymentResponse> {
-    try {
-      const accessToken = await this.getAccessToken();
-
-      // Format phone number (remove leading 0 and add country code if needed)
-      let phoneNumber = request.phoneNumber;
-      if (phoneNumber.startsWith('0')) {
-        phoneNumber = `254${phoneNumber.substring(1)}`;
-      }
-      if (!phoneNumber.startsWith('254')) {
-        phoneNumber = `254${phoneNumber}`;
-      }
-
-      const response = await axios({
-        method: 'post',
-        url: `${AIRTEL_CONFIG.baseUrl}/merchant/v1/payments/`,
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'X-Country': AIRTEL_CONFIG.countryCode,
-          'X-Currency': AIRTEL_CONFIG.currency
-        },
-        data: {
-          reference: request.reference,
-          subscriber: {
-            country: AIRTEL_CONFIG.countryCode,
-            currency: AIRTEL_CONFIG.currency,
-            msisdn: phoneNumber
-          },
-          transaction: {
-            amount: request.amount,
-            country: AIRTEL_CONFIG.countryCode,
-            currency: AIRTEL_CONFIG.currency,
-            id: `INF-${Date.now()}` // Generate a unique transaction ID
-          },
-          description: request.transactionDesc || 'Payment for gaming services'
-        }
-      });
-
-      return {
-        status: response.data.status,
-        message: response.data.message,
-        reference: response.data.transaction.id,
-        transactionId: response.data.transaction.id
-      };
-    } catch (error: any) {
-      console.error("Failed to initiate Airtel Money payment:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to initiate Airtel Money payment");
-    }
-  }
-
-  public async checkTransactionStatus(transactionId: string): Promise<any> {
-    try {
-      const accessToken = await this.getAccessToken();
-
-      const response = await axios({
-        method: 'get',
-        url: `${AIRTEL_CONFIG.baseUrl}/standard/v1/payments/${transactionId}`,
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'X-Country': AIRTEL_CONFIG.countryCode,
-          'X-Currency': AIRTEL_CONFIG.currency
-        }
-      });
-
-      return {
-        status: response.data.status,
-        message: response.data.message,
-        transactionId: response.data.transaction.id,
-        transactionStatus: response.data.transaction.status
-      };
-    } catch (error: any) {
-      console.error("Failed to check Airtel transaction status:", error.response?.data || error.message);
-      throw new Error("Failed to check payment status");
+      console.error('Airtel Money authentication error:', error);
+      throw new Error('Failed to authenticate with Airtel Money API');
     }
   }
 }
 
+// Create and export service instance
 export const airtelMoneyService = new AirtelMoneyService();
