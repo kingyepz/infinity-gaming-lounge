@@ -1091,7 +1091,7 @@ export default function POSDashboard() {
       )}
       {showNewSessionModal && (
         <Dialog open={showNewSessionModal} onOpenChange={setShowNewSessionModal}>
-          <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
+          <DialogContent className="sm:max-w-425px bg-black/50 border-primary/20 text-white">
             <DialogHeader>
               <DialogTitle>Start New Gaming Session</DialogTitle>
             </DialogHeader>
@@ -1106,7 +1106,7 @@ export default function POSDashboard() {
                     <SelectValue placeholder="Choose a game" />
                   </SelectTrigger>
                   <SelectContent>
-                    {games?.map(game => (
+                    {games?.filter(game => game.isActive).map(game => (
                       <SelectItem key={game.id} value={game.name}>
                         {game.name}
                       </SelectItem>
@@ -1116,13 +1116,25 @@ export default function POSDashboard() {
               </div>
 
               <div>
-                <label className="text-sm text-muted-foreground">Customer Name</label>
-                <Input
-                  id="customerName"
-                  className="col-span-3"
-                  value={selectedCustomer?.displayName || ''}
-                  onChange={(e) => setSelectedCustomer({ ...selectedCustomer, displayName: e.target.value } as User)}
-                />
+                <label className="text-sm text-muted-foreground">Select Customer</label>
+                <Select
+                  onValueChange={(value) => {
+                    const customer = customers.find(c => c.id.toString() === value);
+                    setSelectedCustomer(customer || null);
+                  }}
+                  value={selectedCustomer?.id?.toString()}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map(customer => (
+                      <SelectItem key={customer.id} value={customer.id.toString()}>
+                        {customer.displayName} (@{customer.gamingName})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -1140,45 +1152,54 @@ export default function POSDashboard() {
                 </Select>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
-                Cancel
+            <div className="flex justify-between items-center">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCustomerRegistration(true)}
+              >
+                Register New Customer
               </Button>
-              <Button onClick={async () => {
-                try {
-                  if (!selectedStation || !selectedGame) {
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={async () => {
+                  try {
+                    if (!selectedStation || !selectedGame || !selectedCustomer) {
+                      toast({
+                        title: "Missing Information",
+                        description: "Please select a game and customer",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    await apiRequest("POST", "/api/sessions/start", {
+                      stationId: selectedStation.id,
+                      customerId: selectedCustomer.id,
+                      customerName: selectedCustomer.displayName,
+                      gameId: selectedGame,
+                      sessionType: selectedStation.sessionType || "per_game"
+                    });
+
+                    await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+
+                    setShowNewSessionModal(false);
                     toast({
-                      title: "Missing Information",
-                      description: "Please select a game and customer details",
+                      title: "Session Started",
+                      description: "Gaming session has been started successfully!"
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to start session. Please try again.",
                       variant: "destructive"
                     });
-                    return;
                   }
-
-                  await apiRequest("POST", "/api/sessions/start", {
-                    stationId: selectedStation.id,
-                    customerName: selectedCustomer?.displayName || "Walk-in Customer",
-                    gameId: selectedGame,
-                    sessionType: selectedStation.sessionType || "per_game"
-                  });
-
-                  await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-
-                  setShowNewSessionModal(false);
-                  toast({
-                    title: "Session Started",
-                    description: "Gaming session has been started successfully!"
-                  });
-                } catch (error: any) {
-                  toast({
-                    title: "Error",
-                    description: "Failed to start session. Please try again.",
-                    variant: "destructive"
-                  });
-                }
-              }}>
-                Start Session
-              </Button>
+                }}>
+                  Start Session
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
