@@ -104,16 +104,27 @@ export default function POSDashboard() {
     // Handle clearing a pending payment
     const handleClearPayment = async (transactionId: number) => {
         try {
-            await axios.post("/api/transactions/payment", {
+            console.log("Clearing payment for transaction ID:", transactionId);
+            const transaction = pendingTransactions.find((tx: any) => tx.id === transactionId);
+            
+            const response = await axios.post("/api/transactions/payment", {
                 transactionId: transactionId,
-                amount: pendingTransactions.find((tx: any) => tx.id === transactionId)?.amount || 0,
+                amount: transaction?.amount || 0,
                 paymentMethod: "cash",
             });
+            
+            console.log("Payment cleared successfully:", response.data);
+            
+            // Refresh transactions list
+            fetchTransactions();
 
             toast({
                 title: "Payment Cleared",
                 description: "The payment has been marked as completed",
             });
+            
+            // Refresh data
+            fetchTransactions();
 
             // Refetch data to update the UI
             refetchTransactions();

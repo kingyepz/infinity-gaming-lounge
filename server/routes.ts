@@ -855,26 +855,60 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
   app.post("/api/transactions/payment", asyncHandler(async (req, res) => {
     try {
-      const { stationId, amount, paymentMethod, phoneNumber, reference } = req.body;
+      const { transactionId, amount, paymentMethod, phoneNumber, reference } = req.body;
 
-      // Validate input
-      if (!stationId || !amount || !paymentMethod) {
+      console.log("Payment request received:", req.body);
+
+      // Validate essential input
+      if (!transactionId) {
         return res.status(400).json({
           success: false,
-          error: "Missing required fields"
+          error: "Missing transaction ID"
         });
       }
 
+      // Default to cash payment if not specified
+      const method = paymentMethod || "cash";
+      
+      // Find the transaction to get the amount if not provided
+      let transactionAmount = amount;
+      if (!transactionAmount) {
+        try {
+          const transaction = await db.select()
+            .from(transactions)
+            .where(eq(transactions.id, transactionId))
+            .limit(1);
+            
+          if (transaction && transaction.length > 0) {
+            transactionAmount = transaction[0].amount;
+          } else {
+            return res.status(404).json({
+              success: false,
+              error: "Transaction not found"
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching transaction:", err);
+          return res.status(500).json({
+            success: false,
+            error: "Error fetching transaction details"
+          });
+        }
+      }
+
       // Create payment record
-      const [payment] = await db.insert(payments).values([{
-        transactionId: stationId,
-        amount: String(amount), // Always convert amount to string
-        paymentMethod,
-        status: paymentMethod === "cash" ? "completed" : "pending",
+      const paymentData = {
+        transactionId,
+        amount: String(transactionAmount), // Always convert amount to string
+        paymentMethod: method,
+        status: method === "cash" ? "completed" : "pending",
         reference: reference || null,
         phoneNumber: phoneNumber || null,
         createdAt: new Date()
-      } as any]).returning();
+      };
+      
+      console.log("Creating payment record:", paymentData);
+      const [payment] = await db.insert(payments).values([paymentData as any]).returning();
 
       if (!payment) {
         return res.status(400).json({
@@ -883,37 +917,28 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         });
       }
 
-      // Find all transactions for this station and update their status if it's a cash payment
-      if (paymentMethod === "cash") {
+      // Always update the transaction status for cash payments
+      if (method === "cash") {
         try {
           // Update transaction payment status to completed
-          // Only update these fields to avoid error with non-existent columns
-          await db.update(transactions)
+          const result = await db.update(transactions)
             .set({ 
               paymentStatus: "completed" 
             })
-            .where(eq(transactions.stationId, stationId))
+            .where(eq(transactions.id, transactionId))
             .returning();
+            
+          console.log("Transaction updated:", result);
         } catch (err) {
           console.error("Error updating transaction:", err);
-          // Try with transaction ID instead of station ID
-          try {
-            await db.update(transactions)
-              .set({ 
-                paymentStatus: "completed" 
-              })
-              .where(eq(transactions.id, stationId))
-              .returning();
-          } catch (innerErr) {
-            console.error("Error updating transaction by ID:", innerErr);
-          }
+          // Continue anyway since we've created the payment record
         }
       }
 
       return res.json({
         success: true,
         payment,
-        message: `${paymentMethod.toUpperCase()} payment processed successfully`
+        message: `${method.toUpperCase()} payment processed successfully`
       });
     } catch (error: any) {
       console.error("Payment error:", error);
