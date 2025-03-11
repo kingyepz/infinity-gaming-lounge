@@ -1,86 +1,21 @@
 import { type Express } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
-import { games, transactions, gameStations, users, payments } from "../shared/schema";
+import { games, transactions, gameStations, users, payments } from "../shared/schema"; // Added 'payments' import
 import { desc, eq } from "drizzle-orm";
-
-// WebSocket connections store
-const wsConnections = new Map<string, WebSocket>();
-
-// Broadcast to all connected clients
-const broadcast = (message: any) => {
-  wsConnections.forEach((ws) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(message));
-    }
-  });
-};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
   const server = createServer(app);
 
-  // Create WebSocket server
-  const wss = new WebSocketServer({ server, path: '/ws' });
-
-  wss.on('connection', (ws) => {
-    const id = Math.random().toString(36).substring(7);
-    wsConnections.set(id, ws);
-    console.log('WebSocket client connected:', id);
-
-    // Send initial session data on connection
-    getAndBroadcastSessions();
-
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected:', id);
-      wsConnections.delete(id);
-    });
-  });
-
-  // Session update interval
-  const getAndBroadcastSessions = async () => {
-    try {
-      const activeStations = await db.select().from(gameStations);
-
-      const activeSessionsData = activeStations
-        .filter(station => station.currentCustomer && station.sessionStartTime)
-        .map(station => {
-          const startTime = new Date(station.sessionStartTime!);
-          const now = new Date();
-          const diffMs = now.getTime() - startTime.getTime();
-          const diffMins = Math.floor(diffMs / 60000);
-
-          const cost = station.sessionType === "per_game"
-            ? 40 // Fixed rate per game
-            : Math.ceil(diffMins / 60) * 200; // 200 KES per hour
-
-          return {
-            stationId: station.id,
-            customerName: station.currentCustomer,
-            gameName: station.currentGame,
-            duration: diffMins,
-            cost: cost,
-            sessionType: station.sessionType,
-            name: station.name,
-            sessionStartTime: station.sessionStartTime
-          };
-        });
-
-      broadcast({
-        type: 'SESSION_UPDATE',
-        data: activeSessionsData
-      });
-    } catch (error) {
-      console.error('Error broadcasting session updates:', error);
-    }
+  // Wrap route handlers with error catching
+  const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
+    return Promise.resolve(fn(req, res, next)).catch(next);
   };
-
-  setInterval(getAndBroadcastSessions, 1000); // Update every second
 
   // User related routes
   app.get("/api/users/customers", asyncHandler(async (_req, res) => {
@@ -168,29 +103,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw error;
     }
   }));
-
-  app.get("/api/stations/:id", asyncHandler(async (req, res) => {
-    try {
-        const stationId = parseInt(req.params.id);
-        if (isNaN(stationId)) {
-            return res.status(400).json({ error: "Invalid station ID" });
-        }
-
-        const [station] = await db.select()
-            .from(gameStations)
-            .where(eq(gameStations.id, stationId));
-
-        if (!station) {
-            return res.status(404).json({ error: "Station not found" });
-        }
-
-        res.json(station);
-    } catch (error) {
-        console.error("Error fetching station:", error);
-        throw error;
-    }
-  }));
-
 
   app.get("/api/reports/current", asyncHandler(async (_req, res) => {
     try {
@@ -640,7 +552,3 @@ const updateStationSchema = z.object({
   sessionType: z.enum(["per_game", "hourly"]).nullable(),
   sessionStartTime: z.date().nullable()
 });
-
-const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
-  return Promise.resolve(fn(req, res, next)).catch(next);
-};
