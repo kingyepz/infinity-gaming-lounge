@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import InfinityLogo from "@/components/animations/InfinityLogo";
 import CustomerPortal from "@/pages/customer/portal";
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 
 export default function POSDashboard() {
@@ -52,7 +53,7 @@ export default function POSDashboard() {
     const [currentTransaction, setCurrentTransaction] = useState<any>(null);
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash");
     let diffMins: number;
-
+    const { sessionUpdates, connected } = useWebSocket();
 
     const { data: stations = [], isLoading: stationsLoading } = useQuery({
         queryKey: ["/api/stations"],
@@ -172,6 +173,56 @@ export default function POSDashboard() {
                 variant: "destructive"
             });
         }
+    };
+
+    const renderActiveSessions = () => {
+        return sessionUpdates.map((session) => (
+            <Card key={session.stationId} className="bg-primary/5 border-primary/10">
+                <CardHeader className="pb-2">
+                    <div className="flex justify-between">
+                        <CardTitle className="text-sm font-medium">Station #{session.stationId}</CardTitle>
+                        <Badge variant="outline" className="bg-green-500/20">Active</Badge>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-xs text-muted-foreground">Customer</p>
+                            <p className="font-medium">{session.customerName}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <p className="text-xs text-muted-foreground">Game</p>
+                                <p className="font-medium">{session.gameName}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Duration</p>
+                                <p className="font-medium">
+                                    {Math.floor(session.duration / 60)}h {session.duration % 60}m
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Type</p>
+                                <p className="font-medium capitalize">{session.sessionType}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Cost</p>
+                                <p className="font-medium">KSH {session.cost}</p>
+                            </div>
+                        </div>
+
+                        <Button
+                            variant="destructive"
+                            className="w-full"
+                            onClick={() => handleEndSession( {id: session.stationId, sessionStartTime: session.sessionStartTime, currentCustomer: session.customerName, currentGame: session.gameName, sessionType: session.sessionType, baseRate: session.baseRate, hourlyRate: session.hourlyRate})}
+                        >
+                            End Session
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        ));
     };
 
     if (stationsLoading || gamesLoading || customersLoading) {
@@ -474,67 +525,13 @@ export default function POSDashboard() {
                             <Card className="bg-black/30 border-primary/20">
                                 <CardHeader>
                                     <CardTitle>Active Sessions</CardTitle>
+                                    {connected && (
+                                        <p className="text-sm text-green-500">Real-time updates active</p>
+                                    )}
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {stations?.filter(station => station.currentCustomer).map((station) => {
-                                            const startTime = new Date(station.sessionStartTime!);
-                                            const now = new Date();
-                                            const diffMs = now.getTime() - startTime.getTime();
-                                            const diffMins = Math.floor(diffMs / 60000);
-                                            const hours = Math.floor(diffMins / 60);
-                                            const mins = diffMins % 60;
-
-                                            const cost = station.sessionType === "per_game"
-                                                ? station.baseRate
-                                                : Math.ceil(diffMins / 60) * (station.hourlyRate || 0);
-
-                                            return (
-                                                <Card key={station.id} className="bg-primary/5 border-primary/10">
-                                                    <CardHeader className="pb-2">
-                                                        <div className="flex justify-between">
-                                                            <CardTitle className="text-sm font-medium">Station #{station.id}</CardTitle>
-                                                            <Badge variant="outline" className="bg-green-500/20">Active</Badge>
-                                                        </div>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <div className="space-y-4">
-                                                            <div>
-                                                                <p className="text-xs text-muted-foreground">Customer</p>
-                                                                <p className="font-medium">{station.currentCustomer}</p>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <div>
-                                                                    <p className="text-xs text-muted-foreground">Game</p>
-                                                                    <p className="font-medium">{station.currentGame}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-muted-foreground">Duration</p>
-                                                                    <p className="font-medium">{hours}h {mins}m</p>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-muted-foreground">Type</p>
-                                                                    <p className="font-medium capitalize">{station.sessionType}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-muted-foreground">Cost</p>
-                                                                    <p className="font-medium">KSH {cost}</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <Button
-                                                                variant="destructive"
-                                                                className="w-full"
-                                                                onClick={() => handleEndSession(station)}
-                                                            >
-                                                                End Session
-                                                            </Button>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            );
-                                        })}
+                                        {renderActiveSessions()}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -691,7 +688,8 @@ export default function POSDashboard() {
                                             {(() => {
                                                 const gameCounts = {};
                                                 stations?.forEach(station => {
-                                                    if (station.currentGame) {                                                        gameCounts[station.currentGame] = (gameCounts[station.currentGame] || 0) + 1;
+                                                    if (station.currentGame) {
+                                                        gameCounts[station.currentGame] = (gameCounts[station.currentGame] || 0) + 1;
                                                     }
                                                 });
                                                 const entries = Object.entries(gameCounts);
@@ -996,7 +994,7 @@ export default function POSDashboard() {
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="bg-primary/5 p-3 rounded-md">
-                                            <p className="text-sm text-mutedforeground">Today</p>
+                                            <p className="text-sm text-muted-foreground">Today</p>
                                             <p className="text-xl font-bold">KSH 12,500</p>
                                             <p className="text-xs text-green-500">+15% from yesterday</p>
                                         </div>
