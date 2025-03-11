@@ -139,6 +139,7 @@ export default function POSDashboard() {
         description: `Session completed. Total cost: KSH ${cost}`,
       });
     } catch (error: any) {
+      console.error("Error ending session:", error);
       toast({
         title: "Error",
         description: "Failed to end session. Please try again.",
@@ -734,8 +735,7 @@ export default function POSDashboard() {
                           const now = new Date();
                           return sum + Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
                         }, 0);
-                        return `${Math.floor(totalMinutes / activeSessions.length)} min`;
-                      })()}
+                        return `${Math.floor(totalMinutes / activeSessions.length)} min`;                      })()}
                     </div>                    <p className="text-xs text-muted-foreground">For active sessions</p>
                   </CardContent>
                 </Card>              </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
