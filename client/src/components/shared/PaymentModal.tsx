@@ -54,14 +54,17 @@ export default function PaymentModal({
       setIsProcessing(true);
 
       // Create a transaction record
-      const transactionResponse = await axios.post("/api/transactions", {
+      const transactionData = {
         stationId: station.id,
         customerName: station.currentCustomer || "Walk-in Customer",
         gameName: station.currentGame || "Unknown Game",
-        sessionType: station.sessionType,
+        sessionType: station.sessionType || "per_game", // Ensure sessionType is never null
         amount: String(amount),
         duration: station.sessionType === "hourly" ? duration : null
-      });
+      };
+
+      console.log("Sending transaction data:", transactionData);
+      const transactionResponse = await axios.post("/api/transactions", transactionData);
 
       const transactionId = transactionResponse.data[0]?.id;
 
