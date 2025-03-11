@@ -614,18 +614,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find all transactions for this station and update their status if it's a cash payment
       if (paymentMethod === "cash") {
-        // First try with stationId
-        const updated = await db.update(transactions)
-          .set({ paymentStatus: "completed" })
-          .where(eq(transactions.stationId, stationId))
-          .returning();
-          
-        // If no rows updated, try with id
-        if (!updated || updated.length === 0) {
-          await db.update(transactions)
+        try {
+          // First try with stationId
+          const updated = await db.update(transactions)
             .set({ paymentStatus: "completed" })
-            .where(eq(transactions.id, stationId))
+            .where(eq(transactions.stationId, stationId))
             .returning();
+            
+          // If no rows updated, try with id
+          if (!updated || updated.length === 0) {
+            await db.update(transactions)
+              .set({ paymentStatus: "completed" })
+              .where(eq(transactions.id, stationId))
+              .returning();
+          }
+        } catch (err) {
+          console.error("Error updating transaction:", err);
+          // Continue with the process even if this fails
         }
       }
 
