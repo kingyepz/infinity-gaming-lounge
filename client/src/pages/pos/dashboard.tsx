@@ -31,6 +31,9 @@ import {
     PrinterIcon,
     LogOutIcon,
     HistoryIcon,
+    TrophyIcon,
+    GiftIcon,
+    UserIcon
 } from "lucide-react";
 import InfinityLogo from "@/components/animations/InfinityLogo";
 import CustomerPortal from "@/pages/customer/portal";
