@@ -105,7 +105,11 @@ export default function POSDashboard() {
   // Handle session end
   const handleEndSession = async (station: GameStation) => {
     try {
-      const startTime = new Date(station.sessionStartTime!);
+      if (!station.sessionStartTime) {
+        throw new Error("Invalid session start time");
+      }
+
+      const startTime = new Date(station.sessionStartTime);
       const now = new Date();
       const diffMs = now.getTime() - startTime.getTime();
       const diffMins = Math.floor(diffMs / 60000);
@@ -115,7 +119,7 @@ export default function POSDashboard() {
         : Math.ceil(diffMins / 60) * (station.hourlyRate || 0);
 
       // First create the transaction record
-      await apiRequest("POST", "/api/transactions", {
+      const transaction = await apiRequest("POST", "/api/transactions", {
         stationId: station.id,
         customerName: station.currentCustomer,
         gameName: station.currentGame,
@@ -125,10 +129,18 @@ export default function POSDashboard() {
         paymentStatus: "completed"
       });
 
+      if (!transaction) {
+        throw new Error("Failed to create transaction");
+      }
+
       // Then end the session
-      await apiRequest("POST", "/api/sessions/end", {
+      const response = await apiRequest("POST", "/api/sessions/end", {
         stationId: station.id
       });
+
+      if (!response) {
+        throw new Error("Failed to end session");
+      }
 
       // Refresh data
       await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
@@ -142,7 +154,7 @@ export default function POSDashboard() {
       console.error("Error ending session:", error);
       toast({
         title: "Error",
-        description: "Failed to end session. Please try again.",
+        description: error.message || "Failed to end session. Please try again.",
         variant: "destructive"
       });
     }
