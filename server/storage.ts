@@ -424,12 +424,7 @@ export class StorageService {
         { name: "Call of Duty: Modern Warfare", isActive: true },
         { name: "GTA V", isActive: true },
         { name: "Fortnite", isActive: true },
-        { name: "Minecraft", isActive: true },
-        { name: "NBA 2K24", isActive: true },
-        { name: "Mortal Kombat 1", isActive: true },
-        { name: "EA FC 24", isActive: true },
-        { name: "Tekken 8", isActive: true },
-        { name: "God of War Ragnarök", isActive: true }
+        { name: "Minecraft", isActive: true }
       ]);
 
       // Create test users
