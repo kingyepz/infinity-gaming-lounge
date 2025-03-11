@@ -20,16 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from '@/hooks/use-toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { GameStation, Game, User } from '@shared/schema';
-import { apiRequest } from '@/lib/queryClient';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { GameStation, Game, User } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
@@ -38,11 +38,11 @@ export default function POSDashboard() {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [selectedSessionType, setSelectedSessionType] = useState<"per_game" | "hourly" | null>(null);
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("sessions"); // Starts on sessions tab
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Properly fetch data using useQuery
+  // Fetch data using useQuery
   const { data: stations = [], isLoading: stationsLoading } = useQuery({
     queryKey: ["/api/stations"],
     queryFn: () => apiRequest("GET", "/api/stations")
@@ -66,6 +66,45 @@ export default function POSDashboard() {
     );
   }
 
+  const handleStartSession = async () => {
+    try {
+      if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
+        toast({
+          title: "Missing Information",
+          description: "Please select a game, customer, and session type",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await apiRequest("POST", "/api/sessions/start", {
+        stationId: selectedStation.id,
+        customerId: selectedCustomer.id,
+        customerName: selectedCustomer.displayName,
+        gameId: selectedGame,
+        sessionType: selectedSessionType
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+
+      setShowNewSessionModal(false);
+      setSelectedGame(null);
+      setSelectedCustomer(null);
+      setSelectedSessionType(null);
+
+      toast({
+        title: "Session Started",
+        description: "Gaming session has been started successfully!"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to start session. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="flex h-full">
       <Tabs className="w-full" value={activeTab} onValueChange={setActiveTab}>
@@ -73,8 +112,6 @@ export default function POSDashboard() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="sessions">Gaming Sessions</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -82,7 +119,19 @@ export default function POSDashboard() {
             <Card className="bg-black/40 border-primary/20 col-span-1">
               <CardHeader>
                 <CardTitle>Stations Overview</CardTitle>
-                <Button size="sm" variant="default" onClick={() => setShowNewSessionModal(true)} className="ml-auto">Start New Session</Button>
+                <Button size="sm" variant="default" onClick={() => {
+                  const availableStation = stations.find(s => !s.currentCustomer);
+                  if (availableStation) {
+                    setSelectedStation(availableStation);
+                    setShowNewSessionModal(true);
+                  } else {
+                    toast({
+                      title: "No Available Stations",
+                      description: "All gaming stations are currently occupied.",
+                      variant: "destructive"
+                    });
+                  }
+                }} className="ml-auto">Start New Session</Button>
               </CardHeader>
               <CardContent className="relative h-60">
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -274,14 +323,23 @@ export default function POSDashboard() {
           </div>
         </TabsContent>
 
-
         <TabsContent value="sessions">
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Gaming Sessions</h2>
-              <Button onClick={() => setShowNewSessionModal(true)}>
-                Start New Session
-              </Button>
+              <Button onClick={() => {
+                const availableStation = stations.find(s => !s.currentCustomer);
+                if (availableStation) {
+                  setSelectedStation(availableStation);
+                  setShowNewSessionModal(true);
+                } else {
+                  toast({
+                    title: "No Available Stations",
+                    description: "All gaming stations are currently occupied.",
+                    variant: "destructive"
+                  });
+                }
+              }}>Start New Session</Button>
             </div>
 
             <Card>
@@ -305,202 +363,15 @@ export default function POSDashboard() {
             </Card>
           </div>
         </TabsContent>
+
         <TabsContent value="customers">
           <div>
             <h3 className="text-2xl font-bold mb-4">Customers</h3>
-            {/* Add customer list here */}
-          </div>
-        </TabsContent>
-        <TabsContent value="reports">
-          <div>
-            <h3 className="text-2xl font-bold mb-4">Financial Reports</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Customers</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>2023-10-26</TableCell>
-                  <TableCell>1200</TableCell>
-                  <TableCell>5</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>2023-10-27</TableCell>
-                  <TableCell>1500</TableCell>
-                  <TableCell>7</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>2023-10-28</TableCell>
-                  <TableCell>1000</TableCell>
-                  <TableCell>3</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-        <TabsContent value="payments">
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold">Payments</h3>
-
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Pending Payments</span>
-                  <Badge variant="secondary">3</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
-                      <div>
-                        <p className="font-medium">Customer {i+1}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Game Station {i+1} • {Math.floor(Math.random() * 60) + 30} min
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
-                        <div className="flex gap-2 mt-2">
-                          <select className="text-xs p-1 rounded border border-primary/20 bg-primary/5">
-                            <option value="">Payment Method</option>
-                            <option value="cash">Cash</option>
-                            <option value="mpesa">M-Pesa</option>
-                            <option value="airtel">Airtel Money</option>
-                          </select>
-                          <Button size="sm" variant="default" className="text-xs">Pay</Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle>Payment Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-primary/5 p-3 rounded-md">
-                    <p className="text-sm text-muted-foreground">Today</p>
-                    <p className="text-xl font-bold">KSH 12,500</p>
-                    <p className="text-xs text-green-500">+15% from yesterday</p>
-                  </div>
-                  <div className="bg-primary/5 p-3 rounded-md">
-                    <p className="text-sm text-muted-foreground">This Week</p>
-                    <p className="text-xl font-bold">KSH 68,200</p>
-                    <p className="text-xs text-green-500">+8% from last week</p>
-                  </div>
-                  <div className="bg-primary/5 p-3 rounded-md">
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                    <p className="text-xl font-bold">KSH 245,800</p>
-                    <p className="text-xs text-green-500">+12% from last month</p>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <p className="font-medium mb-2">Payment Method Breakdown</p>
-                  <div className="bg-primary/5 p-3 rounded-md">
-                    <div className="flex justify-between items-center mb-2">
-                      <span>Cash</span>
-                      <span>35%</span>
-                    </div>
-                    <div className="w-full bg-gray-300 rounded-full h-2.5">
-                      <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '35%' }}></div>
-                    </div>
-
-                    <div className="flex justify-between items-center mb-2 mt-3">
-                      <span>M-Pesa</span>
-                      <span>55%</span>
-                    </div>
-                    <div className="w-full bg-gray-300 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '55%' }}></div>
-                    </div>
-
-                    <div className="flex justify-between items-center mb-2 mt-3">
-                      <span>Airtel Money</span>
-                      <span>10%</span>
-                    </div>
-                    <div className="w-full bg-gray-300 rounded-full h-2.5">
-                      <div className="bg-orange-600 h-2.5 rounded-full" style={{ width: '10%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Recent Transactions</span>
-                  <Button size="sm" variant="outline">Print Receipt</Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="flex justify-between items-center p-3 rounded-md bg-primary/5">
-                      <div>
-                        <p className="font-medium">Transaction #{10045 + i}</p>
-                        <div className="flex gap-2 items-center">
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(Date.now() - i * 60 * 60 * 1000).toLocaleTimeString()}
-                          </p>
-                          <Badge variant="outline" className="text-xs">
-                            {['Cash', 'M-Pesa', 'Airtel Money'][i % 3]}
-                          </Badge>
-                          {i % 2 === 0 && <Badge variant="secondary" className="text-xs">10% Discount</Badge>}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">KSH {(Math.random() * 500 + 200).toFixed(2)}</p>
-                        <p className="text-xs text-primary">+{Math.floor(Math.random() * 50 + 20)} points</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Button variant="outline" className="h-auto flex flex-col items-center py-3">
-                    <span className="text-sm">Apply Discount</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto flex flex-col items-center py-3">
-                    <span className="text-sm">Split Payment</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto flex flex-col items-center py-3">
-                    <span className="text-sm">Verify Payment</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto flex flex-col items-center py-3">
-                    <span className="text-sm">Redeem Points</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Customer list will be implemented later */}
           </div>
         </TabsContent>
       </Tabs>
-      {showPayment && selectedStation && (
-        <PaymentModal
-          station={selectedStation}
-          onClose={() => {
-            setShowPayment(false);
-            setSelectedStation(null);
-          }}
-        />
-      )}
+
       <Dialog open={showNewSessionModal} onOpenChange={setShowNewSessionModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -508,7 +379,7 @@ export default function POSDashboard() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <label className="text-sm font-medium">Select Game</label>
+              <label className="text-sm text-muted-foreground">Select Game</label>
               <Select
                 onValueChange={setSelectedGame}
                 value={selectedGame || undefined}
@@ -517,7 +388,7 @@ export default function POSDashboard() {
                   <SelectValue placeholder="Choose a game" />
                 </SelectTrigger>
                 <SelectContent>
-                  {games.filter(game => game.isActive).map(game => (
+                  {games?.filter(game => game.isActive).map(game => (
                     <SelectItem key={game.id} value={game.name}>
                       {game.name}
                     </SelectItem>
@@ -527,7 +398,7 @@ export default function POSDashboard() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Select Customer</label>
+              <label className="text-sm text-muted-foreground">Select Customer</label>
               <Select
                 onValueChange={(value) => {
                   const customer = customers.find(c => c.id.toString() === value);
@@ -549,7 +420,7 @@ export default function POSDashboard() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Session Type</label>
+              <label className="text-sm text-muted-foreground">Session Type</label>
               <Select
                 onValueChange={(value) => setSelectedSessionType(value as "per_game" | "hourly")}
                 value={selectedSessionType || undefined}
@@ -575,59 +446,13 @@ export default function POSDashboard() {
               <Button variant="ghost" onClick={() => setShowNewSessionModal(false)}>
                 Cancel
               </Button>
-              <Button onClick={async () => {
-                try {
-                  if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
-                    toast({
-                      title: "Missing Information",
-                      description: "Please select a game, customer, and session type",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  await apiRequest("POST", "/api/sessions/start", {
-                    stationId: selectedStation.id,
-                    customerId: selectedCustomer.id,
-                    customerName: selectedCustomer.displayName,
-                    gameId: selectedGame,
-                    sessionType: selectedSessionType
-                  });
-
-                  await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-
-                  setShowNewSessionModal(false);
-                  setSelectedGame(null);
-                  setSelectedCustomer(null);
-                  setSelectedSessionType(null);
-
-                  toast({
-                    title: "Session Started",
-                    description: "Gaming session has been started successfully!"
-                  });
-                } catch (error: any) {
-                  toast({
-                    title: "Error",
-                    description: "Failed to start session. Please try again.",
-                    variant: "destructive"
-                  });
-                }
-              }}>
+              <Button onClick={handleStartSession}>
                 Start Session
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-      const showPayment = useState(false);
-      const setShowPayment = (value: boolean) => showPayment[1](value);
-      const Table = ({ children }: { children: any}) => <table className="w-full">{children}</table>;
-      const TableHeader = ({ children }: { children: any}) => <thead>{children}</thead>;
-      const TableRow = ({ children }: { children: any}) => <tr className="border-b border-gray-200">{children}</tr>;
-      const TableHead = ({ children }: { children: any}) => <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{children}</th>;
-      const TableBody = ({ children }: { children: any}) => <tbody>{children}</tbody>;
-      const TableCell = ({ children }: { children: any}) => <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{children}</td>;
-      const PaymentModal = ({ station, onClose }: { station: any, onClose: () => void}) => <div></div>;
     </div>
   );
 }
