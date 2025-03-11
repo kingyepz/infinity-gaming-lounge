@@ -87,13 +87,7 @@ export default function POSDashboard() {
 
   const switchTab = (tabValue: string) => {
     try {
-      const tabTrigger = document.querySelector(`[value="${tabValue}"]`) as HTMLElement;
-      if (tabTrigger) {
-        tabTrigger.click();
-        setActiveTab(tabValue);
-      } else {
-        throw new Error(`Tab ${tabValue} not found`);
-      }
+      setActiveTab(tabValue);
     } catch (error) {
       toast({
         title: "Navigation Error",
@@ -113,36 +107,12 @@ export default function POSDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden">
+      {/* Background pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNzUiIG51bU9jdGF2ZXM9IjQiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIgb3BhY2l0eT0iMC4xNSIvPjwvc3ZnPg==')] opacity-20"></div>
       </div>
 
-      <Card className="bg-black/30 border-primary/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Top Games</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[
-              { name: "FIFA 24", sessions: 42, platform: "PS5" },
-              { name: "Call of Duty", sessions: 38, platform: "Xbox" },
-              { name: "Fortnite", sessions: 27, platform: "PC" },
-              { name: "Mortal Kombat", sessions: 23, platform: "PS5" },
-            ].map((game, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-sm font-medium">{game.name}</span>
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {game.platform}
-                  </Badge>
-                </div>
-                <span className="text-sm">{game.sessions} sessions</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* Content */}
       <div className="w-full flex justify-center items-center py-2 sm:py-4 z-10 relative">
         <div className="flex flex-col items-center">
           <InfinityLogo className="w-16 h-16 sm:w-24 sm:h-24" />
