@@ -1,4 +1,3 @@
-
 import { apiRequest } from "./queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,15 +25,16 @@ export async function processPayment({
   try {
     // Apply discount if any
     const finalAmount = amount - (amount * (discount / 100));
-    
+    const amountString = finalAmount.toString(); // Convert amount to string
+
     // Different API endpoints based on payment method
     if (method === "cash") {
       const response = await apiRequest("POST", "/api/payments/cash", {
         transactionId,
-        amount: finalAmount,
+        amount: amountString, // Pass amount as string
         customerName
       });
-      
+
       return {
         success: true,
         reference: response.receiptNumber
@@ -46,13 +46,13 @@ export async function processPayment({
           error: "Phone number is required for M-Pesa payments"
         };
       }
-      
+
       const response = await apiRequest("POST", "/api/payments/mpesa", {
         transactionId,
-        amount: finalAmount,
+        amount: amountString, // Pass amount as string
         phoneNumber
       });
-      
+
       return {
         success: true,
         reference: response.mpesaRef
@@ -64,19 +64,19 @@ export async function processPayment({
           error: "Phone number is required for Airtel Money payments"
         };
       }
-      
+
       const response = await apiRequest("POST", "/api/payments/airtel", {
         transactionId,
-        amount: finalAmount,
+        amount: amountString, // Pass amount as string
         phoneNumber
       });
-      
+
       return {
         success: true,
         reference: response.reference
       };
     }
-    
+
     return {
       success: false,
       error: "Invalid payment method"

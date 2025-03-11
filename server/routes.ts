@@ -296,17 +296,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Ensure amount is a string and payment status is set to "pending" by default
       const rawData = req.body;
-      
+
       // Convert amount to string if it's a number
       if (typeof rawData.amount === 'number') {
         rawData.amount = String(rawData.amount);
       }
-      
+
       const transactionData = {
         ...insertTransactionSchema.parse(rawData),
         paymentStatus: "pending" 
       };
-      
+
       const transaction = await db.insert(transactions).values(transactionData).returning();
       res.json(transaction);
     } catch (error) {
@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments/mpesa", asyncHandler(async (req, res) => {
     try {
       const paymentData = mpesaPaymentSchema.parse(req.body);
-      
+
       // Initiate STK Push
       const response = await mpesaService.initiateSTKPush({
         phoneNumber: paymentData.phoneNumber,
@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accountReference: `TXN-${paymentData.transactionId}`,
         transactionDesc: "Payment for gaming services"
       });
-      
+
       // Store the checkout request ID for later verification
       await db.update(transactions)
         .set({ 
@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentStatus: "pending"
         })
         .where(eq(transactions.id, paymentData.transactionId));
-      
+
       res.json({
         success: true,
         message: "M-Pesa payment initiated. Please check your phone to complete payment.",
@@ -523,35 +523,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }));
-  
+
   // Add M-Pesa verification endpoint
   app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req, res) => {
     try {
       const { checkoutRequestId } = req.params;
-      
+
       // Check transaction status
       const statusResponse = await mpesaService.checkTransactionStatus(checkoutRequestId);
-      
+
       // If successful, update transaction status
       if (statusResponse.ResultCode === "0") {
         const transaction = await db.select()
           .from(transactions)
           .where(eq(transactions.mpesaRef, statusResponse.MerchantRequestID))
           .limit(1);
-          
+
         if (transaction) {
           await db.update(transactions)
             .set({ paymentStatus: "completed" })
             .where(eq(transactions.mpesaRef, statusResponse.MerchantRequestID));
         }
-        
+
         return res.json({
           success: true,
           status: "COMPLETED",
           message: "Payment completed successfully"
         });
       }
-      
+
       // Return appropriate status
       return res.json({
         success: true,
@@ -566,16 +566,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }));
-  
+
   // Add M-Pesa callback endpoint
   app.post("/api/mpesa/callback", asyncHandler(async (req, res) => {
     try {
       const callbackData = req.body;
       console.log("M-Pesa callback received:", JSON.stringify(callbackData));
-      
+
       // Extract the checkout request ID and Merchant Request ID
       const { CheckoutRequestID, ResultCode, MerchantRequestID } = callbackData.Body.stkCallback;
-      
+
       // If payment was successful
       if (ResultCode === 0) {
         // Update transaction status using Merchant Request ID
@@ -583,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ paymentStatus: "completed" })
           .where(eq(transactions.mpesaRef, MerchantRequestID));
       }
-      
+
       res.status(200).json({ success: true });
     } catch (error: any) {
       console.error("M-Pesa callback error:", error);
@@ -661,12 +661,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }));
-  
+
   // Cash payment route
   app.post("/api/payments/cash", asyncHandler(async (req, res) => {
     try {
       const paymentData = cashPaymentSchema.parse(req.body);
-      
+
       // Create payment record with status=completed
       const [payment] = await db.insert(payments).values({
         transactionId: paymentData.transactionId,
@@ -675,21 +675,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "completed",
         createdAt: new Date()
       }).returning();
-      
+
       if (!payment) {
         return res.status(500).json({
           success: false,
           error: "Failed to create cash payment record"
         });
       }
-      
+
       // Update transaction status to completed
       await db.update(transactions)
         .set({ 
           paymentStatus: "completed" 
         })
         .where(eq(transactions.id, paymentData.transactionId));
-      
+
       return res.json({
         success: true,
         message: "Cash payment processed successfully",
@@ -703,12 +703,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }));
-  
+
   // Airtel Money payment route
   app.post("/api/payments/airtel", asyncHandler(async (req, res) => {
     try {
       const paymentData = airtelPaymentSchema.parse(req.body);
-      
+
       // Initiate Airtel Money payment
       const response = await airtelMoneyService.initiatePayment({
         phoneNumber: paymentData.phoneNumber,
@@ -716,14 +716,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reference: `TXN-${paymentData.transactionId}`,
         transactionDesc: "Payment for gaming services"
       });
-      
+
       // Store the transaction reference for later verification
       await db.update(transactions)
         .set({ 
           paymentStatus: "pending"
         })
         .where(eq(transactions.id, paymentData.transactionId));
-      
+
       // Create payment record
       const [payment] = await db.insert(payments).values({
         transactionId: paymentData.transactionId,
@@ -734,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phoneNumber: paymentData.phoneNumber,
         createdAt: new Date()
       }).returning();
-      
+
       res.json({
         success: true,
         message: "Airtel Money payment initiated. Please check your phone to complete payment.",
@@ -770,12 +770,18 @@ const basePaymentSchema = z.object({
 });
 
 // Mobile money payment schemas
-const mpesaPaymentSchema = basePaymentSchema.extend({
-  phoneNumber: z.string()
+const mpesaPaymentSchema = z.object({
+  phoneNumber: z.string(),
+  amount: z.number(),
+  transactionId: z.number()
 });
 
-const airtelPaymentSchema = basePaymentSchema.extend({
-  phoneNumber: z.string()
+const airtelPaymentSchema = z.object({
+  phoneNumber: z.string(),
+  amount: z.number(),
+  transactionId: z.number(),
+  reference: z.string(),
+  transactionDesc: z.string().optional()
 });
 
 // Cash payment schema - no additional fields needed
