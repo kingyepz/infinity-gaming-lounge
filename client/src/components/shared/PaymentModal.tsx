@@ -21,20 +21,17 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
   const handlePayment = async () => {
     try {
       setProcessing(true);
-
-      // Create payment record
       const response = await apiRequest("POST", "/api/transactions/payment", {
         stationId: station.id,
         amount,
         paymentMethod,
-        mpesaRef: paymentMethod === "mpesa" ? `MP${Date.now()}` : undefined
+        mpesaRef: paymentMethod === "mpesa" ? `MP${Date.now()}` : null
       });
 
-      if (!response.success) {
-        throw new Error(response.error || "Payment failed");
+      if (!response?.success) {
+        throw new Error(response?.error || "Payment processing failed");
       }
 
-      // For cash payments, complete immediately
       if (paymentMethod === "cash") {
         toast({
           title: "Payment Successful",
@@ -42,17 +39,16 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
         });
         onSuccess();
       } else {
-        // For M-Pesa, show instructions and wait for verification
         toast({
-          title: "M-Pesa Payment Instructions",
-          description: "Please complete the payment using M-Pesa",
+          title: "M-Pesa Payment",
+          description: "Please follow the M-Pesa instructions to complete payment"
         });
       }
     } catch (error: any) {
       console.error("Payment error:", error);
       toast({
         title: "Payment Failed",
-        description: error.message || "Failed to process payment",
+        description: error.message || "Failed to process payment. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -100,7 +96,7 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
                 3. Enter Till Number: 123456<br/>
                 4. Enter Amount: KSH {amount}<br/>
                 5. Enter your M-Pesa PIN<br/>
-                6. Wait for confirmation message
+                6. Wait for confirmation SMS
               </p>
             </div>
           )}

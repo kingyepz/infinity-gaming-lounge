@@ -501,28 +501,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { stationId, amount, paymentMethod, mpesaRef } = req.body;
 
+      // Validate input
+      if (!stationId || !amount || !paymentMethod) {
+        return res.status(400).json({
+          success: false,
+          error: "Missing required fields"
+        });
+      }
+
       // Create payment record
-      const payment = await db.insert(payments).values({
-        transactionId: stationId, // Using stationId temporarily as transactionId
+      const [payment] = await db.insert(payments).values({
+        transactionId: stationId,
         amount,
         paymentMethod,
         status: paymentMethod === "cash" ? "completed" : "pending",
-        mpesaRef,
+        mpesaRef: paymentMethod === "mpesa" ? mpesaRef : null,
         createdAt: new Date()
       }).returning();
 
       if (!payment) {
-        return res.status(400).json({ error: "Failed to create payment record" });
+        return res.status(400).json({
+          success: false,
+          error: "Failed to create payment record"
+        });
       }
 
-      res.json({
+      // Update transaction status if it's a cash payment
+      if (paymentMethod === "cash") {
+        await db.update(transactions)
+          .set({ paymentStatus: "completed" })
+          .where(eq(transactions.stationId, stationId));
+      }
+
+      return res.json({
         success: true,
-        payment: payment[0],
+        payment,
         message: `${paymentMethod.toUpperCase()} payment processed successfully`
       });
     } catch (error: any) {
       console.error("Payment error:", error);
-      res.status(500).json({
+      return res.status(500).json({
+        success: false,
         error: error.message || "Failed to process payment"
       });
     }
