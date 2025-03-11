@@ -304,24 +304,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create a base transaction data object with required fields only
-      const baseTransactionData = {
+      // Create a partial transaction record with only valid column names
+      // Get a list of column names in the transactions table from the schema
+      const transactionColumns = Object.keys(transactions);
+      
+      // Create a base transaction object with mandatory fields
+      const baseTransactionData: Record<string, any> = {
         stationId: rawData.stationId,
         customerName: rawData.customerName,
-        gameName: rawData.gameName || null,
         sessionType: rawData.sessionType,
         amount: rawData.amount,
-        duration: rawData.duration || null,
-        paymentStatus: "pending" 
+        paymentStatus: "pending"
       };
+      
+      // Add optional fields only if they exist in schema and have values
+      if (rawData.gameName && transactionColumns.includes('gameName')) {
+        baseTransactionData.gameName = rawData.gameName;
+      }
+      
+      if (rawData.duration !== undefined && rawData.duration !== null && transactionColumns.includes('duration')) {
+        baseTransactionData.duration = rawData.duration;
+      }
 
-      // Skip zod validation for now since schema might not match DB exactly
-      // const transactionData = {
-      //  ...insertTransactionSchema.parse(rawData),
-      //  paymentStatus: "pending" 
-      // };
-
-      console.log("Inserting transaction:", baseTransactionData);
-      const transaction = await db.insert(transactions).values(baseTransactionData).returning();
+      console.log("Inserting transaction with sanitized fields:", baseTransactionData);
+      
+      // Ensure we're passing an array of values, as required by drizzle
+      const transaction = await db.insert(transactions).values([baseTransactionData as any]).returning();
       res.json(transaction);
     } catch (error) {
       console.error("Transaction creation error:", error);
@@ -517,18 +525,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        // Store the checkout request ID for later verification
-        // First try updating with mpesaRef field
+        // Get a list of column names in the transactions table from the schema
+        const transactionColumns = Object.keys(transactions);
+        
+        // Create update data object with only valid columns
+        const updateData: Record<string, any> = {
+          paymentStatus: "pending"
+        };
+        
+        // Only add mpesaRef if the column exists
+        if (transactionColumns.includes('mpesaRef')) {
+          updateData.mpesaRef = response.MerchantRequestID;
+        }
+        
+        console.log("Updating transaction with sanitized fields:", updateData);
         await db.update(transactions)
-          .set({ 
-            mpesaRef: response.MerchantRequestID,
-            paymentStatus: "pending"
-          })
+          .set(updateData)
           .where(eq(transactions.id, paymentData.transactionId));
       } catch (dbError) {
-        console.log("Database schema doesn't have mpesaRef field, updating payment status only");
+        console.error("Error updating transaction with M-Pesa reference:", dbError);
         
-        // If the first update fails, try with just payment status
+        // If the update fails, try with just payment status as a fallback
         await db.update(transactions)
           .set({ 
             paymentStatus: "pending"
@@ -538,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create a payment record in the payments table
       try {
-        await db.insert(payments).values({
+        await db.insert(payments).values([{
           transactionId: paymentData.transactionId,
           amount: String(paymentData.amount),
           paymentMethod: "mpesa",
@@ -546,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reference: response.MerchantRequestID,
           phoneNumber: paymentData.phoneNumber,
           createdAt: new Date()
-        });
+        } as any]);
       } catch (paymentError) {
         console.error("Error creating payment record:", paymentError);
         // This is non-critical, so we won't throw the error
@@ -647,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create payment record
-      const [payment] = await db.insert(payments).values({
+      const [payment] = await db.insert(payments).values([{
         transactionId: stationId,
         amount: String(amount), // Always convert amount to string
         paymentMethod,
@@ -655,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reference: reference || null,
         phoneNumber: phoneNumber || null,
         createdAt: new Date()
-      }).returning();
+      } as any]).returning();
 
       if (!payment) {
         return res.status(400).json({
@@ -711,13 +728,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentData = cashPaymentSchema.parse(req.body);
 
       // Create payment record with status=completed
-      const [payment] = await db.insert(payments).values({
+      const [payment] = await db.insert(payments).values([{
         transactionId: paymentData.transactionId,
         amount: String(paymentData.amount),
         paymentMethod: "cash",
         status: "completed",
         createdAt: new Date()
-      }).returning();
+      } as any]).returning();
 
       if (!payment) {
         return res.status(500).json({
@@ -764,20 +781,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Airtel Money response:", response);
 
-      // Store the transaction reference for later verification
+      // Store the transaction reference for later verification 
       try {
+        // Get a list of column names in the transactions table from the schema
+        const transactionColumns = Object.keys(transactions);
+        
+        // Create update data object with only valid columns
+        const updateData: Record<string, any> = {
+          paymentStatus: "pending"
+        };
+        
+        // Only add airtelRef if the column exists
+        if (transactionColumns.includes('airtelRef')) {
+          updateData.airtelRef = response.reference;
+        }
+        
+        console.log("Updating transaction with sanitized fields for Airtel:", updateData);
         await db.update(transactions)
-          .set({ 
-            paymentStatus: "pending"
-          })
+          .set(updateData)
           .where(eq(transactions.id, paymentData.transactionId));
       } catch (dbError) {
-        console.error("Error updating transaction:", dbError);
+        console.error("Error updating transaction for Airtel payment:", dbError);
+        
+        // If the update fails, try with just payment status as a fallback
+        try {
+          await db.update(transactions)
+            .set({ 
+              paymentStatus: "pending"
+            })
+            .where(eq(transactions.id, paymentData.transactionId));
+        } catch (fallbackError) {
+          console.error("Error updating transaction status for Airtel payment (fallback):", fallbackError);
+          // We'll continue even if this fails
+        }
       }
 
       // Create payment record in payments table
       try {
-        const [payment] = await db.insert(payments).values({
+        const [payment] = await db.insert(payments).values([{
           transactionId: paymentData.transactionId,
           amount: String(paymentData.amount),
           paymentMethod: "airtel",
@@ -785,7 +826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reference: response.reference,
           phoneNumber: paymentData.phoneNumber,
           createdAt: new Date()
-        }).returning();
+        } as any]).returning();
 
         res.json({
           success: true,
