@@ -37,17 +37,17 @@ export default function PaymentModal({
   const [airtelStatus, setAirtelStatus] = useState<PaymentStatus>("idle");
   const { toast } = useToast();
 
-  // Calculate duration if session is active
+  // Calculate duration if session is active (in minutes)
   const duration = station.sessionStartTime
     ? Math.ceil(
         (Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60)
       ) // minutes
     : 0;
 
-  // Calculate amount based on session type
+  // Calculate amount based on session type with safe fallbacks
   const amount = station.sessionType === "per_game"
-    ? station.baseRate
-    : Math.ceil(duration / 60) * station.hourlyRate;
+    ? (station.baseRate || 40) // Default to 40 KES if baseRate is missing
+    : Math.ceil(duration / 60) * (station.hourlyRate || 200); // Default to 200 KES/hour if hourlyRate is missing
 
   const handlePayment = async () => {
     try {
@@ -138,8 +138,8 @@ export default function PaymentModal({
         const airtelResponse = await axios.post("/api/payments/airtel", {
           phoneNumber: airtelPhoneNumber,
           amount,
-          transactionId,
-          reference: `TXN-${transactionId}`
+          transactionId
+          // Let server generate the reference
         });
 
         if (airtelResponse.data.success) {
