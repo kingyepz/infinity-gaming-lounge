@@ -22,11 +22,12 @@ import {
   CalendarClock,
   Bell,
   Copy,
-  UserCircle
+  UserCircle,
+  Phone
 } from "lucide-react";
 
 export default function CustomerPortal() {
-  const { toast } = useToast();
+  const { toast } = useToast(); // Get toast function from hook
 
   // Fetch current user
   const { data: currentUser, isLoading: currentUserLoading } = useQuery({

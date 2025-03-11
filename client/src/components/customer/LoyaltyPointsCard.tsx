@@ -21,15 +21,17 @@ export default function LoyaltyPointsCard({ userId, points }: LoyaltyPointsCardP
 
   const { data: rewards, isLoading } = useQuery({
     queryKey: ['/api/rewards'],
-    queryFn: () => apiRequest('/api/rewards')
   });
 
   const redeemMutation = useMutation({
     mutationFn: (rewardId: number) => 
       apiRequest('/api/rewards/redeem', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ userId, rewardId })
-      }),
+      }) as Promise<any>,
     onSuccess: (data) => {
       toast({
         title: "Reward Redeemed!",

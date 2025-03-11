@@ -1076,6 +1076,27 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         PaymentDebugger.log('airtel', 'payment_record', paymentRecord);
         const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
         PaymentDebugger.log('airtel', 'payment_record_created', payment);
+        
+        // If immediate success response, award loyalty points right away
+        if (response.status === "SUCCESS" && paymentData.userId) {
+          try {
+            // Award points based on payment amount (1 point for every 10 KES)
+            const pointsToAward = Math.floor(paymentData.amount / 10);
+            
+            if (pointsToAward > 0) {
+              const newPoints = await storage.awardLoyaltyPoints(paymentData.userId, pointsToAward);
+              
+              PaymentDebugger.log('airtel', 'loyalty_points_awarded', {
+                userId: paymentData.userId,
+                pointsAwarded: pointsToAward,
+                newTotalPoints: newPoints
+              });
+            }
+          } catch (pointsError) {
+            PaymentDebugger.logError('airtel', 'loyalty_points_award', pointsError);
+            // Continue even if points award fails, as the payment was successful
+          }
+        }
 
         res.json({
           success: true,
@@ -1206,7 +1227,8 @@ const basePaymentSchema = z.object({
 const mpesaPaymentSchema = z.object({
   phoneNumber: z.string(),
   amount: z.number(),
-  transactionId: z.number()
+  transactionId: z.number(),
+  userId: z.number().optional() // Optional user ID for loyalty points
 });
 
 const airtelPaymentSchema = z.object({
