@@ -5,8 +5,8 @@ import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
-import { users, transactions, games, gameStations } from "../shared/schema";
-import { desc, sql } from "drizzle-orm";
+import { games, transactions, gameStations, users } from "../shared/schema";
+import { desc, eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hourAgo = new Date(now.getTime() - (60 * 60 * 1000));
 
       const hourlyTransactions = transactionsList.filter(tx =>
-        new Date(tx.createdAt) >= hourAgo && 
+        new Date(tx.createdAt) >= hourAgo &&
         tx.paymentStatus === "completed"
       );
 
@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const estimatedAmount = station.sessionType === "per_game"
           ? station.baseRate
           : Math.ceil(duration / 60) * station.hourlyRate;
-          
+
         return {
           stationName: station.name,
           customerName: station.currentCustomer,
@@ -211,8 +211,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/games", asyncHandler(async (_req, res) => {
-    const games = await db.select().from(games);
-    res.json(games);
+    try {
+      const gamesList = await db.select().from(games).orderBy(desc(games.name));
+      res.json(gamesList);
+    } catch (error) {
+      console.error("Error fetching games:", error);
+      throw error;
+    }
   }));
 
   app.post("/api/transactions", asyncHandler(async (req, res) => {

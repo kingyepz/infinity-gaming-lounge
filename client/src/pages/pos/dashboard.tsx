@@ -11,43 +11,53 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerPortal from "@/pages/customer/portal";
-import type { GameStation, Game } from "@shared/schema";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, ArrowDown, Download, Printer, Calendar, LogOut } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Transaction } from "@shared/schema";
+import type { GameStation, Game, User, Transaction } from "@shared/schema";
 
+// Types for our queries
+interface DashboardQueries {
+  stations: GameStation[];
+  games: Game[];
+  customers: User[];
+  transactions: Transaction[];
+}
 
 export default function POSDashboard() {
   const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
   const [selectedGame, setSelectedGame] = useState<string | null>(null); 
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: stations, isLoading: stationsLoading } = useQuery({
+  // Properly typed queries
+  const { data: stations = [], isLoading: stationsLoading } = useQuery<GameStation[]>({
     queryKey: ["/api/stations"],
   });
 
-  const { data: games, isLoading: gamesLoading } = useQuery({
+  const { data: games = [], isLoading: gamesLoading } = useQuery<Game[]>({
     queryKey: ["/api/games"],
   });
 
-  const { data: customers, isLoading: customersLoading } = useQuery({
+  const { data: customers = [], isLoading: customersLoading } = useQuery<User[]>({
     queryKey: ["/api/users/customers"],
-    queryFn: () => apiRequest("GET", "/api/users/customers")
   });
 
-  const { data: transactions } = useQuery({
+  const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
   });
+
+  // Calculate metrics for the overview tab
+  const activeStations = stations.filter(s => s.currentCustomer)?.length || 0;
+  const todayRevenue = transactions
+    .filter(tx => new Date(tx.createdAt).toDateString() === new Date().toDateString())
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const newCustomers = customers
+    .filter(c => new Date(c.createdAt).toDateString() === new Date().toDateString())
+    .length;
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -149,7 +159,7 @@ export default function POSDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-lg sm:text-2xl font-bold">
-                      {stations?.filter(s => s.currentCustomer)?.length || 0}
+                      {activeStations}
                     </div>
                     <p className="text-xs text-muted-foreground">+2 from last hour</p>
                   </CardContent>
@@ -159,7 +169,7 @@ export default function POSDashboard() {
                     <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-lg sm:text-2xl font-bold">KSH 1,250.00</div>
+                    <div className="text-lg sm:text-2xl font-bold">KSH {todayRevenue.toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">+$350 from yesterday</p>
                   </CardContent>
                 </Card>
@@ -168,7 +178,7 @@ export default function POSDashboard() {
                     <CardTitle className="text-sm font-medium">New Customers</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-lg sm:text-2xl font-bold">8</div>
+                    <div className="text-lg sm:text-2xl font-bold">{newCustomers}</div>
                     <p className="text-xs text-muted-foreground">+3 from yesterday</p>
                   </CardContent>
                 </Card>
