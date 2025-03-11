@@ -62,67 +62,70 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
     try {
       setProcessing(true);
 
-      if (paymentMethod === "cash") {
-        const response = await apiRequest("POST", "/api/transactions/payment", {
-          stationId: station.id,
-          amount: String(amount), // Changed to string
-          paymentMethod: "cash"
-        });
-
-        if (!response?.success) {
-          throw new Error(response?.error || "Payment processing failed");
-        }
-
-        // Set payment status to completed for cash payments
-        setPaymentStatus("completed");
-
-        toast({
-          title: "Payment Successful",
-          description: `Cash payment of KSH ${amount} received`
-        });
-        onSuccess();
-      } else if (paymentMethod === "mpesa") {
-        // Validate phone number
+      if (paymentMethod === "mpesa") {
         if (!phoneNumber) {
           toast({
-            title: "Phone Number Required",
-            description: "Please enter the customer's phone number",
+            title: "Error",
+            description: "Please enter a phone number",
             variant: "destructive"
           });
           setProcessing(false);
           return;
         }
 
+        // Format phone number to the required format (254...)
+        const formattedPhone = formatPhoneNumber(phoneNumber);
+
         // Initiate M-Pesa payment
         const response = await apiRequest("POST", "/api/payments/mpesa", {
-          phoneNumber,
+          phoneNumber: formattedPhone,
           amount,
           transactionId: station.id
         });
 
-        if (!response?.success) {
-          throw new Error(response?.error || "M-Pesa payment initiation failed");
+        if (response.success) {
+          setCheckoutId(response.checkoutRequestId);
+          // Start polling for status
+          checkPaymentStatus(response.checkoutRequestId);
+        } else {
+          toast({
+            title: "M-Pesa Error",
+            description: response.error || "Failed to initiate M-Pesa payment",
+            variant: "destructive"
+          });
+          setProcessing(false);
         }
-
-        // Store the checkout ID for status verification
-        setCheckoutId(response.checkoutRequestId);
-
-        toast({
-          title: "M-Pesa Payment Initiated",
-          description: "STK Push sent to your phone. Please enter your M-Pesa PIN"
+      } else {
+        // Cash payment
+        const response = await apiRequest("POST", "/api/transactions/payment", {
+          stationId: station.id,
+          amount: String(amount), // Convert amount to string
+          paymentMethod: "cash"
         });
 
-        // Start checking payment status
-        setTimeout(() => checkPaymentStatus(response.checkoutRequestId), 5000);
+        if (response.success) {
+          toast({
+            title: "Payment Successful",
+            description: "Cash payment has been recorded",
+          });
+          await onSuccess();
+          onClose();
+        } else {
+          toast({
+            title: "Error",
+            description: response.error || "Failed to process payment",
+            variant: "destructive"
+          });
+        }
+        setProcessing(false);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Payment error:", error);
       toast({
-        title: "Payment Failed",
-        description: error.message || "Failed to process payment. Please try again.",
+        title: "Error",
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
-    } finally {
       setProcessing(false);
     }
   };
@@ -235,3 +238,6 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
     </Dialog>
   );
 }
+
+// Placeholder for phone number formatting - replace with actual implementation
+const formatPhoneNumber = (phoneNumber: string) => phoneNumber;

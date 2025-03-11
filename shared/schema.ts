@@ -112,14 +112,20 @@ export const insertGameStationSchema = createInsertSchema(gameStations).pick({
 
 export const insertGameSchema = createInsertSchema(games);
 
-export const insertTransactionSchema = createInsertSchema(transactions).pick({
-  stationId: true,
-  customerName: true,
-  gameName: true,
-  sessionType: true,
-  amount: true,
-  duration: true
-});
+export const insertTransactionSchema = createInsertSchema(transactions)
+  .pick({
+    stationId: true,
+    customerName: true,
+    gameName: true,
+    sessionType: true,
+    amount: true,
+    duration: true
+  })
+  .transform((data) => ({
+    ...data,
+    // Ensure amount is always a string
+    amount: typeof data.amount === 'number' ? String(data.amount) : data.amount
+  }));
 
 export const insertPaymentSchema = createInsertSchema(payments).pick({
   transactionId: true,

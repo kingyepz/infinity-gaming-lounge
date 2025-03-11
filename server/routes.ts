@@ -293,11 +293,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", asyncHandler(async (req, res) => {
     try {
-      // Ensure payment status is set to "pending" by default
+      // Ensure amount is a string and payment status is set to "pending" by default
+      const rawData = req.body;
+      
+      // Convert amount to string if it's a number
+      if (typeof rawData.amount === 'number') {
+        rawData.amount = String(rawData.amount);
+      }
+      
       const transactionData = {
-        ...insertTransactionSchema.parse(req.body),
+        ...insertTransactionSchema.parse(rawData),
         paymentStatus: "pending" 
       };
+      
       const transaction = await db.insert(transactions).values(transactionData).returning();
       res.json(transaction);
     } catch (error) {
@@ -614,22 +622,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find all transactions for this station and update their status if it's a cash payment
       if (paymentMethod === "cash") {
         try {
-          // First try with stationId
-          const updated = await db.update(transactions)
-            .set({ paymentStatus: "completed" })
+          // Update transaction payment status to completed
+          // Only update these fields to avoid error with non-existent columns
+          await db.update(transactions)
+            .set({ 
+              paymentStatus: "completed" 
+            })
             .where(eq(transactions.stationId, stationId))
             .returning();
-            
-          // If no rows updated, try with id
-          if (!updated || updated.length === 0) {
-            await db.update(transactions)
-              .set({ paymentStatus: "completed" })
-              .where(eq(transactions.id, stationId))
-              .returning();
-          }
         } catch (err) {
           console.error("Error updating transaction:", err);
-          // Continue with the process even if this fails
+          // Try with transaction ID instead of station ID
+          try {
+            await db.update(transactions)
+              .set({ 
+                paymentStatus: "completed" 
+              })
+              .where(eq(transactions.id, stationId))
+              .returning();
+          } catch (innerErr) {
+            console.error("Error updating transaction by ID:", innerErr);
+          }
         }
       }
 
