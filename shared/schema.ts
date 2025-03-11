@@ -92,9 +92,10 @@ export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
   transactionId: integer("transaction_id").notNull(),
   amount: text("amount").notNull(),
-  paymentMethod: text("payment_method", { enum: ["cash", "mpesa"] }).notNull(),
+  paymentMethod: text("payment_method", { enum: ["cash", "mpesa", "airtel"] }).notNull(),
   status: text("status", { enum: ["pending", "completed", "failed"] }).notNull(),
-  mpesaRef: text("mpesa_ref"),
+  reference: text("reference"), // Generic reference for any payment method
+  phoneNumber: text("phone_number"), // Phone number for mobile money payments
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -130,7 +131,9 @@ export const insertTransactionSchema = createInsertSchema(transactions)
 export const insertPaymentSchema = createInsertSchema(payments).pick({
   transactionId: true,
   amount: true,
-  paymentMethod: true
+  paymentMethod: true,
+  reference: true,
+  phoneNumber: true
 });
 
 export type User = typeof users.$inferSelect;

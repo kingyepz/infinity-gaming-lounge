@@ -8,6 +8,7 @@ import { db } from "./db";
 import { games, transactions, gameStations, users, payments } from "../shared/schema"; // Added 'payments' import
 import { desc, eq } from "drizzle-orm";
 import { mpesaService } from "./mpesa";
+import { airtelMoneyService } from "./airtel";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
