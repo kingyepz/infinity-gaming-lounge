@@ -1,31 +1,173 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Banknote, Check, CheckCircle, CreditCard, Loader, SmartphoneIcon, X, XCircle } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { PaymentMethod } from "@/lib/payment";
+import { Banknote, SmartphoneIcon, CheckCircle, XCircle } from "lucide-react";
+
+type PaymentMethod = "cash" | "mpesa" | "airtel";
+
+type PaymentStatus = "idle" | "processing" | "completed" | "failed";
 
 interface PaymentModalProps {
-  amount: number;
   station: any;
-  duration?: number; // Added duration for hourly rate calculation.  May need adjustment
-  onSuccess: () => Promise<void>;
   onClose: () => void;
+  onPaymentComplete: () => void;
 }
 
-export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClose }: PaymentModalProps) {
+export default function PaymentModal({
+  station,
+  onClose,
+  onPaymentComplete,
+}: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState("");
   const [airtelPhoneNumber, setAirtelPhoneNumber] = useState("");
-  const [mpesaStatus, setMpesaStatus] = useState<"idle" | "pending" | "completed" | "failed">("idle");
-  const [airtelStatus, setAirtelStatus] = useState<"idle" | "pending" | "completed" | "failed">("idle");
-  const [mpesaRequestId, setMpesaRequestId] = useState("");
-  const [airtelRequestId, setAirtelRequestId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [mpesaStatus, setMpesaStatus] = useState<PaymentStatus>("idle");
+  const [airtelStatus, setAirtelStatus] = useState<PaymentStatus>("idle");
   const { toast } = useToast();
+
+  // Calculate duration if session is active
+  const duration = station.sessionStartTime
+    ? Math.ceil(
+        (Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60)
+      ) // minutes
+    : 0;
+
+  // Calculate amount based on session type
+  const amount = station.sessionType === "per_game"
+    ? station.baseRate
+    : Math.ceil(duration / 60) * station.hourlyRate;
+
+  const handlePayment = async () => {
+    try {
+      setIsProcessing(true);
+
+      // Create a transaction record
+      const transactionResponse = await axios.post("/api/transactions", {
+        stationId: station.id,
+        customerName: station.currentCustomer || "Walk-in Customer",
+        gameName: station.currentGame || "Unknown Game",
+        sessionType: station.sessionType,
+        amount: String(amount),
+        duration: station.sessionType === "hourly" ? duration : null
+      });
+
+      const transactionId = transactionResponse.data[0]?.id;
+
+      if (!transactionId) {
+        throw new Error("Failed to create transaction record");
+      }
+
+      if (paymentMethod === "cash") {
+        // Process cash payment
+        await axios.post("/api/payments/cash", {
+          transactionId,
+          amount
+        });
+
+        toast({
+          title: "Payment Successful",
+          description: "Cash payment processed successfully."
+        });
+        onPaymentComplete();
+        onClose();
+      } else if (paymentMethod === "mpesa") {
+        if (!mpesaPhoneNumber) {
+          setIsProcessing(false);
+          toast({
+            title: "Phone Number Required",
+            description: "Please enter a phone number for M-Pesa payment.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setMpesaStatus("processing");
+
+        // Process M-Pesa payment
+        const mpesaResponse = await axios.post("/api/payments/mpesa", {
+          phoneNumber: mpesaPhoneNumber,
+          amount,
+          transactionId
+        });
+
+        if (mpesaResponse.data.success) {
+          // Start polling for payment status
+          startPollingMpesaStatus(mpesaResponse.data.checkoutRequestId);
+          toast({
+            title: "M-Pesa Request Sent",
+            description: "Please check your phone to complete the payment."
+          });
+        } else {
+          setMpesaStatus("failed");
+          setIsProcessing(false);
+          toast({
+            title: "Payment Failed",
+            description: mpesaResponse.data.error || "Failed to initiate M-Pesa payment.",
+            variant: "destructive"
+          });
+        }
+      } else if (paymentMethod === "airtel") {
+        if (!airtelPhoneNumber) {
+          setIsProcessing(false);
+          toast({
+            title: "Phone Number Required",
+            description: "Please enter a phone number for Airtel Money payment.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setAirtelStatus("processing");
+
+        // Process Airtel Money payment
+        const airtelResponse = await axios.post("/api/payments/airtel", {
+          phoneNumber: airtelPhoneNumber,
+          amount,
+          transactionId,
+          reference: `TXN-${transactionId}`
+        });
+
+        if (airtelResponse.data.success) {
+          // Start polling for payment status
+          startPollingAirtelStatus(airtelResponse.data.reference);
+          toast({
+            title: "Airtel Money Request Sent",
+            description: "Please check your phone to complete the payment."
+          });
+        } else {
+          setAirtelStatus("failed");
+          setIsProcessing(false);
+          toast({
+            title: "Payment Failed",
+            description: airtelResponse.data.error || "Failed to initiate Airtel Money payment.",
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      setIsProcessing(false);
+      setMpesaStatus("idle");
+      setAirtelStatus("idle");
+      toast({
+        title: "Payment Error",
+        description: error.message || "An error occurred during payment processing.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const startPollingMpesaStatus = (checkoutRequestId: string) => {
     const pollInterval = setInterval(async () => {
@@ -64,7 +206,7 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
       try {
         const response = await axios.get(`/api/payments/airtel/status/${referenceId}`);
 
-        if (response.data.status === "COMPLETED" || response.data.transactionStatus === "TS") {
+        if (response.data.transactionStatus === "SUCCESS") {
           clearInterval(pollInterval);
           setAirtelStatus("completed");
           toast({
@@ -73,7 +215,7 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
           });
           onPaymentComplete();
           onClose();
-        } else if (response.data.status === "FAILED" || response.data.transactionStatus === "TF") {
+        } else if (response.data.transactionStatus === "FAILED") {
           clearInterval(pollInterval);
           setAirtelStatus("failed");
           setIsProcessing(false);
@@ -84,96 +226,12 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
           });
         }
       } catch (error) {
-        console.error("Error checking Airtel Money status:", error);
+        console.error("Error checking Airtel status:", error);
       }
     }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(pollInterval);
   };
-
-  const handlePayment = async () => {
-    setIsProcessing(true);
-
-    try {
-      // Calculate amount and ensure it's a string
-      const calculatedAmount = station.sessionType === "per_game" 
-        ? station.baseRate 
-        : Math.ceil(duration / 60) * station.hourlyRate;
-      const amount = String(calculatedAmount);
-
-      if (paymentMethod === "cash") {
-        const response = await axios.post('/api/transactions/payment', {
-          stationId: station.id,
-          amount,
-          paymentMethod: "cash"
-        });
-
-        if (response.data.success) {
-          toast({
-            title: "Payment Successful",
-            description: "Cash payment recorded successfully."
-          });
-          await onSuccess();
-          onClose();
-        } else {
-          throw new Error(response.data.error || "Failed to process cash payment");
-        }
-      } else if (paymentMethod === "mpesa") {
-        const phoneNumber = mpesaPhoneNumber.startsWith("0") 
-          ? `254${mpesaPhoneNumber.substring(1)}`
-          : mpesaPhoneNumber;
-
-        const response = await axios.post('/api/payments/mpesa', {
-          phoneNumber,
-          amount: parseInt(amount), 
-          transactionId: station.id
-        });
-
-        if (response.data.success) {
-          setMpesaRequestId(response.data.checkoutRequestId);
-          setMpesaStatus("pending");
-          startPollingMpesaStatus(response.data.checkoutRequestId);
-        } else {
-          throw new Error(response.data.error || "Failed to initiate M-Pesa payment");
-        }
-      } else if (paymentMethod === "airtel") {
-        const phoneNumber = airtelPhoneNumber.startsWith("0") 
-          ? `254${airtelPhoneNumber.substring(1)}`
-          : airtelPhoneNumber;
-
-        const response = await axios.post('/api/payments/airtel', {
-          phoneNumber,
-          amount: parseInt(amount),
-          transactionId: station.id,
-          reference: `INF-${station.id}-${Date.now()}`,
-          transactionDesc: `Payment for station ${station.name}`
-        });
-
-        if (response.data.success) {
-          setAirtelRequestId(response.data.reference);
-          setAirtelStatus("pending");
-          startPollingAirtelStatus(response.data.reference);
-        } else {
-          throw new Error(response.data.error || "Failed to initiate Airtel Money payment");
-        }
-      }
-      setIsProcessing(false);
-    } catch (error) {
-      console.error("Payment processing error:", error);
-      toast({
-        title: "Payment Failed",
-        description: error.message || "There was a problem processing your payment.",
-        variant: "destructive"
-      });
-      setIsProcessing(false);
-    }
-  };
-
-  const onPaymentComplete = async () => {
-    await onSuccess();
-    onClose();
-  }
-
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -186,7 +244,7 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
             <p className="text-lg font-bold">Amount: KSH {amount}</p>
             <p className="text-sm text-muted-foreground">{station.name}</p>
             <p className="text-sm text-muted-foreground">
-              Rate: KSH {station.sessionType === "per_game" ? "40 per game" : "200 per hour"}
+              Rate: KSH {station.sessionType === "per_game" ? `${station.baseRate} per game` : `${station.hourlyRate} per hour`}
             </p>
           </div>
           <Tabs defaultValue="cash" className="w-full" onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
@@ -200,10 +258,13 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
               <div className="space-y-4">
                 <div className="rounded-md border p-4 flex flex-col items-center">
                   <Banknote className="h-12 w-12 text-primary mb-2" />
-                  <p className="text-center mb-2">Collect cash payment of <strong>KSH {station.sessionType === "per_game" ? station.baseRate : Math.ceil(duration / 60) * station.hourlyRate}</strong></p>
-                  <Button onClick={handlePayment} disabled={isProcessing} className="w-full">
-                    {isProcessing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                    Confirm Cash Payment
+                  <p className="text-center mb-2">Collect cash payment of <strong>KSH {amount}</strong></p>
+                  <Button 
+                    onClick={handlePayment}
+                    disabled={isProcessing}
+                    className="w-full"
+                  >
+                    {isProcessing ? "Processing..." : "Confirm Cash Payment"}
                   </Button>
                 </div>
               </div>
@@ -214,9 +275,9 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
                 {mpesaStatus === "idle" && (
                   <div className="rounded-md border p-4">
                     <div className="flex items-center justify-center mb-4">
-                      <CreditCard className="h-12 w-12 text-primary" />
+                      <SmartphoneIcon className="h-12 w-12 text-green-500" />
                     </div>
-                    <p className="text-center mb-4">Enter customer's M-Pesa phone number to initiate payment of <strong>KSH {station.sessionType === "per_game" ? station.baseRate : Math.ceil(duration / 60) * station.hourlyRate}</strong></p>
+                    <p className="text-center mb-4">Enter customer's M-Pesa phone number to initiate payment of <strong>KSH {amount}</strong></p>
                     <Input
                       type="tel"
                       placeholder="Phone Number (e.g. 0712345678)"
@@ -226,40 +287,35 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
                     />
                     <Button 
                       onClick={handlePayment}
-                      disabled={!mpesaPhoneNumber || isProcessing}
+                      disabled={isProcessing}
                       className="w-full"
                     >
-                      {isProcessing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Initiate M-Pesa Payment
+                      {isProcessing ? "Processing..." : "Send M-Pesa Request"}
                     </Button>
                   </div>
                 )}
-                {/* M-Pesa Status Display */}
-                {mpesaStatus !== "idle" && (
-                  <div className="rounded-md border p-4 text-center">
-                    {mpesaStatus === "pending" && (
-                      <>
-                        <Loader className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-                        <p className="font-semibold mb-2">Processing M-Pesa Payment</p>
-                        <p className="text-sm mb-4">The customer should receive an STK push to complete the payment.</p>
-                        <p className="text-xs text-muted-foreground">Request ID: {mpesaRequestId}</p>
-                      </>
-                    )}
-                    {mpesaStatus === "completed" && (
-                      <>
-                        <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                        <p className="font-semibold mb-2">Payment Successful!</p>
-                        <p className="text-sm">The M-Pesa payment has been completed successfully.</p>
-                      </>
-                    )}
-                    {mpesaStatus === "failed" && (
-                      <>
-                        <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-                        <p className="font-semibold mb-2">Payment Failed</p>
-                        <p className="text-sm mb-4">The M-Pesa payment could not be processed.</p>
-                        <Button onClick={() => setMpesaStatus("idle")} variant="outline">Try Again</Button>
-                      </>
-                    )}
+                {mpesaStatus === "processing" && (
+                  <div className="rounded-md border p-4 flex flex-col items-center">
+                    <div className="animate-pulse">
+                      <SmartphoneIcon className="h-12 w-12 text-green-500" />
+                    </div>
+                    <p className="text-center my-4">M-Pesa payment is being processed...</p>
+                    <p className="text-center text-sm">Customer should receive a prompt on their phone. Please wait for confirmation.</p>
+                  </div>
+                )}
+                {mpesaStatus === "completed" && (
+                  <div className="rounded-md border p-4 flex flex-col items-center">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                    <p className="font-semibold mb-2">Payment Successful</p>
+                    <p className="text-sm mb-4">The M-Pesa payment has been processed successfully.</p>
+                  </div>
+                )}
+                {mpesaStatus === "failed" && (
+                  <div className="rounded-md border p-4 flex flex-col items-center">
+                    <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+                    <p className="font-semibold mb-2">Payment Failed</p>
+                    <p className="text-sm mb-4">The M-Pesa payment could not be processed.</p>
+                    <Button onClick={() => setMpesaStatus("idle")} variant="outline">Try Again</Button>
                   </div>
                 )}
               </div>
@@ -272,7 +328,7 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
                     <div className="flex items-center justify-center mb-4">
                       <SmartphoneIcon className="h-12 w-12 text-orange-500" />
                     </div>
-                    <p className="text-center mb-4">Enter customer's Airtel Money phone number to initiate payment of <strong>KSH {station.sessionType === "per_game" ? station.baseRate : Math.ceil(duration / 60) * station.hourlyRate}</strong></p>
+                    <p className="text-center mb-4">Enter customer's Airtel Money phone number to initiate payment of <strong>KSH {amount}</strong></p>
                     <Input
                       type="tel"
                       placeholder="Phone Number (e.g. 0733123456)"
@@ -282,40 +338,35 @@ export function PaymentModal({ station,  amount, duration = 0, onSuccess, onClos
                     />
                     <Button 
                       onClick={handlePayment}
-                      disabled={!airtelPhoneNumber || isProcessing}
+                      disabled={isProcessing}
                       className="w-full"
                     >
-                      {isProcessing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Initiate Airtel Money Payment
+                      {isProcessing ? "Processing..." : "Send Airtel Money Request"}
                     </Button>
                   </div>
                 )}
-                {/* Airtel Money Status Display */}
-                {airtelStatus !== "idle" && (
-                  <div className="rounded-md border p-4 text-center">
-                    {airtelStatus === "pending" && (
-                      <>
-                        <Loader className="h-12 w-12 animate-spin mx-auto mb-4 text-orange-500" />
-                        <p className="font-semibold mb-2">Processing Airtel Money Payment</p>
-                        <p className="text-sm mb-4">The customer should receive a prompt to complete the payment.</p>
-                        <p className="text-xs text-muted-foreground">Reference ID: {airtelRequestId}</p>
-                      </>
-                    )}
-                    {airtelStatus === "completed" && (
-                      <>
-                        <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                        <p className="font-semibold mb-2">Payment Successful!</p>
-                        <p className="text-sm">The Airtel Money payment has been completed successfully.</p>
-                      </>
-                    )}
-                    {airtelStatus === "failed" && (
-                      <>
-                        <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-                        <p className="font-semibold mb-2">Payment Failed</p>
-                        <p className="text-sm mb-4">The Airtel Money payment could not be processed.</p>
-                        <Button onClick={() => setAirtelStatus("idle")} variant="outline">Try Again</Button>
-                      </>
-                    )}
+                {airtelStatus === "processing" && (
+                  <div className="rounded-md border p-4 flex flex-col items-center">
+                    <div className="animate-pulse">
+                      <SmartphoneIcon className="h-12 w-12 text-orange-500" />
+                    </div>
+                    <p className="text-center my-4">Airtel Money payment is being processed...</p>
+                    <p className="text-center text-sm">Customer should receive a prompt on their phone. Please wait for confirmation.</p>
+                  </div>
+                )}
+                {airtelStatus === "completed" && (
+                  <div className="rounded-md border p-4 flex flex-col items-center">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                    <p className="font-semibold mb-2">Payment Successful</p>
+                    <p className="text-sm mb-4">The Airtel Money payment has been processed successfully.</p>
+                  </div>
+                )}
+                {airtelStatus === "failed" && (
+                  <div className="rounded-md border p-4 flex flex-col items-center">
+                    <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+                    <p className="font-semibold mb-2">Payment Failed</p>
+                    <p className="text-sm mb-4">The Airtel Money payment could not be processed.</p>
+                    <Button onClick={() => setAirtelStatus("idle")} variant="outline">Try Again</Button>
                   </div>
                 )}
               </div>

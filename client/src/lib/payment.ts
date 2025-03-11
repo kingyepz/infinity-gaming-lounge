@@ -114,3 +114,114 @@ export function usePaymentStats() {
     }
   };
 }
+// payment.ts - Payment utility functions
+
+import axios from 'axios';
+
+/**
+ * Process a cash payment for a transaction
+ */
+export async function processCashPayment(transactionId: number, amount: number) {
+  try {
+    const response = await axios.post('/api/payments/cash', {
+      transactionId,
+      amount
+    });
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error: any) {
+    console.error('Cash payment processing error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to process cash payment'
+    };
+  }
+}
+
+/**
+ * Process an M-Pesa payment for a transaction
+ */
+export async function processMpesaPayment(transactionId: number, phoneNumber: string, amount: number) {
+  try {
+    const response = await axios.post('/api/payments/mpesa', {
+      transactionId,
+      phoneNumber,
+      amount
+    });
+    
+    return {
+      success: true,
+      data: response.data,
+      checkoutRequestId: response.data.checkoutRequestId
+    };
+  } catch (error: any) {
+    console.error('M-Pesa payment processing error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to process M-Pesa payment'
+    };
+  }
+}
+
+/**
+ * Process an Airtel Money payment for a transaction
+ */
+export async function processAirtelPayment(transactionId: number, phoneNumber: string, amount: number) {
+  try {
+    const response = await axios.post('/api/payments/airtel', {
+      transactionId,
+      phoneNumber,
+      amount,
+      reference: `TXN-${transactionId}`
+    });
+    
+    return {
+      success: true,
+      data: response.data,
+      reference: response.data.reference
+    };
+  } catch (error: any) {
+    console.error('Airtel Money payment processing error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to process Airtel Money payment'
+    };
+  }
+}
+
+/**
+ * Check M-Pesa payment status
+ */
+export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
+  try {
+    const response = await axios.get(`/api/payments/mpesa/status/${checkoutRequestId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking M-Pesa payment status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check Airtel Money payment status
+ */
+export async function checkAirtelPaymentStatus(referenceId: string) {
+  try {
+    const response = await axios.get(`/api/payments/airtel/status/${referenceId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking Airtel Money payment status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Format currency amount as KSH
+ */
+export function formatCurrency(amount: number | string) {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return `KSH ${numAmount.toFixed(0)}`;
+}
