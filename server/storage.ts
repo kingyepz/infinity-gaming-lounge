@@ -1,5 +1,5 @@
-import { gameStations, games, transactions, users } from "@shared/schema";
-import type { GameStation, InsertGameStation, Game, InsertGame, Transaction, InsertTransaction, User, InsertUser } from "@shared/schema";
+import { gameStations, games, transactions, users, payments } from "@shared/schema";
+import type { GameStation, InsertGameStation, Game, InsertGame, Transaction, InsertTransaction, User, InsertUser, Payment, InsertPayment } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
@@ -456,6 +456,71 @@ export class StorageService {
       console.log("Mock data initialized successfully");
     } catch (error) {
       console.error("Error initializing mock data:", error);
+      throw error;
+    }
+  }
+
+  // Payment Methods
+  async createPayment(data: InsertPayment): Promise<Payment> {
+    try {
+      const [payment] = await db.insert(payments)
+        .values({
+          ...data,
+          status: "pending",
+          createdAt: new Date()
+        })
+        .returning();
+      return payment;
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      throw error;
+    }
+  }
+
+  async updatePaymentStatus(id: number, status: string, mpesaRef?: string): Promise<Payment | null> {
+    try {
+      const [payment] = await db.update(payments)
+        .set({
+          status,
+          ...(mpesaRef && { mpesaRef })
+        })
+        .where(eq(payments.id, id))
+        .returning();
+      return payment;
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      throw error;
+    }
+  }
+
+  async getPaymentByTransactionId(transactionId: number): Promise<Payment | null> {
+    try {
+      const [payment] = await db.select()
+        .from(payments)
+        .where(eq(payments.transactionId, transactionId));
+      return payment || null;
+    } catch (error) {
+      console.error("Error fetching payment:", error);
+      return null;
+    }
+  }
+
+  // Add these new methods to handle transactions with payments
+  async createTransactionWithPayment(transactionData: InsertTransaction, paymentMethod: string): Promise<{ transaction: Transaction; payment: Payment }> {
+    try {
+      // First create the transaction
+      const transaction = await this.createTransaction(transactionData);
+
+      // Then create the payment
+      const payment = await this.createPayment({
+        transactionId: transaction.id,
+        amount: transaction.amount,
+        paymentMethod
+      });
+
+      return { transaction, payment };
+    } catch (error) {
+      console.error("Error creating transaction with payment:", error);
       throw error;
     }
   }

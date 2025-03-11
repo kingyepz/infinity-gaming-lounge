@@ -86,7 +86,16 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
-// Insert Schemas
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  transactionId: integer("transaction_id").notNull(),
+  amount: integer("amount").notNull(),
+  paymentMethod: text("payment_method", { enum: ["cash", "mpesa"] }).notNull(),
+  status: text("status", { enum: ["pending", "completed", "failed"] }).notNull(),
+  mpesaRef: text("mpesa_ref"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
   gamingName: true,
@@ -110,7 +119,12 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   duration: true
 });
 
-// Types
+export const insertPaymentSchema = createInsertSchema(payments).pick({
+  transactionId: true,
+  amount: true,
+  paymentMethod: true
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type GameStation = typeof gameStations.$inferSelect;
@@ -119,3 +133,5 @@ export type Game = typeof games.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;

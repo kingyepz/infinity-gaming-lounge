@@ -29,7 +29,7 @@ import { apiRequest } from "@/lib/queryClient";
 import PaymentModal from "@/components/shared/PaymentModal";
 import CustomerPortal from "@/pages/customer/portal";
 import type { GameStation, Game, User, Transaction } from "@shared/schema";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -54,6 +54,10 @@ export default function POSDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [currentTransaction, setCurrentTransaction] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash");
 
   // Properly typed queries
   const { data: stations = [], isLoading: stationsLoading } = useQuery({
@@ -102,7 +106,7 @@ export default function POSDashboard() {
     }
   };
 
-  // Handle session end
+  // Updated handleEndSession function
   const handleEndSession = async (station: GameStation) => {
     try {
       if (!station.sessionStartTime) {
@@ -118,47 +122,115 @@ export default function POSDashboard() {
         ? station.baseRate
         : Math.ceil(diffMins / 60) * (station.hourlyRate || 0);
 
-      // First create the transaction record
-      const transaction = await apiRequest("POST", "/api/transactions", {
+      setPaymentAmount(cost);
+      setCurrentTransaction({
         stationId: station.id,
         customerName: station.currentCustomer,
         gameName: station.currentGame,
         sessionType: station.sessionType,
         amount: cost,
-        duration: diffMins,
-        paymentStatus: "completed"
+        duration: diffMins
       });
+      setShowPaymentDialog(true);
+    } catch (error: any) {
+      console.error("Error preparing payment:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process payment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
-      if (!transaction) {
-        throw new Error("Failed to create transaction");
-      }
-
-      // Then end the session
-      const response = await apiRequest("POST", "/api/sessions/end", {
-        stationId: station.id
+  const handlePayment = async () => {
+    try {
+      // Create transaction with payment
+      const response = await apiRequest("POST", "/api/transactions/with-payment", {
+        ...currentTransaction,
+        paymentMethod
       });
 
       if (!response) {
-        throw new Error("Failed to end session");
+        throw new Error("Failed to process payment");
       }
+
+      // End the session
+      await apiRequest("POST", "/api/sessions/end", {
+        stationId: currentTransaction.stationId
+      });
 
       // Refresh data
       await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
 
+      setShowPaymentDialog(false);
+      setCurrentTransaction(null);
+
       toast({
-        title: "Session Ended",
-        description: `Session completed. Total cost: KSH ${cost}`,
+        title: "Payment Successful",
+        description: `Session completed. Payment received: KSH ${paymentAmount}`,
       });
     } catch (error: any) {
-      console.error("Error ending session:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to end session. Please try again.",
+        description: error.message || "Failed to process payment. Please try again.",
         variant: "destructive"
       });
     }
   };
+
+  // Add Payment Dialog
+  const PaymentDialog = () => (
+    <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+      <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
+        <DialogHeader>
+          <DialogTitle>Process Payment</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div>
+            <p className="text-lg font-bold">Amount: KSH {paymentAmount}</p>
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground">Payment Method</label>
+            <Select
+              onValueChange={(value) => setPaymentMethod(value as "cash" | "mpesa")}
+              value={paymentMethod}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select payment method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="mpesa">M-Pesa</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {paymentMethod === "mpesa" && (
+            <div>
+              <label className="text-sm text-muted-foreground">M-Pesa Instructions</label>
+              <p className="text-sm mt-1">
+                1. Go to M-Pesa menu<br/>
+                2. Select Lipa na M-Pesa<br/>
+                3. Enter Till Number: 123456<br/>
+                4. Enter Amount: KSH {paymentAmount}<br/>
+                5. Enter your M-Pesa PIN<br/>
+                6. Share the confirmation message
+              </p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setShowPaymentDialog(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handlePayment}>
+            {paymentMethod === "cash" ? "Confirm Payment" : "Verify M-Pesa"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   // Handle start session
   const handleStartSession = async () => {
@@ -1218,6 +1290,7 @@ export default function POSDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+      <PaymentDialog />
     </div>
   );
 }
