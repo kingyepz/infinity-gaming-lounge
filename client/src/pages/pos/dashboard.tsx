@@ -73,6 +73,9 @@ export default function POSDashboard() {
           <TabsTrigger value="sessions">Gaming Sessions</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="revenue">Revenue</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sessions" className="p-6">
@@ -248,14 +251,88 @@ export default function POSDashboard() {
         <TabsContent value="overview">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold">Overview</h2>
-            {/* Overview content */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="bg-black/30 border-primary/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stations?.filter(s => s.currentCustomer)?.length || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Out of {stations?.length || 0} stations</p>
+                </CardContent>
+              </Card>
+              {/* Add more overview cards */}
+            </div>
           </div>
         </TabsContent>
 
         <TabsContent value="customers">
-          <div>
-            <h3 className="text-2xl font-bold mb-4">Customers</h3>
-            {/* Customer list will be implemented later */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Customer Management</h2>
+              <Button onClick={() => setShowCustomerRegistration(true)}>
+                Register New Customer
+              </Button>
+            </div>
+            {/* Add customer list */}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Reports</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Daily Report</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Add daily report content */}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Weekly Report</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Add weekly report content */}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Payments</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Payments</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Add payments list */}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="revenue">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Revenue</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Today's Revenue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">KSH {/* Add actual revenue */}</div>
+                </CardContent>
+              </Card>
+              {/* Add more revenue metrics */}
+            </div>
           </div>
         </TabsContent>
       </Tabs>
