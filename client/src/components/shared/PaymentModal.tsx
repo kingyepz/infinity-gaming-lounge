@@ -65,14 +65,14 @@ export default function PaymentModal({ amount, station, onSuccess, onClose }: Pa
       if (paymentMethod === "cash") {
         const response = await apiRequest("POST", "/api/transactions/payment", {
           stationId: station.id,
-          amount,
+          amount: String(amount), // Changed to string
           paymentMethod: "cash"
         });
 
         if (!response?.success) {
           throw new Error(response?.error || "Payment processing failed");
         }
-        
+
         // Set payment status to completed for cash payments
         setPaymentStatus("completed");
 

@@ -91,7 +91,7 @@ export const transactions = pgTable("transactions", {
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
   transactionId: integer("transaction_id").notNull(),
-  amount: integer("amount").notNull(),
+  amount: text("amount").notNull(),
   paymentMethod: text("payment_method", { enum: ["cash", "mpesa"] }).notNull(),
   status: text("status", { enum: ["pending", "completed", "failed"] }).notNull(),
   mpesaRef: text("mpesa_ref"),

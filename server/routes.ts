@@ -495,7 +495,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store the checkout request ID for later verification
       await db.update(transactions)
         .set({ 
-          mpesaCheckoutId: response.CheckoutRequestID,
           mpesaRef: response.MerchantRequestID,
           paymentStatus: "pending"
         })
@@ -528,13 +527,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (statusResponse.ResultCode === "0") {
         const transaction = await db.select()
           .from(transactions)
-          .where(eq(transactions.mpesaCheckoutId, checkoutRequestId))
+          .where(eq(transactions.mpesaRef, statusResponse.MerchantRequestID))
           .limit(1);
           
         if (transaction) {
           await db.update(transactions)
             .set({ paymentStatus: "completed" })
-            .where(eq(transactions.mpesaCheckoutId, checkoutRequestId));
+            .where(eq(transactions.mpesaRef, statusResponse.MerchantRequestID));
         }
         
         return res.json({
@@ -565,15 +564,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const callbackData = req.body;
       console.log("M-Pesa callback received:", JSON.stringify(callbackData));
       
-      // Extract the checkout request ID
-      const { CheckoutRequestID, ResultCode } = callbackData.Body.stkCallback;
+      // Extract the checkout request ID and Merchant Request ID
+      const { CheckoutRequestID, ResultCode, MerchantRequestID } = callbackData.Body.stkCallback;
       
       // If payment was successful
       if (ResultCode === 0) {
-        // Update transaction status
+        // Update transaction status using Merchant Request ID
         await db.update(transactions)
           .set({ paymentStatus: "completed" })
-          .where(eq(transactions.mpesaCheckoutId, CheckoutRequestID));
+          .where(eq(transactions.mpesaRef, MerchantRequestID));
       }
       
       res.status(200).json({ success: true });
@@ -598,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create payment record
       const [payment] = await db.insert(payments).values({
         transactionId: stationId,
-        amount: typeof amount === 'number' ? String(amount) : amount, // Convert to string if it's a number
+        amount: String(amount), // Always convert amount to string
         paymentMethod,
         status: paymentMethod === "cash" ? "completed" : "pending",
         mpesaRef: paymentMethod === "mpesa" ? mpesaRef : null,
