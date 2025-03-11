@@ -4,15 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  CalendarIcon, 
-  GamepadIcon, 
-  BarChart2Icon, 
-  DollarSignIcon, 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  CalendarIcon,
+  GamepadIcon,
+  BarChart2Icon,
+  DollarSignIcon,
   UsersIcon,
   DownloadIcon,
   PrinterIcon,
-  LogOutIcon
+  LogOutIcon,
 } from "lucide-react";
 import InfinityLogo from "@/components/animations/InfinityLogo";
 import { useLocation } from "wouter";
@@ -36,7 +44,7 @@ export default function POSDashboard() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
-  const [selectedGame, setSelectedGame] = useState<string | null>(null); 
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -117,10 +125,10 @@ export default function POSDashboard() {
         <div className="flex flex-col items-center">
           <InfinityLogo className="w-16 h-16 sm:w-24 sm:h-24" />
           <h1 className="text-xl sm:text-2xl font-bold text-primary">INFINITY GAMING LOUNGE</h1>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleLogout} 
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
             className="hover:bg-primary/20 mt-2"
           >
             <UsersIcon className="w-4 h-4" />
@@ -259,8 +267,8 @@ export default function POSDashboard() {
                 <Card className="bg-black/30 border-primary/20">
                   <CardContent className="p-4 mt-2">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      <Button 
-                        variant="default" 
+                      <Button
+                        variant="default"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => {
                           const availableStation = stations?.find(s => !s.currentCustomer);
@@ -278,48 +286,48 @@ export default function POSDashboard() {
                         <GamepadIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">New Session</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => document.querySelector('[value="reports"]')?.dispatchEvent(new MouseEvent('click'))}
                       >
                         <BarChart2Icon className="h-6 w-6 mb-2" />
                         <span className="text-sm">View Reports</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => document.querySelector('[value="sessions"]')?.dispatchEvent(new MouseEvent('click'))}
                       >
                         <CalendarIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Manage Sessions</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => document.querySelector('[value="customers"]')?.dispatchEvent(new MouseEvent('click'))}
                       >
                         <UsersIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Customer Portal</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => document.querySelector('[value="payments"]')?.dispatchEvent(new MouseEvent('click'))}
                       >
                         <DollarSignIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Process Payment</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => document.querySelector('[value="analytics"]')?.dispatchEvent(new MouseEvent('click'))}
                       >
                         <BarChart2Icon className="h-6 w-6 mb-2" />
                         <span className="text-sm">View Analytics</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3"
                         onClick={() => {
                           toast({
@@ -331,8 +339,8 @@ export default function POSDashboard() {
                         <PrinterIcon className="h-6 w-6 mb-2" />
                         <span className="text-sm">Print Receipt</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-auto flex flex-col items-center p-3 bg-red-900/20 hover:bg-red-900/30"
                         onClick={handleLogout}
                       >
@@ -456,8 +464,8 @@ export default function POSDashboard() {
                                 })();
 
                                 // Calculate final amount based on session type and duration
-                                const finalAmount = station.sessionType === "per_game" 
-                                  ? station.baseRate 
+                                const finalAmount = station.sessionType === "per_game"
+                                  ? station.baseRate
                                   : Math.ceil(duration / 60) * station.hourlyRate;
 
                                 // Create final transaction record for completed session
@@ -583,7 +591,7 @@ export default function POSDashboard() {
                           displayName: formData.get("displayName"),
                           gamingName: formData.get("gamingName"),
                           phoneNumber: formData.get("phoneNumber"),
-                          role: "customer" 
+                          role: "customer"
                         });
 
                         toast({
@@ -602,7 +610,7 @@ export default function POSDashboard() {
                           description: error.message || "Failed to register customer"
                         });
                       }
-                    }} 
+                    }}
                     className="space-y-4">
                       <div>
                         <label className="text-sm text-muted-foreground">Display Name</label>
@@ -614,9 +622,9 @@ export default function POSDashboard() {
                       </div>
                       <div>
                         <label className="text-sm text-muted-foreground">Phone Number</label>
-                        <Input 
-                          name="phoneNumber" 
-                          required 
+                        <Input
+                          name="phoneNumber"
+                          required
                           placeholder="254700000000"
                           pattern="^254[0-9]{9}$"
                           title="Please enter a valid Kenyan phone number starting with 254"
@@ -624,9 +632,9 @@ export default function POSDashboard() {
                       </div>
                       <div className="flex gap-2">
                         <Button type="submit">Register Customer</Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           onClick={() => setShowRegistration(false)}
                         >
                           Cancel
@@ -726,14 +734,14 @@ export default function POSDashboard() {
                           <div className="w-48 h-48 rounded-full border-8 border-primary/20 relative">
                             {stations && (
                               <>
-                                <div 
-                                  className="absolute inset-0 rounded-full border-8 border-primary" 
-                                  style={{ 
+                                <div
+                                  className="absolute inset-0 rounded-full border-8 border-primary"
+                                  style={{
                                     clipPath: `polygon(50% 50%, 50% 0%, ${
                                       50 + 50 * Math.sin((stations.filter(s => s.currentCustomer).length / stations.length) * Math.PI * 2)
                                     }% ${
                                       50 - 50 * Math.cos((stations.filter(s => s.currentCustomer).length / stations.length) * Math.PI * 2)
-                                    }%, 50% 50%)` 
+                                    }%, 50% 50%)`
                                   }}
                                 ></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
@@ -774,8 +782,8 @@ export default function POSDashboard() {
                             const height = 30 + Math.random() * 70;
                             return (
                               <div key={i} className="flex-1 flex items-end pb-8">
-                                <div 
-                                  className="w-full mx-1 rounded-t-sm bg-gradient-to-t from-primary/50 to-primary/80" 
+                                <div
+                                  className="w-full mx-1 rounded-t-sm bg-gradient-to-t from-primary/50 to-primary/80"
                                   style={{ height: `${height}%` }}
                                 ></div>
                               </div>
@@ -811,7 +819,7 @@ export default function POSDashboard() {
                               <span className="text-sm font-medium">{Math.floor(randomPercent)}%</span>
                             </div>
                             <div className="h-2 w-full bg-primary/20 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className="h-full bg-primary rounded-full"
                                 style={{ width: `${randomPercent}%` }}
                               ></div>
@@ -833,11 +841,11 @@ export default function POSDashboard() {
                     <div className="absolute inset-0 px-4">
                       <div className="h-full flex items-end">
                         <svg className="w-full h-full" viewBox="0 0 24 10" preserveAspectRatio="none">
-                          <path 
-                            d="M0,10 C1,8 2,9 3,7 C4,5 5,6 6,4 C7,2 8,3 9,3 C10,3 11,5 12,4 C13,3 14,2 15,3 C16,4 17,5 18,4 C19,3 20,2 21,1 C22,0 23,1 24,2" 
-                            fill="none" 
-                            stroke="hsl(var(--primary))" 
-                            strokeWidth="0.2" 
+                          <path
+                            d="M0,10 C1,8 2,9 3,7 C4,5 5,6 6,4 C7,2 8,3 9,3 C10,3 11,5 12,4 C13,3 14,2 15,3 C16,4 17,5 18,4 C19,3 20,2 21,1 C22,0 23,1 24,2"
+                            fill="none"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth="0.2"
                             strokeLinecap="round"
                           />
                         </svg>
@@ -860,14 +868,14 @@ export default function POSDashboard() {
                   <CardContent className="h-60 flex items-center justify-center">
                     <div className="relative w-36 h-36">
                       <svg viewBox="0 0 36 36">
-                        <path 
+                        <path
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           fill="none"
                           stroke="hsl(var(--primary))"
                           strokeWidth="2"
                           strokeDasharray="60, 100"
                         />
-                        <path 
+                        <path
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           fill="none"
                           stroke="hsl(var(--primary) / 0.5)"
@@ -875,7 +883,7 @@ export default function POSDashboard() {
                           strokeDasharray="25, 100"
                           strokeDashoffset="-60"
                         />
-                        <path 
+                        <path
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           fill="none"
                           stroke="hsl(var(--primary) / 0.2)"
@@ -1116,8 +1124,8 @@ export default function POSDashboard() {
                         <div
                           key={customer.id}
                           className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedCustomer?.id === customer.id 
-                              ? 'bg-primary text-primary-foreground' 
+                            selectedCustomer?.id === customer.id
+                              ? 'bg-primary text-primary-foreground'
                               : 'bg-primary/10 hover:bg-primary/20'
                           }`}
                           onClick={() => setSelectedCustomer(customer)}
@@ -1133,8 +1141,8 @@ export default function POSDashboard() {
                       ))}
                     </div>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full"
                     onClick={() => setShowCustomerRegistration(true)}
                   >
@@ -1221,7 +1229,7 @@ export default function POSDashboard() {
                       description: error.message || "Failed to register customer"
                     });
                   }
-                }} 
+                }}
                 className="space-y-4">
                   <div>
                     <label className="text-sm text-muted-foreground">Display Name</label>
@@ -1233,9 +1241,9 @@ export default function POSDashboard() {
                   </div>
                   <div>
                     <label className="text-sm text-muted-foreground">Phone Number</label>
-                    <Input 
-                      name="phoneNumber" 
-                      required 
+                    <Input
+                      name="phoneNumber"
+                      required
                       placeholder="254700000000"
                       pattern="^254[0-9]{9}$"
                       title="Please enter a valid Kenyan phone number starting with 254"
@@ -1243,9 +1251,9 @@ export default function POSDashboard() {
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit">Register Customer</Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={() => setShowCustomerRegistration(false)}
                     >
                       Cancel
