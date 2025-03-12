@@ -112,6 +112,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!station) {
         throw new Error("Failed to end session");
       }
+      
+      // Broadcast station updates via WebSocket
+      await websocketService.sendStationUpdates();
+      console.log(`Session ended on station ${stationId}. Broadcasting updates via WebSocket.`);
+      
+      // Also broadcast transaction updates as session end might trigger a transaction
+      await websocketService.sendTransactionUpdates();
 
       res.json(station);
     } catch (error) {
@@ -424,6 +431,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "No transaction record created" 
           });
         }
+        
+        // Broadcast transaction updates via WebSocket
+        await websocketService.sendTransactionUpdates();
+        console.log(`New transaction created with ID ${result.id}. Broadcasting updates via WebSocket.`);
         
         // Return a standardized response with success flag and the transaction data
         return res.json({ 

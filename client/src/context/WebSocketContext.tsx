@@ -45,6 +45,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   
   // Initialize WebSocket connection
   useEffect(() => {
+    // Add connection status for tracking reconnection attempts
+    let isReconnecting = false;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10; // Maximum number of reconnection attempts
+    
     const connectWebSocket = () => {
       // Determine WebSocket URL based on current location
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -58,6 +63,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       ws.onopen = () => {
         console.log('Connected to WebSocket server');
         setConnected(true);
+        // Reset reconnection attempts on successful connection
+        isReconnecting = false;
+        reconnectAttempts = 0;
       };
       
       // Listen for messages
@@ -104,13 +112,22 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setConnected(false);
         setClientId(null);
         
-        // Attempt to reconnect after a delay
-        setTimeout(connectWebSocket, 3000);
+        // Implement exponential backoff for reconnection
+        if (!isReconnecting && reconnectAttempts < maxReconnectAttempts) {
+          isReconnecting = true;
+          const delay = Math.min(3000 * Math.pow(1.5, reconnectAttempts), 30000); // Max 30s delay
+          reconnectAttempts++;
+          console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts}) in ${delay/1000}s...`);
+          setTimeout(connectWebSocket, delay);
+        } else if (reconnectAttempts >= maxReconnectAttempts) {
+          console.error('Maximum reconnection attempts reached. Please refresh the page.');
+        }
       };
       
       // Connection error
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        // Let onclose handle reconnection
       };
       
       // Store the WebSocket instance
