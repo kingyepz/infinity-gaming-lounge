@@ -81,10 +81,37 @@ export default function AdminAnalytics() {
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
   const [newStationName, setNewStationName] = useState("");
   
+  // Edit Station Dialog
+  const [showEditStationDialog, setShowEditStationDialog] = useState(false);
+  const [editStationId, setEditStationId] = useState<number | null>(null);
+  const [editStationName, setEditStationName] = useState("");
+  const [confirmDeleteStationDialog, setConfirmDeleteStationDialog] = useState(false);
+  const [stationToDelete, setStationToDelete] = useState<number | null>(null);
+  
   // Add Game Dialog
   const [showAddGameDialog, setShowAddGameDialog] = useState(false);
   const [newGameName, setNewGameName] = useState("");
   const [newGameDescription, setNewGameDescription] = useState("");
+  
+  // Edit Game Dialog
+  const [showEditGameDialog, setShowEditGameDialog] = useState(false);
+  const [editGameId, setEditGameId] = useState<number | null>(null);
+  const [editGameName, setEditGameName] = useState("");
+  const [editGameDescription, setEditGameDescription] = useState("");
+  const [editGamePricePerSession, setEditGamePricePerSession] = useState("");
+  const [editGamePricePerHour, setEditGamePricePerHour] = useState("");
+  const [confirmDeleteGameDialog, setConfirmDeleteGameDialog] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<number | null>(null);
+  
+  // Customers
+  const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
+  const [editCustomerId, setEditCustomerId] = useState<number | null>(null);
+  const [editCustomerDisplayName, setEditCustomerDisplayName] = useState("");
+  const [editCustomerGamingName, setEditCustomerGamingName] = useState("");
+  const [editCustomerPhone, setEditCustomerPhone] = useState("");
+  const [editCustomerPoints, setEditCustomerPoints] = useState("");
+  const [confirmDeleteCustomerDialog, setConfirmDeleteCustomerDialog] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<number | null>(null);
   
   // Add Staff Dialog
   const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
