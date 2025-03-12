@@ -74,42 +74,12 @@ import type { GameStation, Game, User, Transaction } from "@shared/schema";
 
 export default function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   
-  // Function to refresh all dashboard data
-  const refreshAllData = async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/stations"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/games"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/transactions"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/daily"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/revenue/weekly"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/popular-games"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/station-utilization"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/customer-activity"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/payment-methods"] })
-      ]);
-      
-      toast({
-        title: "Data refreshed",
-        description: "All dashboard data has been updated"
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh failed",
-        description: "Could not refresh some data sources",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  // Initialize state variables
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Add Station Dialog
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
@@ -227,6 +197,40 @@ export default function AdminAnalytics() {
     queryKey: ["/api/reports/payment-methods"],
     queryFn: () => apiRequest({ path: "/api/reports/payment-methods" })
   });
+
+  // Refresh functionality
+  const refreshAllData = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate all queries to force refetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/stations"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/games"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/transactions"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/daily"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/revenue/weekly"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/popular-games"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/station-utilization"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/customer-activity"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/payment-methods"] })
+      ]);
+      
+      toast({
+        title: "Data refreshed",
+        description: "All dashboard data has been updated."
+      });
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Refresh failed",
+        description: "There was a problem updating the dashboard data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Derived statistics
   const activeStations = stations.filter((station) => station.currentCustomer).length;
