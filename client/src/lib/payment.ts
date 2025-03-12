@@ -376,8 +376,8 @@ export async function generateMpesaQRCode(amount: number, transactionId: number,
  */
 export async function checkMpesaQRPaymentStatus(transactionId: number) {
   try {
-    // Simulation mode for testing without actual M-Pesa QR code API
-    const SIMULATION_MODE = true; // Set to false to use real M-Pesa QR code API
+    // Determine if we should use simulation mode or real API
+    const SIMULATION_MODE = false; // Set to true to use simulated responses for testing
     
     if (SIMULATION_MODE) {
       console.log('DEVELOPMENT MODE: Simulating M-Pesa QR code payment status check');
@@ -403,20 +403,29 @@ export async function checkMpesaQRPaymentStatus(transactionId: number) {
       }
     }
     
+    // Log the transaction ID being checked
+    console.log(`Checking M-Pesa QR payment status for transaction ID: ${transactionId}`);
+    
+    // Make API request to check payment status
     const response = await apiRequest<{
       success: boolean;
       status?: string;
       message?: string;
+      mpesaRef?: string;
       error?: string;
     }>({
       method: 'GET',
       path: `/api/mpesa/qrcode/status/${transactionId}`
     });
     
+    // Log the response for debugging
+    console.log('QR Payment status response:', response);
+    
     if (response.success) {
       return {
         success: true,
         status: 'COMPLETED',
+        mpesaRef: response.mpesaRef,
         message: response.message || 'Payment completed successfully'
       };
     }

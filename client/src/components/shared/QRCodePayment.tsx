@@ -27,6 +27,7 @@ export default function QRCodePayment({
   // M-Pesa QR code is provided by the API and displayed directly
   // We will fetch it in the useEffect hook
   const [qrCodeImage, setQrCodeImage] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // M-Pesa brand color
   const mpesaColor = "#4CAF50"; // Green for M-Pesa
@@ -36,31 +37,31 @@ export default function QRCodePayment({
     // Function to initialize and fetch the QR code
     const initializeQRCode = async () => {
       try {
-        // For the QR-M-Pesa payment method, we generate the QR code using the M-Pesa API
-        const response = await fetch(`/api/mpesa/qrcode`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            amount,
-            transactionId,
-            referenceNumber: `TX-${transactionId}`
-          })
-        });
+        setIsLoading(true);
         
-        const data = await response.json();
+        // Import the payment utility function to generate the QR code
+        const { generateMpesaQRCode } = await import('@/lib/payment');
         
-        if (data.success && data.QRCode) {
+        // For the QR-M-Pesa payment method, generate the QR code using the M-Pesa API
+        const result = await generateMpesaQRCode(
+          amount, 
+          transactionId, 
+          `TX-${transactionId}`
+        );
+        
+        if (result.success && result.qrCode) {
           // Set the QR code image received from the API
-          setQrCodeImage(data.QRCode);
+          setQrCodeImage(result.qrCode);
+          console.log("Successfully generated QR code with request ID:", result.requestId);
         } else {
-          console.error("Failed to generate QR code:", data.error || "Unknown error");
+          console.error("Failed to generate QR code:", result.error || "Unknown error");
           setStatus("failed");
         }
       } catch (error) {
         console.error("Error generating QR code:", error);
         setStatus("failed");
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -114,7 +115,19 @@ export default function QRCodePayment({
   return (
     <Card className="p-4 bg-black/30 border-gray-800">
       <div className="flex flex-col items-center">
-        {status === "pending" && (
+        {isLoading && (
+          <div className="flex flex-col items-center py-8">
+            <div className="animate-spin mb-4">
+              <RefreshCw size={48} color={mpesaColor} />
+            </div>
+            <p className="text-center mb-2 font-semibold">Generating QR Code...</p>
+            <p className="text-center text-sm mb-4">
+              This may take a few moments. Please wait.
+            </p>
+          </div>
+        )}
+        
+        {status === "pending" && !isLoading && (
           <>
             <div className="mb-4 py-2 px-4 bg-white rounded-lg">
               {qrCodeImage ? (
@@ -124,6 +137,25 @@ export default function QRCodePayment({
                   alt="M-Pesa QR Code" 
                   width={200} 
                   height={200}
+                  onError={(e) => {
+                    console.error("Error loading QR code image");
+                    // If image fails to load, show fallback
+                    e.currentTarget.style.display = 'none';
+                    // Add fallback element
+                    const container = e.currentTarget.parentElement;
+                    if (container) {
+                      const fallback = document.createElement('div');
+                      fallback.innerHTML = `
+                        <div class="flex items-center justify-center h-[200px] w-[200px] bg-gray-100 text-gray-500 text-center p-4">
+                          <div>
+                            <p>Error loading QR code</p>
+                            <p class="text-sm mt-2">Please try again</p>
+                          </div>
+                        </div>
+                      `;
+                      container.appendChild(fallback);
+                    }
+                  }}
                 />
               ) : (
                 // Fallback to generated QR code if API fails
