@@ -1087,7 +1087,9 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         amount: String(paymentData.amount),
         paymentMethod: "cash",
         status: "completed",
-        createdAt: new Date()
+        createdAt: new Date(),
+        // Use the provided reference or generate a new one
+        reference: paymentData.reference || `CASH-${Date.now()}-${Math.floor(Math.random() * 1000)}`
       };
       
       // Only add split payment fields if this is actually a split payment
@@ -1562,7 +1564,8 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 const basePaymentSchema = z.object({
   amount: z.number(),
   transactionId: z.number(),
-  userId: z.number().optional() // Optional user ID for loyalty points
+  userId: z.number().optional(), // Optional user ID for loyalty points
+  reference: z.string().optional() // Optional reference for tracking
 });
 
 // Mobile money payment schemas
