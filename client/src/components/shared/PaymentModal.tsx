@@ -42,6 +42,30 @@ export default function PaymentModal({
   const [mpesaRef, setMpesaRef] = useState<string | null>(null); // Track M-Pesa transaction reference
   const [airtelRef, setAirtelRef] = useState<string | null>(null); // Track Airtel Money transaction reference
   const { toast } = useToast();
+  
+  // Helper function to reset the station status after payment
+  const resetStationStatus = async (paymentSource: string) => {
+    try {
+      console.log(`Resetting station after ${paymentSource} payment:`, station.id);
+      const { apiRequest } = await import("@/lib/queryClient");
+      
+      // Call API to update station status
+      await apiRequest({
+        method: "PATCH",
+        path: `/api/stations/${station.id}`,
+        data: {
+          currentCustomer: null,
+          currentGame: null,
+          sessionType: null,
+          sessionStartTime: null,
+          status: "available"
+        }
+      });
+      console.log(`Station ${station.id} reset successful after ${paymentSource} payment`);
+    } catch (resetError) {
+      console.error(`Error resetting station after ${paymentSource} payment:`, resetError);
+    }
+  };
 
   // Calculate duration if session is active (in minutes)
   const duration = station.sessionStartTime
@@ -231,25 +255,7 @@ export default function PaymentModal({
           setMpesaStatus("completed");
           
           // Reset the station status after payment is complete
-          try {
-            console.log("Resetting station after M-Pesa payment:", station.id);
-            const { apiRequest } = await import("@/lib/queryClient");
-            
-            // Call API to update station status
-            await apiRequest({
-              method: "PATCH",
-              path: `/api/stations/${station.id}`,
-              data: {
-                currentCustomer: null,
-                currentGame: null,
-                sessionType: null,
-                sessionStartTime: null,
-                status: "available"
-              }
-            });
-          } catch (resetError) {
-            console.error("Error resetting station after M-Pesa payment:", resetError);
-          }
+          await resetStationStatus("M-Pesa");
           
           toast({
             title: "Payment Successful",
@@ -287,25 +293,7 @@ export default function PaymentModal({
           setAirtelStatus("completed");
           
           // Reset the station status after payment is complete
-          try {
-            console.log("Resetting station after Airtel payment:", station.id);
-            const { apiRequest } = await import("@/lib/queryClient");
-            
-            // Call API to update station status
-            await apiRequest({
-              method: "PATCH",
-              path: `/api/stations/${station.id}`,
-              data: {
-                currentCustomer: null,
-                currentGame: null,
-                sessionType: null,
-                sessionStartTime: null,
-                status: "available"
-              }
-            });
-          } catch (resetError) {
-            console.error("Error resetting station after Airtel payment:", resetError);
-          }
+          await resetStationStatus("Airtel");
           
           toast({
             title: "Payment Successful",
