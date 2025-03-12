@@ -61,6 +61,46 @@ export class StorageService {
     }
   }
 
+  async updateGame(id: number, data: Partial<Game>): Promise<Game | null> {
+    try {
+      const [updated] = await db.update(games)
+        .set(data)
+        .where(eq(games.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating game:", error);
+      throw error;
+    }
+  }
+
+  async getGameById(id: number): Promise<Game | null> {
+    try {
+      const results = await db.select()
+        .from(games)
+        .where(eq(games.id, id))
+        .limit(1);
+
+      return results[0] || null;
+    } catch (error) {
+      console.error("Error fetching game by id:", error);
+      return null;
+    }
+  }
+
+  async deleteGame(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(games)
+        .where(eq(games.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting game:", error);
+      throw error;
+    }
+  }
+
 
   // Transaction Methods
   async getTransactions(): Promise<Transaction[]> {

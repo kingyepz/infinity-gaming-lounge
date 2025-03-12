@@ -70,6 +70,10 @@ export const gameStations = pgTable("game_stations", {
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // FC25, GTA 5, etc.
+  description: text("description"),
+  pricePerSession: integer("price_per_session").default(40), // 40 KES per game session
+  pricePerHour: integer("price_per_hour").default(200), // 200 KES per hour
+  popularity: integer("popularity").default(0), // tracks game popularity
   isActive: boolean("is_active").default(true)
 });
 
