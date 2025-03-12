@@ -283,12 +283,31 @@ export default function AdminAnalytics() {
       };
     }).reverse();
 
-  const paymentMethodChartData = [
-    { name: 'Cash', value: completedTransactions.filter(tx => tx.paymentMethod === 'cash').length },
-    { name: 'M-Pesa', value: completedTransactions.filter(tx => tx.paymentMethod === 'mpesa').length },
-    { name: 'Airtel', value: completedTransactions.filter(tx => tx.paymentMethod === 'airtel').length },
-    { name: 'Card', value: completedTransactions.filter(tx => tx.paymentMethod === 'card').length },
-  ].filter(item => item.value > 0);
+  // Use payment method stats from API if available, otherwise generate from transactions
+  const paymentMethodChartData = paymentMethodStats.length > 0 
+    ? [
+        { name: 'Cash', value: paymentMethodStats.find(p => p.method === 'cash')?.count || 0 },
+        { name: 'M-Pesa', value: paymentMethodStats.find(p => p.method === 'mpesa')?.count || 0 },
+        { name: 'Airtel', value: paymentMethodStats.find(p => p.method === 'airtel')?.count || 0 },
+        { name: 'Card', value: paymentMethodStats.find(p => p.method === 'card')?.count || 0 },
+        { name: 'QR Code', value: paymentMethodStats.find(p => p.method === 'qr' || p.method === 'qr-mpesa')?.count || 0 },
+      ].filter(item => item.value > 0)
+    : [
+        { name: 'Cash', value: completedTransactions.filter(tx => !tx.mpesaRef || tx.paymentMethod === 'cash').length },
+        { name: 'M-Pesa', value: completedTransactions.filter(tx => 
+          (tx.mpesaRef && !tx.mpesaRef.startsWith('QR-') && !tx.mpesaRef.startsWith('SIM-AIRTEL-') && !tx.mpesaRef.startsWith('AR-')) || 
+          tx.paymentMethod === 'mpesa'
+        ).length },
+        { name: 'Airtel', value: completedTransactions.filter(tx => 
+          (tx.mpesaRef && (tx.mpesaRef.startsWith('SIM-AIRTEL-') || tx.mpesaRef.startsWith('AR-'))) || 
+          tx.paymentMethod === 'airtel'
+        ).length },
+        { name: 'QR Code', value: completedTransactions.filter(tx => 
+          (tx.mpesaRef && tx.mpesaRef.startsWith('QR-')) || 
+          tx.paymentMethod === 'qr' || 
+          tx.paymentMethod === 'qr-mpesa'
+        ).length },
+      ].filter(item => item.value > 0);
 
   // Use API data for popular games if available, otherwise calculate from transactions
   const popularGamesData = popularGamesStats.length > 0 
@@ -1804,23 +1823,38 @@ export default function AdminAnalytics() {
                       <div className="space-y-4">
                         <div className="flex justify-between">
                           <span>Cash Payments</span>
-                          <Switch checked id="cash-payments" />
+                          <Switch 
+                            checked={paymentMethodStats.some(p => p.method === 'cash' && p.count > 0)} 
+                            id="cash-payments" 
+                          />
                         </div>
                         <div className="flex justify-between">
                           <span>M-Pesa</span>
-                          <Switch checked id="mpesa-payments" />
+                          <Switch 
+                            checked={paymentMethodStats.some(p => p.method === 'mpesa' && p.count > 0)} 
+                            id="mpesa-payments" 
+                          />
                         </div>
                         <div className="flex justify-between">
                           <span>Airtel Money</span>
-                          <Switch checked id="airtel-payments" />
+                          <Switch 
+                            checked={paymentMethodStats.some(p => p.method === 'airtel' && p.count > 0)} 
+                            id="airtel-payments" 
+                          />
                         </div>
                         <div className="flex justify-between">
                           <span>Card Payments</span>
-                          <Switch id="card-payments" />
+                          <Switch 
+                            checked={paymentMethodStats.some(p => p.method === 'card' && p.count > 0)} 
+                            id="card-payments" 
+                          />
                         </div>
                         <div className="flex justify-between">
                           <span>QR Code Payments</span>
-                          <Switch checked id="qr-payments" />
+                          <Switch 
+                            checked={paymentMethodStats.some(p => (p.method === 'qr' || p.method === 'qr-mpesa') && p.count > 0)} 
+                            id="qr-payments" 
+                          />
                         </div>
                       </div>
                     </CardContent>
