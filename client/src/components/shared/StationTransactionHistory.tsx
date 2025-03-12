@@ -23,6 +23,8 @@ export default function StationTransactionHistory({ stationId, stationName }: St
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Store payment references for display in the UI
+  const [refs, setRefs] = useState<Record<number, React.ReactNode>>({});
 
   // Function to fetch both transactions and their payment methods
   const fetchTransactionData = async () => {
@@ -61,11 +63,11 @@ export default function StationTransactionHistory({ stationId, stationName }: St
             }
           }
           
-          // Fallback logic using mpesaRef field
+          // Fallback logic using mpesaRef field with improved detection
           return {
             ...tx,
             paymentMethodInfo: tx.mpesaRef 
-              ? (String(tx.mpesaRef || '').startsWith('SIM-AIRTEL-') ? 'airtel' : 'mpesa')
+              ? (String(tx.mpesaRef || '').startsWith('SIM-AIRTEL-') || String(tx.mpesaRef || '').startsWith('AR-') ? 'airtel' : 'mpesa')
               : 'cash'
           };
         })
@@ -322,17 +324,53 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                               : <div>
                                   <span className="text-green-500 font-medium">Cash</span>
                                   
-                                  {/* Check for cash reference in the transaction object */}
-                                  {tx.reference && (
-                                    <div className="flex flex-col">
-                                      <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.reference}>
-                                        Ref: {tx.reference.substring(0, 14)}{tx.reference.length > 14 ? '...' : ''}
-                                      </span>
-                                      <span className="text-xs text-gray-500">
-                                        {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
-                                      </span>
-                                    </div>
-                                  )}
+                                  {/* Check for reference in payment data - we'll fetch it if present */}
+                                  {(() => {
+                                    // First try to get reference from payments API
+                                    const fetchRef = async () => {
+                                      try {
+                                        const paymentData = await apiRequest(
+                                          'GET',
+                                          `/api/payments/transaction/${tx.id}`
+                                        );
+                                        if (paymentData && paymentData.reference) {
+                                          return (
+                                            <div className="flex flex-col">
+                                              <span className="text-xs text-gray-400 truncate max-w-[120px]" title={paymentData.reference}>
+                                                Ref: {paymentData.reference.substring(0, 14)}{paymentData.reference.length > 14 ? '...' : ''}
+                                              </span>
+                                              <span className="text-xs text-gray-500">
+                                                {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      } catch(e) {
+                                        console.log('Could not fetch payment reference for transaction', tx.id);
+                                        return null;
+                                      }
+                                    };
+                                    
+                                    // Start fetching when this section renders
+                                    React.useEffect(() => {
+                                      let isMounted = true;
+                                      
+                                      const doFetch = async () => {
+                                        const element = await fetchRef();
+                                        if (isMounted && element) {
+                                          setRefs(prev => ({ ...prev, [tx.id]: element }));
+                                        }
+                                      };
+                                      
+                                      doFetch();
+                                      
+                                      return () => { isMounted = false; };
+                                    }, [tx.id]);
+                                    
+                                    // If we have a cached reference for this transaction, return it
+                                    return refs[tx.id] || null;
+                                  })()}
                                 </div>
                               }
                           </div>
