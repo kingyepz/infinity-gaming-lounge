@@ -294,7 +294,7 @@ export default function AdminAnalytics() {
   const popularGamesData = popularGamesStats.length > 0 
     ? popularGamesStats.map(game => ({ 
         name: game.name, 
-        count: game.sessions,
+        count: game.sessions, // API now returns sessions directly
         revenue: game.revenue 
       }))
     : Object.entries(

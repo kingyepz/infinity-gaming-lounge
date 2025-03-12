@@ -374,7 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(gameStats.map(stat => ({
         name: stat.gameName,
-        count: Number(stat.count),
+        sessions: Number(stat.count), // Changed count to sessions to match client expectations
         revenue: stat.revenue ? Number(stat.revenue) : 0
       })));
     } catch (error) {
