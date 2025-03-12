@@ -75,6 +75,7 @@ export default function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   // Add Station Dialog
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
@@ -276,7 +277,7 @@ export default function AdminAnalytics() {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="flex-1 flex flex-col md:flex-row">
         <div className="w-full md:w-64 bg-black/50 p-6 backdrop-blur-md">
-          <div className="flex items-center mb-8">
+          <div className="flex items-center mb-6">
             <InfinityLogo compact={true} />
             <div className="ml-2">
               <h1 className="text-xl font-bold">Admin Portal</h1>
@@ -284,7 +285,7 @@ export default function AdminAnalytics() {
             </div>
           </div>
           
-          <ScrollArea className="h-[calc(100vh-180px)]">
+          <ScrollArea className="h-[calc(100vh-220px)]">
             <div className="space-y-1">
               <Button
                 variant={activeTab === "overview" ? "secondary" : "ghost"}
@@ -400,6 +401,25 @@ export default function AdminAnalytics() {
               </Button>
             </div>
           </ScrollArea>
+          
+          {/* Logout Button */}
+          <div className="mt-2 pt-2 border-t border-gray-800">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              onClick={() => {
+                localStorage.removeItem('user');
+                setLocation('/');
+                toast({
+                  title: "Logged out",
+                  description: "You have been logged out successfully",
+                });
+              }}
+            >
+              <LogOutIcon className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
@@ -1883,7 +1903,19 @@ export default function AdminAnalytics() {
                           <h4 className="font-medium">Dark Mode</h4>
                           <p className="text-sm text-muted-foreground">Use dark theme throughout the application</p>
                         </div>
-                        <Switch checked id="dark-mode" />
+                        <Switch 
+                          id="dark-mode" 
+                          defaultChecked={localStorage.getItem('theme') === 'dark'} 
+                          onCheckedChange={(checked) => {
+                            const theme = checked ? 'dark' : 'light';
+                            localStorage.setItem('theme', theme);
+                            document.documentElement.classList.toggle('dark', checked);
+                            toast({
+                              title: `${checked ? 'Dark' : 'Light'} mode enabled`,
+                              description: `The application theme has been changed to ${checked ? 'dark' : 'light'} mode`,
+                            });
+                          }}
+                        />
                       </div>
                       
                       <div className="flex justify-between items-center">
