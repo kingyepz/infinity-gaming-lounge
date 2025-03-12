@@ -10,6 +10,7 @@ import POSDashboard from "@/pages/pos/dashboard";
 import CustomerPortal from "@/pages/customer/portal";
 import AdminAnalytics from "@/pages/admin/analytics";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { WebSocketProvider } from "./context/WebSocketContext";
 
 function Router() {
   return (
@@ -76,7 +77,9 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
+      <WebSocketProvider>
+        <Router />
+      </WebSocketProvider>
     </QueryClientProvider>
   );
 }

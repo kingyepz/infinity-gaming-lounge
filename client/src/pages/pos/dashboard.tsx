@@ -13,6 +13,7 @@ import PaymentModal from "@/components/shared/PaymentModal";
 import StationTransactionHistoryModal from "@/components/shared/StationTransactionHistoryModal";
 import type { GameStation, Game, User, Transaction } from "@shared/schema";
 import { useLocation } from "wouter";
+import { useWebSocket } from "@/context/WebSocketContext";
 import {
     Table,
     TableBody,
