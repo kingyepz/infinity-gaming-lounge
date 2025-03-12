@@ -1029,14 +1029,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   /**
-   * Get filtered data based on date range
-   * This endpoint supports filtering dashboard data by date range
-   * GET /api/reports/filtered?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+   * Get filtered data based on date range and time of day
+   * This endpoint supports filtering dashboard data by date range and time hours
+   * GET /api/reports/filtered?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&startHour=0&endHour=23
    */
   app.get("/api/reports/filtered", asyncHandler(async (req, res) => {
     try {
-      // Get date range from query parameters
-      const { startDate, endDate } = req.query;
+      // Get date range and time filters from query parameters
+      const { startDate, endDate, startHour, endHour } = req.query;
       
       if (!startDate || !endDate) {
         return res.status(400).json({ 
@@ -1064,11 +1064,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Get transactions within the date range
+      // Parse time range parameters (defaulting to all day if not provided)
+      const hourStart = startHour !== undefined ? parseInt(startHour as string) : 0;
+      const hourEnd = endHour !== undefined ? parseInt(endHour as string) : 23;
+      
+      // Validate time range
+      if (isNaN(hourStart) || isNaN(hourEnd) || hourStart < 0 || hourStart > 23 || hourEnd < 0 || hourEnd > 23) {
+        return res.status(400).json({
+          error: "Invalid time range",
+          message: "Start and end hours must be between 0 and 23"
+        });
+      }
+      
+      if (hourStart > hourEnd) {
+        return res.status(400).json({
+          error: "Invalid time range",
+          message: "Start hour must be less than or equal to end hour"
+        });
+      }
+      
+      // Get transactions within the date range and time range
       const allTransactions = await storage.getTransactions();
       const filteredTransactions = allTransactions.filter(tx => {
         const txDate = new Date(tx.createdAt || new Date());
-        return txDate >= start && txDate <= end;
+        const txHour = txDate.getHours();
+        
+        // Check if transaction is within both date range and time range
+        return txDate >= start && txDate <= end && txHour >= hourStart && txHour <= hourEnd;
       });
         
       // Get completed transactions
@@ -1167,6 +1189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateRange: {
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0]
+        },
+        timeRange: {
+          startHour: hourStart,
+          endHour: hourEnd
         },
         overviewStats: {
           totalRevenue,

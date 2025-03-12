@@ -1383,14 +1383,128 @@ export default function AdminAnalytics() {
                                 </div>
                               </div>
                               <Button 
-                                onClick={applyDateFilter} 
-                                disabled={isApplyingFilter}
-                                className="w-full mt-2"
+                                variant={dashboardPeriod === 'custom' ? 'default' : 'outline'} 
+                                size="sm"
+                                onClick={() => setDashboardPeriod('custom')}
                               >
-                                Apply Filter
-                                {isApplyingFilter && <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />}
+                                Custom Range
                               </Button>
                             </div>
+                            
+                            <Separator className="my-2" />
+                            
+                            <div className="space-y-2">
+                              <h4 className="font-medium leading-none">Time of Day</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Filter data by specific hours
+                              </p>
+                              
+                              <div className="grid grid-cols-4 gap-2 mt-2">
+                                <Button 
+                                  variant={timeOfDayFilter === 'all' ? 'default' : 'outline'} 
+                                  size="sm"
+                                  onClick={() => {
+                                    setTimeOfDayFilter('all');
+                                    setStartHour(0);
+                                    setEndHour(23);
+                                  }}
+                                >
+                                  All Day
+                                </Button>
+                                <Button 
+                                  variant={timeOfDayFilter === 'morning' ? 'default' : 'outline'} 
+                                  size="sm"
+                                  onClick={() => {
+                                    setTimeOfDayFilter('morning');
+                                    setStartHour(6);
+                                    setEndHour(11);
+                                  }}
+                                >
+                                  Morning
+                                </Button>
+                                <Button 
+                                  variant={timeOfDayFilter === 'afternoon' ? 'default' : 'outline'} 
+                                  size="sm"
+                                  onClick={() => {
+                                    setTimeOfDayFilter('afternoon');
+                                    setStartHour(12);
+                                    setEndHour(17);
+                                  }}
+                                >
+                                  Afternoon
+                                </Button>
+                                <Button 
+                                  variant={timeOfDayFilter === 'evening' ? 'default' : 'outline'} 
+                                  size="sm"
+                                  onClick={() => {
+                                    setTimeOfDayFilter('evening');
+                                    setStartHour(18);
+                                    setEndHour(23);
+                                  }}
+                                >
+                                  Evening
+                                </Button>
+                              </div>
+                              
+                              <div className="space-y-1 mt-2">
+                                <div className="flex justify-between">
+                                  <Label htmlFor="customTimeRange">Custom Time Range: {startHour}:00 - {endHour}:00</Label>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-1">
+                                    <Label htmlFor="startHour">Start Hour</Label>
+                                    <Select
+                                      value={startHour.toString()}
+                                      onValueChange={(value) => {
+                                        setTimeOfDayFilter('custom');
+                                        setStartHour(parseInt(value));
+                                      }}
+                                    >
+                                      <SelectTrigger id="startHour">
+                                        <SelectValue placeholder="Start hour" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Array.from({ length: 24 }).map((_, i) => (
+                                          <SelectItem key={`start-${i}`} value={i.toString()}>
+                                            {i}:00
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label htmlFor="endHour">End Hour</Label>
+                                    <Select
+                                      value={endHour.toString()}
+                                      onValueChange={(value) => {
+                                        setTimeOfDayFilter('custom');
+                                        setEndHour(parseInt(value));
+                                      }}
+                                    >
+                                      <SelectTrigger id="endHour">
+                                        <SelectValue placeholder="End hour" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Array.from({ length: 24 }).map((_, i) => (
+                                          <SelectItem key={`end-${i}`} value={i.toString()}>
+                                            {i}:00
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <Button 
+                              onClick={applyDateFilter} 
+                              disabled={isApplyingFilter}
+                              className="w-full mt-4"
+                            >
+                              Apply Filter
+                              {isApplyingFilter && <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />}
+                            </Button>
                           </div>
                         </div>
                       </PopoverContent>
