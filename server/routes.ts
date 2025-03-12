@@ -762,7 +762,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create a payment record in the payments table
       try {
-        const paymentRecord = {
+        // Create a clean payment record with only the fields defined in the schema
+        const paymentRecord: any = {
           transactionId: paymentData.transactionId,
           amount: String(paymentData.amount),
           paymentMethod: "mpesa",
@@ -773,8 +774,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         PaymentDebugger.log('mpesa', 'payment_record', paymentRecord);
-        await db.insert(payments).values([paymentRecord as any]);
-        PaymentDebugger.log('mpesa', 'payment_record_created', { reference: response.MerchantRequestID });
+        const [payment] = await db.insert(payments).values([paymentRecord]).returning();
+        PaymentDebugger.log('mpesa', 'payment_record_created', { 
+          reference: response.MerchantRequestID,
+          paymentId: payment?.id
+        });
       } catch (paymentError) {
         PaymentDebugger.logError('mpesa', 'payment_record_creation', paymentError);
         // This is non-critical, so we won't throw the error
@@ -1061,107 +1065,123 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
       // Check if this is a split payment
       const isSplitPayment = paymentData.splitPayment || false;
-
-      // Create payment record with status=completed
-      const paymentRecord = {
+      
+      // Create a clean payment record with only the fields defined in the schema
+      const paymentRecord: any = {
         transactionId: paymentData.transactionId,
         amount: String(paymentData.amount),
         paymentMethod: "cash",
         status: "completed",
-        createdAt: new Date(),
-        // Add split payment details if applicable
-        splitPayment: isSplitPayment ? true : undefined,
-        splitIndex: isSplitPayment ? paymentData.splitIndex : undefined,
-        splitTotal: isSplitPayment ? paymentData.splitTotal : undefined
+        createdAt: new Date()
       };
-
-      PaymentDebugger.log('cash', 'payment_record', paymentRecord);
-      const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
-
-      if (!payment) {
-        PaymentDebugger.logError('cash', 'payment_record_creation', 'No payment record returned');
-        return res.status(500).json({
-          success: false,
-          error: "Failed to create cash payment record"
-        });
+      
+      // Only add split payment fields if this is actually a split payment
+      if (isSplitPayment) {
+        // These fields are not in the schema, but we'll add them as custom properties
+        // They'll be ignored by the database but used in our application logic
+        paymentRecord.splitPayment = true;
+        paymentRecord.splitIndex = paymentData.splitIndex;
+        paymentRecord.splitTotal = paymentData.splitTotal;
       }
 
-      PaymentDebugger.log('cash', 'payment_record_created', payment);
+      PaymentDebugger.log('cash', 'payment_record', paymentRecord);
+      
+      try {
+        // Insert payment record and return the result
+        const [payment] = await db.insert(payments).values([paymentRecord]).returning();
 
-      // For split payments, only mark the transaction as completed when all parts are paid
-      if (!isSplitPayment) {
-        // Regular payment - update transaction status to completed
-        try {
-          await db.update(transactions)
-            .set({ 
-              paymentStatus: "completed" 
-            })
-            .where(eq(transactions.id, paymentData.transactionId));
-
-          PaymentDebugger.log('cash', 'transaction_updated', { transactionId: paymentData.transactionId });
-        } catch (updateError) {
-          PaymentDebugger.logError('cash', 'transaction_update', updateError);
-          // Even if the update fails, we'll continue since we've created the payment record
+        if (!payment) {
+          PaymentDebugger.logError('cash', 'payment_record_creation', 'No payment record returned');
+          return res.status(500).json({
+            success: false,
+            error: "Failed to create cash payment record"
+          });
         }
-      } else {
-        // For split payments, check if all splits have been paid
-        try {
-          // Count existing payments for this transaction
-          const existingPayments = await db.select()
-            .from(payments)
-            .where(eq(payments.transactionId, paymentData.transactionId))
-            .where(eq(payments.splitPayment, true))
-            .where(eq(payments.status, "completed"));
 
-          // If we have received all expected split payments, mark transaction as completed
-          if (existingPayments.length >= paymentData.splitTotal) {
+        PaymentDebugger.log('cash', 'payment_record_created', payment);
+
+        // For split payments, only mark the transaction as completed when all parts are paid
+        if (!isSplitPayment) {
+          // Regular payment - update transaction status to completed
+          try {
             await db.update(transactions)
               .set({ 
                 paymentStatus: "completed" 
               })
               .where(eq(transactions.id, paymentData.transactionId));
 
-            PaymentDebugger.log('cash', 'transaction_updated_after_all_splits', { 
-              transactionId: paymentData.transactionId,
-              totalSplits: paymentData.splitTotal
-            });
+            PaymentDebugger.log('cash', 'transaction_updated', { transactionId: paymentData.transactionId });
+          } catch (updateError) {
+            PaymentDebugger.logError('cash', 'transaction_update', updateError);
+            // Even if the update fails, we'll continue since we've created the payment record
           }
-        } catch (checkError) {
-          PaymentDebugger.logError('cash', 'split_payment_check', checkError);
-        }
-      }
+        } else {
+          // For split payments, check if all splits have been paid
+          try {
+            // Count existing payments for this transaction
+            const existingPayments = await db.select()
+              .from(payments)
+              .where(eq(payments.transactionId, paymentData.transactionId))
+              .where(eq(payments.status, "completed"));
 
-      // Award loyalty points if userId is provided
-      if (paymentData.userId) {
-        try {
-          // For split payments, award proportional points
-          const pointsMultiplier = isSplitPayment ? (1 / paymentData.splitTotal) : 1;
-          // Award points based on payment amount (1 point for every 10 KES)
-          const pointsToAward = Math.floor((paymentData.amount * pointsMultiplier) / 10);
+            // We can't check splitPayment directly since it's not in the schema
+            // Instead, we'll check if we have enough payments matching our expected count
+            if (existingPayments.length >= paymentData.splitTotal) {
+              await db.update(transactions)
+                .set({ 
+                  paymentStatus: "completed" 
+                })
+                .where(eq(transactions.id, paymentData.transactionId));
 
-          if (pointsToAward > 0) {
-            const newPoints = await storage.awardLoyaltyPoints(paymentData.userId, pointsToAward);
-
-            PaymentDebugger.log('cash', 'loyalty_points_awarded', {
-              userId: paymentData.userId,
-              pointsAwarded: pointsToAward,
-              newTotalPoints: newPoints,
-              isSplitPayment
-            });
+              PaymentDebugger.log('cash', 'transaction_updated_after_all_splits', { 
+                transactionId: paymentData.transactionId,
+                totalSplits: paymentData.splitTotal
+              });
+            }
+          } catch (checkError) {
+            PaymentDebugger.logError('cash', 'split_payment_check', checkError);
           }
-        } catch (pointsError) {
-          PaymentDebugger.logError('cash', 'loyalty_points_award', pointsError);
-          // Continue even if points award fails, as the payment was successful
         }
-      }
 
-      return res.json({
-        success: true,
-        message: isSplitPayment 
-          ? `Split payment ${paymentData.splitIndex + 1} of ${paymentData.splitTotal} processed successfully` 
-          : "Cash payment processed successfully",
-        payment
-      });
+        // Award loyalty points if userId is provided
+        if (paymentData.userId) {
+          try {
+            // For split payments, award proportional points
+            const pointsMultiplier = isSplitPayment ? (1 / paymentData.splitTotal) : 1;
+            // Award points based on payment amount (1 point for every 10 KES)
+            const pointsToAward = Math.floor((paymentData.amount * pointsMultiplier) / 10);
+
+            if (pointsToAward > 0) {
+              const newPoints = await storage.awardLoyaltyPoints(paymentData.userId, pointsToAward);
+
+              PaymentDebugger.log('cash', 'loyalty_points_awarded', {
+                userId: paymentData.userId,
+                pointsAwarded: pointsToAward,
+                newTotalPoints: newPoints,
+                isSplitPayment
+              });
+            }
+          } catch (pointsError) {
+            PaymentDebugger.logError('cash', 'loyalty_points_award', pointsError);
+            // Continue even if points award fails, as the payment was successful
+          }
+        }
+
+        return res.json({
+          success: true,
+          message: isSplitPayment 
+            ? `Split payment ${paymentData.splitIndex + 1} of ${paymentData.splitTotal} processed successfully` 
+            : "Cash payment processed successfully",
+          payment
+        });
+      } catch (dbError) {
+        // Handle specific database errors
+        PaymentDebugger.logError('cash', 'database_operation', dbError);
+        return res.status(500).json({
+          success: false,
+          error: dbError.message || "Database error while processing payment"
+        });
+      }
     } catch (error: any) {
       const { PaymentDebugger } = await import('./paymentDebugger');
       PaymentDebugger.logError('cash', 'payment_processing', error);
@@ -1238,22 +1258,28 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
       // Create payment record in payments table
       try {
-        const paymentRecord = {
+        // Create a clean payment record with only the fields defined in the schema
+        const paymentRecord: any = {
           transactionId: paymentData.transactionId,
           amount: String(paymentData.amount),
           paymentMethod: "airtel",
           status: "pending",
           reference: response.reference,
           phoneNumber: paymentData.phoneNumber,
-          createdAt: new Date(),
-          // Add split payment details if applicable
-          splitPayment: isSplitPayment ? true : undefined,
-          splitIndex: isSplitPayment ? paymentData.splitIndex : undefined,
-          splitTotal: isSplitPayment ? paymentData.splitTotal : undefined
+          createdAt: new Date()
         };
 
+        // Store split payment information in a separate way that won't affect DB schema
+        if (isSplitPayment) {
+          // We're adding these as any properties since they're not in the schema
+          // They'll be ignored by the database but used in our application logic
+          paymentRecord.splitPayment = true;
+          paymentRecord.splitIndex = paymentData.splitIndex;
+          paymentRecord.splitTotal = paymentData.splitTotal;
+        }
+
         PaymentDebugger.log('airtel', 'payment_record', paymentRecord);
-        const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
+        const [payment] = await db.insert(payments).values([paymentRecord]).returning();
         PaymentDebugger.log('airtel', 'payment_record_created', payment);
 
         // If immediate success response, award loyalty points right away
