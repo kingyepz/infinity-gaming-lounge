@@ -229,11 +229,19 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
             description: `Split payment ${index + 1} of ${numPayers} processed successfully.`,
           });
           
+          // Generate a reference for cash payments for tracking consistency
+          const cashReference = `CASH-${transactionId}-${index+1}`;
+          
           // Mark this payer as paid
           setPayers(prev => 
             prev.map(payer => 
               payer.index === index
-                ? { ...payer, paid: true, paymentMethod: method }
+                ? { 
+                    ...payer, 
+                    paid: true, 
+                    paymentMethod: method,
+                    transactionRef: cashReference 
+                  }
                 : payer
             )
           );
