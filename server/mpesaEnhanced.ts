@@ -540,6 +540,14 @@ export class EnhancedMpesaService {
   public deleteTransaction(checkoutRequestId: string): boolean {
     return this.transactionRecords.delete(checkoutRequestId);
   }
+  
+  /**
+   * Save or update a transaction record
+   * This method allows controlled access to the private transactionRecords property
+   */
+  public saveTransaction(checkoutRequestId: string, transaction: MPesaTransaction): void {
+    this.transactionRecords.set(checkoutRequestId, transaction);
+  }
 
   /**
    * Generate QR code for M-Pesa payment

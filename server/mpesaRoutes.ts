@@ -390,7 +390,7 @@ router.post('/qrcode', async (req: Request, res: Response) => {
         createdAt: new Date()
       };
       
-      enhancedMpesaService.transactionRecords.set(checkoutRequestId, newTransaction);
+      enhancedMpesaService.saveTransaction(checkoutRequestId, newTransaction);
       PaymentDebugger.log('mpesaRoutes', 'qrcode:transaction-created', newTransaction);
     } else {
       // Update existing transaction with new QR code request
@@ -400,7 +400,7 @@ router.post('/qrcode', async (req: Request, res: Response) => {
       transactionRecord.status = 'pending';
       transactionRecord.updatedAt = new Date();
       
-      enhancedMpesaService.transactionRecords.set(checkoutRequestId, transactionRecord);
+      enhancedMpesaService.saveTransaction(checkoutRequestId, transactionRecord);
       PaymentDebugger.log('mpesaRoutes', 'qrcode:transaction-updated', transactionRecord);
     }
     
@@ -553,7 +553,7 @@ router.get('/qrcode/status/:transactionId', async (req: Request, res: Response) 
         transactionRecord.updatedAt = new Date();
         
         // Update record in our service
-        enhancedMpesaService.transactionRecords.set(transactionRecord.checkoutRequestId, transactionRecord);
+        enhancedMpesaService.saveTransaction(transactionRecord.checkoutRequestId, transactionRecord);
         
         // Return completed status
         return res.status(200).json({
