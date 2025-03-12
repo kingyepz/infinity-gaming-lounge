@@ -362,285 +362,187 @@ export default function POSDashboard() {
 
     return (
         <div className="min-h-screen bg-[#0f1218] text-white relative overflow-hidden">
-            <div className="flex">
-                {/* Left Sidebar */}
-                <div className="w-64 bg-[#151a23] min-h-screen border-r border-[#212936]">
-                    {/* Sidebar Header with Logo */}
-                    <div className="py-4 px-4 border-b border-[#212936]">
-                        <h1 className="text-xl font-bold text-[#4794f8]">INFINITY GAMING LOUNGE</h1>
-                    </div>
-                    
-                    <div className="p-2">
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'reservations' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
+            {/* Header with Logo */}
+            <div className="py-4 px-4 border-b border-[#212936] bg-[#151a23]">
+                <h1 className="text-xl font-bold text-[#4794f8] text-center">INFINITY GAMING LOUNGE</h1>
+            </div>
+            
+            {/* Main content */}
+            <div className="flex-1 flex flex-col h-[calc(100vh-64px)]">
+                {/* Main content area with bottom navigation */}
+                <div className="flex-1 p-6 overflow-auto">
+                    <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
+                        <TabsContent value="overview" className="mt-0 outline-none">
+                            <div className="space-y-4 sm:space-y-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <Card className="bg-[#151a23] border-[#212936]">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {activeStations}
+                                            </div>
+                                            <p className="text-xs text-gray-400">+2 from last hour</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-[#151a23] border-[#212936]">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">KES {todayRevenue.toFixed(2)}</div>
+                                            <p className="text-xs text-gray-400">+350 from yesterday</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-[#151a23] border-[#212936]">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{newCustomers}</div>
+                                            <p className="text-xs text-gray-400">+3 from yesterday</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-[#151a23] border-[#212936]">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Total Points Awarded</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">1,850</div>
+                                            <p className="text-xs text-gray-400">+220 from yesterday</p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="analytics" className="mt-0 outline-none">
+                            <h2 className="text-2xl font-bold mb-4">Analytics Dashboard</h2>
+                            <p>Analytics content will appear here</p>
+                        </TabsContent>
+                        
+                        <TabsContent value="reports" className="mt-0 outline-none">
+                            <h2 className="text-2xl font-bold mb-4">Reports</h2>
+                            <p>Reports content will appear here</p>
+                        </TabsContent>
+                        
+                        <TabsContent value="stations" className="mt-0 outline-none">
+                            <h2 className="text-2xl font-bold mb-4">Gaming Stations</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {stations.map((station: any) => (
+                                    <Card key={station.id} className={`${station.currentCustomer ? 'bg-[#213045] border-[#4794f8]/30' : 'bg-[#151a23] border-[#212936]'} relative overflow-hidden`}>
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="flex items-center justify-between">
+                                                <span>{station.name}</span>
+                                                {station.currentCustomer && (
+                                                    <Badge className="bg-[#4794f8] hover:bg-[#3a7fd8]">Active</Badge>
+                                                )}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {station.currentCustomer ? (
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-400">Customer:</span>
+                                                        <span>{station.currentCustomer}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-400">Game:</span>
+                                                        <span>{station.currentGame}</span>
+                                                    </div>
+                                                    <div className="flex justify-center mt-3 gap-2">
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm" 
+                                                            className="w-full border-[#4794f8]/30 hover:bg-[#4794f8]/20"
+                                                            onClick={() => handleEndSession(station)}
+                                                        >
+                                                            End Session
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <p className="text-center text-gray-400 py-2">Station Available</p>
+                                                    <Button 
+                                                        className="w-full bg-[#4794f8] hover:bg-[#3a7fd8]"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedStation(station);
+                                                            setShowNewSessionModal(true);
+                                                        }}
+                                                    >
+                                                        Start Session
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="reservations" className="mt-0 outline-none">
+                            <h2 className="text-2xl font-bold mb-4">Reservations</h2>
+                            <p>Reservations content will appear here</p>
+                        </TabsContent>
+                        
+                        <TabsContent value="inventory" className="mt-0 outline-none">
+                            <h2 className="text-2xl font-bold mb-4">Inventory</h2>
+                            <p>Inventory management content will appear here</p>
+                        </TabsContent>
+                    </Tabs>
+                </div>
+                
+                {/* Bottom horizontal navigation */}
+                <div className="h-16 border-t border-[#212936] flex items-center justify-center px-4 bg-[#151a23]">
+                    <div className="flex space-x-8">
+                        <div 
+                            className={`cursor-pointer flex flex-col items-center py-1 px-3 ${activeTab === 'overview' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                            onClick={() => switchTab('overview')}
+                        >
+                            <BarChart2Icon className="h-5 w-5 mb-1" />
+                            <span className="text-xs">Overview</span>
+                        </div>
+                        <div 
+                            className={`cursor-pointer flex flex-col items-center py-1 px-3 ${activeTab === 'analytics' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                            onClick={() => switchTab('analytics')}
+                        >
+                            <BarChart2Icon className="h-5 w-5 mb-1" />
+                            <span className="text-xs">Analytics</span>
+                        </div>
+                        <div 
+                            className={`cursor-pointer flex flex-col items-center py-1 px-3 ${activeTab === 'reports' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                            onClick={() => switchTab('reports')}
+                        >
+                            <DownloadIcon className="h-5 w-5 mb-1" />
+                            <span className="text-xs">Reports</span>
+                        </div>
+                        <div 
+                            className={`cursor-pointer flex flex-col items-center py-1 px-3 ${activeTab === 'stations' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                            onClick={() => switchTab('stations')}
+                        >
+                            <GamepadIcon className="h-5 w-5 mb-1" />
+                            <span className="text-xs">Stations</span>
+                        </div>
+                        <div 
+                            className={`cursor-pointer flex flex-col items-center py-1 px-3 ${activeTab === 'reservations' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
                             onClick={() => switchTab('reservations')}
                         >
-                            <CalendarIcon className="mr-2 h-5 w-5" />
-                            <span>Reservations</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'games' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('games')}
-                        >
-                            <GamepadIcon className="mr-2 h-5 w-5" />
-                            <span>Game Catalog</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'customers' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('customers')}
-                        >
-                            <UsersIcon className="mr-2 h-5 w-5" />
-                            <span>Customers</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'inventory' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
+                            <CalendarIcon className="h-5 w-5 mb-1" />
+                            <span className="text-xs">Reserve</span>
+                        </div>
+                        <div 
+                            className={`cursor-pointer flex flex-col items-center py-1 px-3 ${activeTab === 'inventory' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
                             onClick={() => switchTab('inventory')}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M3 3h18v18H3z"/>
                                 <path d="M8 12h8"/>
                                 <path d="M12 8v8"/>
                             </svg>
-                            <span>Inventory</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'payments' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('payments')}
-                        >
-                            <DollarSignIcon className="mr-2 h-5 w-5" />
-                            <span>Payments</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'financial' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('financial')}
-                        >
-                            <BarChart2Icon className="mr-2 h-5 w-5" />
-                            <span>Financial Management</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'events' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('events')}
-                        >
-                            <CalendarIcon className="mr-2 h-5 w-5" />
-                            <span>Events</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'staff' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('staff')}
-                        >
-                            <UsersIcon className="mr-2 h-5 w-5" />
-                            <span>Staff Management</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'security' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('security')}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2s8 3 8 10v3.5c0 1.5.8 3 2 4"/>
-                                <path d="M12 2s-8 3-8 10v3.5c0 1.5-.8 3-2 4"/>
-                                <path d="M12 17v5"/>
-                                <path d="M8 17h8"/>
-                            </svg>
-                            <span>Security</span>
-                        </Button>
-                        
-                        <Button
-                            variant="ghost"
-                            className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'settings' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
-                            onClick={() => switchTab('settings')}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2a1 1 0 0 1 .866.5l1.732 3 3.464.5a1 1 0 0 1 .555 1.705l-2.5 2.5.5 3.464a1 1 0 0 1-1.45 1.05L12 13l-3.166 1.67a1 1 0 0 1-1.45-1.05l.5-3.465-2.5-2.5a1 1 0 0 1 .555-1.705l3.464-.5 1.732-3A1 1 0 0 1 12 2z"/>
-                            </svg>
-                            <span>Settings</span>
-                        </Button>
-                        
-                        <div className="mt-8">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start py-2 px-3 text-red-400 hover:bg-[#212936] hover:text-red-300"
-                                onClick={handleLogout}
-                            >
-                                <LogOutIcon className="mr-2 h-5 w-5" />
-                                <span>Logout</span>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Main content */}
-                <div className="flex-1 flex flex-col">
-                    {/* Main content area with bottom navigation */}
-                    <div className="flex-1 p-6 overflow-auto">
-                        <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
-                            <TabsContent value="overview" className="mt-0 outline-none">
-                                <div className="space-y-4 sm:space-y-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <Card className="bg-[#151a23] border-[#212936]">
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">
-                                                    {activeStations}
-                                                </div>
-                                                <p className="text-xs text-gray-400">+2 from last hour</p>
-                                            </CardContent>
-                                        </Card>
-                                        <Card className="bg-[#151a23] border-[#212936]">
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">KES {todayRevenue.toFixed(2)}</div>
-                                                <p className="text-xs text-gray-400">+350 from yesterday</p>
-                                            </CardContent>
-                                        </Card>
-                                        <Card className="bg-[#151a23] border-[#212936]">
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="text-sm font-medium">New Customers</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{newCustomers}</div>
-                                                <p className="text-xs text-gray-400">+3 from yesterday</p>
-                                            </CardContent>
-                                        </Card>
-                                        <Card className="bg-[#151a23] border-[#212936]">
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="text-sm font-medium">Total Points Awarded</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">1,850</div>
-                                                <p className="text-xs text-gray-400">+220 from yesterday</p>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                            
-                            <TabsContent value="analytics" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Analytics Dashboard</h2>
-                                <p>Analytics content will appear here</p>
-                            </TabsContent>
-                            
-                            <TabsContent value="reports" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Reports</h2>
-                                <p>Reports content will appear here</p>
-                            </TabsContent>
-                            
-                            <TabsContent value="stations" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Gaming Stations</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {stations.map((station: any) => (
-                                        <Card key={station.id} className={`${station.currentCustomer ? 'bg-[#213045] border-[#4794f8]/30' : 'bg-[#151a23] border-[#212936]'} relative overflow-hidden`}>
-                                            <CardHeader className="pb-3">
-                                                <CardTitle className="flex items-center justify-between">
-                                                    <span>{station.name}</span>
-                                                    {station.currentCustomer && (
-                                                        <Badge className="bg-[#4794f8] hover:bg-[#3a7fd8]">Active</Badge>
-                                                    )}
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {station.currentCustomer ? (
-                                                    <div className="space-y-2">
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-400">Customer:</span>
-                                                            <span>{station.currentCustomer}</span>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-400">Game:</span>
-                                                            <span>{station.currentGame}</span>
-                                                        </div>
-                                                        <div className="flex justify-center mt-3 gap-2">
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm" 
-                                                                className="w-full border-[#4794f8]/30 hover:bg-[#4794f8]/20"
-                                                                onClick={() => handleEndSession(station)}
-                                                            >
-                                                                End Session
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-2">
-                                                        <p className="text-center text-gray-400 py-2">Station Available</p>
-                                                        <Button 
-                                                            className="w-full bg-[#4794f8] hover:bg-[#3a7fd8]"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                setSelectedStation(station);
-                                                                setShowNewSessionModal(true);
-                                                            }}
-                                                        >
-                                                            Start Session
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </TabsContent>
-                            
-                            <TabsContent value="reservations" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Reservations</h2>
-                                <p>Reservations content will appear here</p>
-                            </TabsContent>
-                        </Tabs>
-                    </div>
-                    
-                    {/* Bottom horizontal navigation */}
-                    <div className="h-12 border-t border-[#212936] flex items-center justify-center px-4 bg-[#151a23]">
-                        <div className="flex space-x-8">
-                            <div 
-                                className={`cursor-pointer py-1 px-3 ${activeTab === 'overview' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
-                                onClick={() => switchTab('overview')}
-                            >
-                                Overview
-                            </div>
-                            <div 
-                                className={`cursor-pointer py-1 px-3 ${activeTab === 'analytics' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
-                                onClick={() => switchTab('analytics')}
-                            >
-                                Analytics
-                            </div>
-                            <div 
-                                className={`cursor-pointer py-1 px-3 ${activeTab === 'reports' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
-                                onClick={() => switchTab('reports')}
-                            >
-                                Reports
-                            </div>
-                            <div 
-                                className={`cursor-pointer py-1 px-3 ${activeTab === 'stations' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
-                                onClick={() => switchTab('stations')}
-                            >
-                                Stations
-                            </div>
-                            <div 
-                                className={`cursor-pointer py-1 px-3 ${activeTab === 'reservations' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
-                                onClick={() => switchTab('reservations')}
-                            >
-                                Reservations
-                            </div>
+                            <span className="text-xs">Inventory</span>
                         </div>
                     </div>
                 </div>
