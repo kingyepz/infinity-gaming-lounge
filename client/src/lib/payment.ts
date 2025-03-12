@@ -72,16 +72,70 @@ export async function processCashPayment(transactionId: number, amount: number, 
 /**
  * Initiate M-Pesa payment
  */
-export async function initiateMpesaPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number) {
+export async function initiateMpesaPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number, splitPayment?: boolean, splitIndex?: number, splitTotal?: number) {
   try {
+    // Format phone number to ensure it's in the required format (254XXXXXXXXX)
+    let formattedPhone = phoneNumber;
+    if (phoneNumber.startsWith('0')) {
+      formattedPhone = `254${phoneNumber.substring(1)}`;
+    } else if (phoneNumber.startsWith('+254')) {
+      formattedPhone = phoneNumber.substring(1); // Remove the + sign
+    }
+    
+    // First try the enhanced M-Pesa integration
+    try {
+      const enhancedResponse = await apiRequest<{
+        success: boolean; 
+        message?: string;
+        data?: {
+          merchantRequestId: string;
+          checkoutRequestId: string;
+          responseDescription: string;
+          customerMessage: string;
+          transactionId: number;
+        };
+        error?: string;
+      }>({
+        method: 'POST',
+        path: '/api/mpesa/stkpush',
+        data: {
+          phoneNumber: formattedPhone,
+          amount,
+          accountReference: `TX-${transactionId}`,
+          transactionDesc: `Payment for transaction ${transactionId}`,
+          transactionId,
+          userId,
+          splitPayment,
+          splitIndex,
+          splitTotal
+        }
+      });
+      
+      if (enhancedResponse.success && enhancedResponse.data) {
+        return {
+          success: true,
+          checkoutRequestId: enhancedResponse.data.checkoutRequestId,
+          merchantRequestId: enhancedResponse.data.merchantRequestId,
+          message: enhancedResponse.data.customerMessage
+        };
+      }
+    } catch (enhancedError) {
+      console.log('Enhanced M-Pesa integration not available, falling back to legacy integration');
+      // If enhanced integration fails, continue to legacy integration
+    }
+    
+    // Legacy integration as fallback
     const response = await apiRequest<{success: boolean; checkoutRequestId?: string; error?: string}>({
       method: 'POST',
       path: '/api/payments/mpesa',
       data: {
-        phoneNumber,
+        phoneNumber: formattedPhone,
         amount,
         transactionId,
-        userId // Include optional userId for loyalty points
+        userId, // Include optional userId for loyalty points
+        splitPayment,
+        splitIndex,
+        splitTotal
       }
     });
     return response;
@@ -118,6 +172,36 @@ export async function initiateAirtelPayment(phoneNumber: string, amount: number,
  */
 export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
   try {
+    // First try with enhanced M-Pesa API endpoint
+    try {
+      const enhancedResponse = await apiRequest<{
+        success: boolean;
+        message: string;
+        data: {
+          resultCode: string;
+          resultDesc: string;
+          merchantRequestId: string;
+          checkoutRequestId: string;
+          transactionId?: number;
+        }
+      }>({
+        method: 'GET',
+        path: `/api/mpesa/status/${checkoutRequestId}`
+      });
+      
+      if (enhancedResponse.success) {
+        return {
+          status: enhancedResponse.data.resultCode === '0' ? 'COMPLETED' : 'FAILED',
+          message: enhancedResponse.data.resultDesc,
+          transactionId: enhancedResponse.data.transactionId
+        };
+      }
+    } catch (enhancedError) {
+      console.log('Enhanced M-Pesa status API not available, falling back to legacy API');
+      // If enhanced integration fails, continue to legacy integration
+    }
+    
+    // Fall back to legacy integration
     const response = await apiRequest<{status: string; message?: string}>({
       method: 'GET',
       path: `/api/payments/mpesa/status/${checkoutRequestId}`
