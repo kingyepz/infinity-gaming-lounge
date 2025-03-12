@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/payment";
+import { Button } from "@/components/ui/button";
+import { generateReceipt } from "@/lib/payment";
+import { useToast } from "@/hooks/use-toast";
+import ReceiptGenerator from "@/components/shared/ReceiptGenerator";
 import type { Transaction } from "@shared/schema";
 
 interface StationTransactionHistoryProps {
@@ -25,6 +29,7 @@ export default function StationTransactionHistory({ stationId, stationName }: St
   const [error, setError] = useState<string | null>(null);
   // Store payment references for display in the UI
   const [refs, setRefs] = useState<Record<number, React.ReactNode>>({});
+  const { toast } = useToast();
 
   // Function to fetch both transactions and their payment methods
   const fetchTransactionData = async () => {
@@ -226,6 +231,7 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                   <TableHead>Date/Time</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Method/Ref</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -377,6 +383,19 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                         )
                       ) : (
                         <span className="text-gray-500">Pending</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {tx.paymentStatus === 'completed' && (
+                        <div className="flex justify-end space-x-2">
+                          <ReceiptGenerator
+                            transactionId={tx.id}
+                            customerName={tx.customerName}
+                            amount={Number(tx.amount)}
+                            paymentMethod={tx.paymentMethodInfo || (tx.mpesaRef ? 'mpesa' : 'cash')}
+                            timestamp={tx.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString()}
+                          />
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
