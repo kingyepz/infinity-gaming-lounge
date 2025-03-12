@@ -135,6 +135,8 @@ export default function AdminAnalytics() {
   const [newCategoryOffPeakRate, setNewCategoryOffPeakRate] = useState("");
   const [newCategoryWeekendRate, setNewCategoryWeekendRate] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState("#6366F1");
+  const [newCategoryIcon, setNewCategoryIcon] = useState("gamepad");
   
   // Edit Category Dialog
   const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
@@ -722,7 +724,9 @@ export default function AdminAnalytics() {
           peakHourRate,
           offPeakRate,
           weekendRate,
-          description: newCategoryDescription
+          description: newCategoryDescription,
+          color: newCategoryColor,
+          icon: newCategoryIcon
         }
       });
       
