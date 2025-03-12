@@ -288,14 +288,53 @@ export default function POSDashboard() {
     }
 
     const handlePaymentComplete = async () => {
-        toast({
-            title: "Payment Successful",
-            description: "The session has been ended and payment received."
-        });
-        await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
-        await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-        setShowPaymentDialog(false);
-        setSelectedStation(null);
+        try {
+            // Reset the station status after payment is complete
+            if (selectedStation) {
+                console.log("Resetting station after payment:", selectedStation.id);
+                
+                // Call API to update station status
+                await apiRequest({
+                    method: "PATCH",
+                    path: `/api/stations/${selectedStation.id}`,
+                    data: {
+                        currentCustomer: null,
+                        currentGame: null,
+                        sessionType: null,
+                        sessionStartTime: null,
+                        status: "available"
+                    }
+                });
+                
+                toast({
+                    title: "Payment Successful",
+                    description: "The session has been ended and payment received."
+                });
+            } else {
+                console.warn("No station selected for reset after payment");
+                toast({
+                    title: "Payment Processed",
+                    description: "Payment was successful, but station information is unavailable."
+                });
+            }
+            
+            // Refresh data
+            await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+            await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+            setShowPaymentDialog(false);
+            setSelectedStation(null);
+        } catch (error) {
+            console.error("Error resetting station after payment:", error);
+            toast({
+                title: "Error",
+                description: "Payment was processed but there was an error resetting the station. Please refresh the page.",
+                variant: "destructive"
+            });
+            // Still close the dialog and refresh data
+            setShowPaymentDialog(false);
+            await queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+            await queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+        }
     };
 
     return (
