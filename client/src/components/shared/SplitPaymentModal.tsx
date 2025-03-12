@@ -377,6 +377,29 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
       const allPaid = updatedPayers.every(payer => payer.paid);
       
       if (allPaid) {
+        try {
+          // Reset the station status after all split payments complete
+          const { apiRequest } = await import("@/lib/queryClient");
+          
+          // Call API to update station status
+          if (transaction) {
+            await apiRequest({
+              method: "PATCH",
+              path: `/api/stations/${transaction.stationId}`,
+              data: {
+                currentCustomer: null,
+                currentGame: null,
+                sessionType: null,
+                sessionStartTime: null,
+                status: "available"
+              }
+            });
+            console.log(`Station ${transaction.stationId} reset successful after split payment`);
+          }
+        } catch (resetError) {
+          console.error("Error resetting station after split payment:", resetError);
+        }
+        
         if (onPaymentComplete) {
           onPaymentComplete();
         }
