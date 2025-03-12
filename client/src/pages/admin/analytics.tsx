@@ -386,22 +386,38 @@ export default function AdminAnalytics() {
   }, [dashboardPeriod, customStartDate, customEndDate, startHour, endHour, timeOfDayFilter, toast]);
 
   // Clear applied filters
-  const clearDateFilter = useCallback(() => {
+  const clearDateFilter = useCallback(async () => {
     setDashboardPeriod('month');
     setCustomStartDate('');
     setCustomEndDate('');
     setTimeOfDayFilter('all');
     setStartHour(0);
     setEndHour(23);
-    setFilteredData(null);
     
-    toast({
-      title: "Filter Cleared",
-      description: "Showing all data without filters"
-    });
-    
-    // Refresh data to ensure we have the complete dataset
-    refreshAllData();
+    // Reset filter UI but also fetch default dashboard data
+    try {
+      const today = new Date();
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      
+      // Clear filtered data first
+      setFilteredData(null);
+      
+      toast({
+        title: "Filter Cleared",
+        description: "Showing all data without filters"
+      });
+      
+      // Refresh data to ensure we have the complete dataset
+      refreshAllData();
+    } catch (error) {
+      console.error("Error resetting dashboard:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reset dashboard data",
+        variant: "destructive"
+      });
+    }
   }, [toast]);
 
   // Refresh functionality
