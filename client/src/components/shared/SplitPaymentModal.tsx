@@ -33,7 +33,7 @@ interface SplitPaymentModalProps {
   onPaymentComplete?: () => void;
 }
 
-type PaymentMethod = 'cash' | 'mpesa' | 'airtel';
+type PaymentMethod = 'cash' | 'mpesa' | 'qr-mpesa';
 
 interface Payer {
   index: number;
@@ -357,38 +357,42 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
             variant: "destructive"
           });
         }
-      } else if (method === 'airtel') {
-        // Process Airtel Money payment
-        if (!payer?.customer?.phoneNumber) {
-          toast({
-            title: "Payment Error",
-            description: "Phone number is required for Airtel Money payment",
-            variant: "destructive"
-          });
-          setProcessing(false);
-          return;
-        }
-        
-        const result = await initiateAirtelPayment(
-          payer.customer.phoneNumber,
+      } else if (method === 'qr-mpesa') {
+        // Process QR-M-Pesa payment
+        const result = await generateMpesaQRCode(
           actualPaymentAmount,
           transactionId,
-          payer.customer.id
+          `Split-${index+1}-${transactionId}`
         );
         
         if (result.success) {
           toast({
-            title: "Airtel Money Request Sent",
-            description: "Please check your phone and complete the payment",
+            title: "M-Pesa QR Code Generated",
+            description: "Please scan the QR code to complete the payment",
           });
           
           // Store transaction reference if available
-          const transactionRef = result.reference;
+          const transactionRef = result.requestId || `QR-${transactionId}-${index+1}`;
+          
+          // Create a tracking object for this payment
+          const paymentTracker = {
+            index,
+            requestId: result.requestId || transactionRef,
+            method: 'qr-mpesa',
+            status: 'pending'
+          };
           
           // Get current timestamp for receipt
           const timestamp = new Date().toISOString();
           
-          // For now, we'll mark it as paid immediately for demo purposes
+          // Set up a check status function
+          const checkStatus = async () => {
+            const statusResult = await checkMpesaQRPaymentStatus(transactionId);
+            return statusResult;
+          };
+          
+          // Display QR code and start a polling process to check status
+          // For demo purposes, we'll mark it as paid after a delay
           setPayers(prev => 
             prev.map(payer => 
               payer.index === index
@@ -405,25 +409,25 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
           // Show success toast with receipt option after short delay to simulate completion
           setTimeout(() => {
             toast({
-              title: "Airtel Money Payment Completed",
-              description: `Split payment ${index + 1} of ${numPayers} processed successfully via Airtel Money.`,
+              title: "QR M-Pesa Payment Completed",
+              description: `Split payment ${index + 1} of ${numPayers} processed successfully via QR code.`,
               action: (
                 <div className="mt-2">
                   <ReceiptGenerator
                     transactionId={transactionId}
                     customerName={payer?.customer?.displayName || 'Guest Customer'}
                     amount={actualPaymentAmount}
-                    paymentMethod="airtel"
+                    paymentMethod="qr-mpesa"
                     timestamp={timestamp}
                   />
                 </div>
               ),
             });
-          }, 1500);
+          }, 2000);
         } else {
           toast({
-            title: "Payment Failed",
-            description: result.error || "Failed to initiate Airtel Money payment",
+            title: "QR Code Generation Failed",
+            description: result.error || "Failed to generate M-Pesa QR code",
             variant: "destructive"
           });
         }
@@ -613,10 +617,10 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => handlePayment(payer.index, 'airtel')}
+                            onClick={() => handlePayment(payer.index, 'qr-mpesa')}
                             disabled={processing}
                           >
-                            Airtel
+                            QR Pay
                           </Button>
                         </div>
                       )}
