@@ -1,6 +1,6 @@
 import { apiRequest } from "./queryClient";
 
-export type PaymentMethod = "cash" | "mpesa" | "airtel";
+export type PaymentMethod = "cash" | "mpesa" | "qr-mpesa";
 
 /**
  * Create a transaction record
@@ -208,64 +208,7 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
   }
 }
 
-/**
- * Initiate Airtel Money payment
- */
-export async function initiateAirtelPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number) {
-  try {
-    // In development mode, we'll simulate a successful payment
-    // This is to avoid actual API calls during development
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
-      console.log('DEVELOPMENT MODE: Simulating Airtel Money payment for phone', phoneNumber);
-      
-      // Return a simulated successful response
-      return {
-        success: true,
-        reference: `SIM-AIRTEL-${Date.now()}`,
-        message: "Airtel Money payment simulation. In production, customer would receive a payment request."
-      };
-    }
-    
-    // Format phone number if needed
-    let formattedPhone = phoneNumber;
-    if (phoneNumber.startsWith('0')) {
-      formattedPhone = `254${phoneNumber.substring(1)}`;
-    } else if (phoneNumber.startsWith('+254')) {
-      formattedPhone = phoneNumber.substring(1); // Remove the + sign
-    }
-    
-    const response = await apiRequest<{success: boolean; reference?: string; error?: string}>({
-      method: 'POST',
-      path: '/api/payments/airtel',
-      data: {
-        phoneNumber: formattedPhone,
-        amount,
-        transactionId,
-        userId // Include optional userId for loyalty points
-      }
-    });
-    
-    // Handle specific error messages for better user experience
-    if (!response.success && response.error) {
-      if (response.error.includes("Connection failed")) {
-        return { 
-          success: false, 
-          error: "Airtel Money system currently unavailable. Please try again later or use an alternative payment method."
-        };
-      } else if (response.error.includes("Invalid credentials")) {
-        return { 
-          success: false, 
-          error: "Airtel Money API credentials not configured. Please contact system administrator."
-        };
-      }
-    }
-    
-    return response;
-  } catch (error) {
-    console.error('Error initiating Airtel Money payment:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
+
 
 /**
  * Check M-Pesa payment status
@@ -479,43 +422,7 @@ export async function checkMpesaQRPaymentStatus(transactionId: number) {
   }
 }
 
-/**
- * Check Airtel Money payment status
- */
-export async function checkAirtelPaymentStatus(referenceId: string) {
-  try {
-    // Simulation mode for testing without actual Airtel Money API
-    const SIMULATION_MODE = true; // Set to false to use real Airtel Money API
-    
-    // Only process simulated transactions (starting with SIM-AIRTEL-)
-    if (SIMULATION_MODE && referenceId.startsWith('SIM-AIRTEL-')) {
-      console.log('DEVELOPMENT MODE: Simulating successful Airtel Money payment status check');
-      
-      // After 3 seconds, consider the payment successful (simulating a real-world delay)
-      if (Date.now() - parseInt(referenceId.replace('SIM-AIRTEL-', '')) > 3000) {
-        return {
-          transactionStatus: 'SUCCESS',
-          message: "Simulated Airtel Money payment completed successfully"
-        };
-      } else {
-        return {
-          transactionStatus: 'PENDING',
-          message: "Simulated Airtel Money payment is still processing"
-        };
-      }
-    }
-    
-    // Real implementation
-    const response = await apiRequest<{transactionStatus: string; message?: string}>({
-      method: 'GET',
-      path: `/api/payments/airtel/status/${referenceId}`
-    });
-    return response;
-  } catch (error) {
-    console.error('Error checking Airtel Money payment status:', error);
-    return { transactionStatus: 'ERROR', message: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
+
 
 /**
  * Format currency amount as KES

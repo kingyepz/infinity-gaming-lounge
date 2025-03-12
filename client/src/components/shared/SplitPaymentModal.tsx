@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/queryClient";
-import { formatCurrency, initiateMpesaPayment, initiateAirtelPayment, processCashPayment, checkMpesaPaymentStatus } from "@/lib/payment";
+import { formatCurrency, initiateMpesaPayment, processCashPayment, checkMpesaPaymentStatus, generateMpesaQRCode, checkMpesaQRPaymentStatus } from "@/lib/payment";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "../ui/badge";
 import { CustomerSelector } from "./CustomerSelector";
