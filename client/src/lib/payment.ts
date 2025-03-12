@@ -102,10 +102,10 @@ export async function initiateAirtelPayment(phoneNumber: string, amount: number,
  */
 export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
   try {
-    const response = await apiRequest<{status: string; message?: string}>(
-      'GET',
-      `/api/payments/mpesa/status/${checkoutRequestId}`
-    );
+    const response = await apiRequest<{status: string; message?: string}>({
+      method: 'GET',
+      path: `/api/payments/mpesa/status/${checkoutRequestId}`
+    });
     return response;
   } catch (error) {
     console.error('Error checking M-Pesa payment status:', error);
@@ -118,10 +118,10 @@ export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
  */
 export async function checkAirtelPaymentStatus(referenceId: string) {
   try {
-    const response = await apiRequest<{transactionStatus: string; message?: string}>(
-      'GET',
-      `/api/payments/airtel/status/${referenceId}`
-    );
+    const response = await apiRequest<{transactionStatus: string; message?: string}>({
+      method: 'GET',
+      path: `/api/payments/airtel/status/${referenceId}`
+    });
     return response;
   } catch (error) {
     console.error('Error checking Airtel Money payment status:', error);
