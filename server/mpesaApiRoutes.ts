@@ -313,10 +313,14 @@ router.get('/status/:checkoutRequestId', async (req: Request, res: Response) => 
     // Return payment status
     return res.status(200).json({
       success: true,
-      status: payment.paymentStatus,
+      status: payment.status,
       amount: payment.amount,
       transactionId: payment.transactionId,
-      mpesaRef: payment.mpesaRef
+      mpesaRef: payment.mpesaRef,
+      paymentMethod: payment.paymentMethod,
+      phoneNumber: payment.phoneNumber,
+      reference: payment.reference,
+      createdAt: payment.createdAt
     });
   } catch (error) {
     PaymentDebugger.logError('mpesaApiRoutes.status', 'error', error);

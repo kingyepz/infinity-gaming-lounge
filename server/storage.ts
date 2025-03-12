@@ -550,12 +550,21 @@ export class StorageService {
    */
   async getPaymentByCheckoutRequestId(checkoutRequestId: string): Promise<Payment | null> {
     try {
-      // Since we store the checkoutRequestId in the reference field for M-Pesa payments
+      // First try to find in checkoutRequestId field
       const [payment] = await db.select()
+        .from(payments)
+        .where(eq(payments.checkoutRequestId, checkoutRequestId));
+      
+      if (payment) {
+        return payment;
+      }
+      
+      // Fallback to reference field for backward compatibility
+      const [legacyPayment] = await db.select()
         .from(payments)
         .where(eq(payments.reference, checkoutRequestId));
       
-      return payment || null;
+      return legacyPayment || null;
     } catch (error) {
       console.error('Error getting payment by checkout request ID:', error);
       return null;

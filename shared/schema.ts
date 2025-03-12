@@ -101,6 +101,13 @@ export const payments = pgTable("payments", {
   status: text("status", { enum: ["pending", "completed", "failed"] }).notNull(),
   reference: text("reference"), // Generic reference for any payment method
   phoneNumber: text("phone_number"), // Phone number for mobile money payments
+  mpesaRef: text("mpesa_ref"), // M-Pesa receipt number
+  merchantRequestId: text("merchant_request_id"), // M-Pesa merchant request ID
+  checkoutRequestId: text("checkout_request_id"), // M-Pesa checkout request ID
+  userId: integer("user_id"), // Optional user ID for loyalty points
+  splitPayment: boolean("split_payment").default(false),
+  splitIndex: integer("split_index"),
+  splitTotal: integer("split_total"),
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -144,7 +151,15 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
   amount: true,
   paymentMethod: true,
   reference: true,
-  phoneNumber: true
+  phoneNumber: true,
+  status: true,
+  mpesaRef: true,
+  merchantRequestId: true,
+  checkoutRequestId: true,
+  userId: true,
+  splitPayment: true,
+  splitIndex: true,
+  splitTotal: true
 });
 
 export type User = typeof users.$inferSelect;
