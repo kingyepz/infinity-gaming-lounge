@@ -1418,6 +1418,32 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
     }
   }));
 
+  // Get payment details for a specific transaction
+  app.get("/api/payments/transaction/:transactionId", asyncHandler(async (req, res) => {
+    try {
+      const transactionId = Number(req.params.transactionId);
+      if (isNaN(transactionId)) {
+        return res.status(400).json({ error: "Invalid transaction ID" });
+      }
+      
+      // Retrieve the payment record for this transaction
+      const payment = await db.select()
+        .from(payments)
+        .where(eq(payments.transactionId, transactionId))
+        .limit(1);
+        
+      if (payment && payment.length > 0) {
+        return res.json(payment[0]);
+      }
+      
+      // No payment record found
+      return res.status(404).json({ error: "Payment record not found" });
+    } catch (error) {
+      console.error("Error retrieving payment record:", error);
+      return res.status(500).json({ error: "Failed to retrieve payment information" });
+    }
+  }));
+
   // Payment debug endpoint (only for development)
   app.get("/api/debug/payments", asyncHandler(async (_req, res) => {
     try {

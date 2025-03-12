@@ -24,25 +24,71 @@ export default function StationTransactionHistory({ stationId, stationName }: St
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setLoading(true);
-        const data = await apiRequest<Transaction[]>(
-          'GET', 
-          `/api/transactions/station/${stationId}`
-        );
-        setTransactions(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching station transactions:', err);
-        setError('Failed to load transaction history');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Function to fetch both transactions and their payment methods
+  const fetchTransactionData = async () => {
+    try {
+      setLoading(true);
+      // Get transaction data
+      const data = await apiRequest<Transaction[]>(
+        'GET', 
+        `/api/transactions/station/${stationId}`
+      );
+      
+      // For each transaction, determine the payment method more accurately
+      const enhancedTransactions = await Promise.all(
+        data.map(async (tx) => {
+          if (tx.paymentStatus === 'completed') {
+            try {
+              // Try to get payment record for this transaction
+              const paymentData = await apiRequest(
+                'GET',
+                `/api/payments/transaction/${tx.id}`
+              );
+              
+              // If payment data exists, use it to determine the payment method
+              if (paymentData && paymentData.paymentMethod) {
+                return {
+                  ...tx,
+                  // Adding paymentMethodInfo as a transient property
+                  paymentMethodInfo: paymentData.paymentMethod
+                };
+              }
+            } catch (e) {
+              // Ignore errors fetching payment data, will use fallback logic
+              console.log('Could not fetch payment details for transaction', tx.id);
+            }
+          }
+          
+          // Fallback logic using mpesaRef field
+          return {
+            ...tx,
+            paymentMethodInfo: tx.mpesaRef 
+              ? (String(tx.mpesaRef || '').startsWith('SIM-AIRTEL-') ? 'airtel' : 'mpesa')
+              : 'cash'
+          };
+        })
+      );
+      
+      setTransactions(enhancedTransactions);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching station transactions:', err);
+      setError('Failed to load transaction history');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchTransactions();
+  useEffect(() => {
+    fetchTransactionData();
+    
+    // Set up an interval to refresh the data every 15 seconds
+    const intervalId = setInterval(() => {
+      fetchTransactionData();
+    }, 15000);
+    
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
   }, [stationId]);
 
   // Calculate total revenue for this station
@@ -52,14 +98,32 @@ export default function StationTransactionHistory({ stationId, stationName }: St
 
   // Get the count of transactions by payment method
   const paymentMethodCounts = transactions.reduce((counts, tx) => {
-    // Check if tx has mpesaRef that is not null
-    if (tx.mpesaRef) {
-      counts.mpesa = (counts.mpesa || 0) + 1;
-    // For Airtel payments, we need to check a naming convention pattern since airtelRef isn't in the schema
-    } else if (tx.paymentStatus === 'completed' && String(tx.mpesaRef || '').startsWith('AR-')) {
-      counts.airtel = (counts.airtel || 0) + 1;
-    } else {
-      counts.cash = (counts.cash || 0) + 1;
+    // Only count completed transactions
+    if (tx.paymentStatus === 'completed') {
+      // First check for our custom paymentMethodInfo field
+      // @ts-ignore - This is a dynamically added property
+      if (tx.paymentMethodInfo) {
+        // @ts-ignore
+        const method = tx.paymentMethodInfo;
+        if (method === 'mpesa') {
+          counts.mpesa = (counts.mpesa || 0) + 1;
+        } else if (method === 'airtel') {
+          counts.airtel = (counts.airtel || 0) + 1;
+        } else {
+          counts.cash = (counts.cash || 0) + 1;
+        }
+      } else {
+        // Fall back to mpesaRef field logic
+        if (tx.mpesaRef) {
+          if (String(tx.mpesaRef).startsWith('SIM-AIRTEL-') || String(tx.mpesaRef).startsWith('AR-')) {
+            counts.airtel = (counts.airtel || 0) + 1;
+          } else {
+            counts.mpesa = (counts.mpesa || 0) + 1;
+          }
+        } else {
+          counts.cash = (counts.cash || 0) + 1;
+        }
+      }
     }
     return counts;
   }, { cash: 0, mpesa: 0, airtel: 0 });
@@ -180,9 +244,35 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {tx.mpesaRef 
-                        ? (String(tx.mpesaRef || '').startsWith('AR-') ? "Airtel" : "M-Pesa") 
-                        : "Cash"}
+                      {tx.paymentStatus === 'completed' ? (
+                        // @ts-ignore - paymentMethodInfo is a dynamic property we added
+                        tx.paymentMethodInfo ? (
+                          <span className={
+                            // @ts-ignore
+                            tx.paymentMethodInfo === 'mpesa' ? "text-blue-500" : 
+                            // @ts-ignore
+                            tx.paymentMethodInfo === 'airtel' ? "text-red-500" : 
+                            "text-green-500"
+                          }>
+                            {/* @ts-ignore */}
+                            {tx.paymentMethodInfo === 'mpesa' ? "M-Pesa" : 
+                             // @ts-ignore
+                             tx.paymentMethodInfo === 'airtel' ? "Airtel" : 
+                             "Cash"}
+                          </span>
+                        ) : (
+                          // Fallback to original logic
+                          <span>
+                            {tx.mpesaRef 
+                              ? (String(tx.mpesaRef || '').startsWith('AR-') || String(tx.mpesaRef || '').startsWith('SIM-AIRTEL-') ? 
+                                 <span className="text-red-500">Airtel</span> : 
+                                 <span className="text-blue-500">M-Pesa</span>) 
+                              : <span className="text-green-500">Cash</span>}
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-gray-500">Pending</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
