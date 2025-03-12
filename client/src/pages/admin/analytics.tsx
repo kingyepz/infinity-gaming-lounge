@@ -109,6 +109,9 @@ export default function AdminAnalytics() {
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
   const [newStationName, setNewStationName] = useState("");
   
+  // Station utilization sorting
+  const [stationSortOrder, setStationSortOrder] = useState<string>("name_asc");
+  
   // Edit Station Dialog
   const [showEditStationDialog, setShowEditStationDialog] = useState(false);
   const [editStationId, setEditStationId] = useState<number | null>(null);
@@ -2510,9 +2513,9 @@ export default function AdminAnalytics() {
                           <CardDescription>Performance metrics for all gaming stations</CardDescription>
                         </div>
                         <Select 
-                          value="name_asc" 
+                          value={stationSortOrder}
                           onValueChange={(value) => {
-                            // This will be handled via the useMemo below
+                            setStationSortOrder(value);
                           }}
                         >
                           <SelectTrigger className="w-[180px]">
@@ -2522,8 +2525,12 @@ export default function AdminAnalytics() {
                             <SelectItem value="name_asc">Name (A-Z)</SelectItem>
                             <SelectItem value="name_desc">Name (Z-A)</SelectItem>
                             <SelectItem value="hours_desc">Total Hours (High-Low)</SelectItem>
+                            <SelectItem value="hours_asc">Total Hours (Low-High)</SelectItem>
                             <SelectItem value="utilization_desc">Utilization (High-Low)</SelectItem>
+                            <SelectItem value="utilization_asc">Utilization (Low-High)</SelectItem>
                             <SelectItem value="revenue_desc">Revenue (High-Low)</SelectItem>
+                            <SelectItem value="revenue_asc">Revenue (Low-High)</SelectItem>
+                            <SelectItem value="status">Status (Active First)</SelectItem>
                           </SelectContent>
                         </Select>
                       </CardHeader>
@@ -2541,10 +2548,44 @@ export default function AdminAnalytics() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {/* Sort stations alphabetically by name regardless of active status */}
+                              {/* Apply sorting based on selected order */}
                               {stationUtilization
                                 ?.slice()
-                                .sort((a, b) => a.stationName.localeCompare(b.stationName))
+                                .sort((a, b) => {
+                                  // Calculate utilization rates for both stations
+                                  const utilizationRateA = Math.min(Math.round((a.totalHours / 24) * 100), 100);
+                                  const utilizationRateB = Math.min(Math.round((b.totalHours / 24) * 100), 100);
+                                  
+                                  // Apply sorting based on selected option
+                                  switch (stationSortOrder) {
+                                    case 'name_asc':
+                                      return a.stationName.localeCompare(b.stationName);
+                                    case 'name_desc':
+                                      return b.stationName.localeCompare(a.stationName);
+                                    case 'hours_desc':
+                                      return b.totalHours - a.totalHours;
+                                    case 'hours_asc':
+                                      return a.totalHours - b.totalHours;
+                                    case 'utilization_desc':
+                                      return utilizationRateB - utilizationRateA;
+                                    case 'utilization_asc':
+                                      return utilizationRateA - utilizationRateB;
+                                    case 'revenue_desc':
+                                      return b.revenue - a.revenue;
+                                    case 'revenue_asc':
+                                      return a.revenue - b.revenue;
+                                    case 'status':
+                                      // Sort by status (active first), then by name alphabetically
+                                      if (a.currentlyActive === b.currentlyActive) {
+                                        // If both have the same active status, sort by name
+                                        return a.stationName.localeCompare(b.stationName);
+                                      }
+                                      // Put active stations first
+                                      return a.currentlyActive ? -1 : 1;
+                                    default:
+                                      return a.stationName.localeCompare(b.stationName);
+                                  }
+                                })
                                 .map((station) => {
                                   // Calculate utilization rate from hours used
                                   const utilizationRate = Math.min(Math.round((station.totalHours / 24) * 100), 100);
