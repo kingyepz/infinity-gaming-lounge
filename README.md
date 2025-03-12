@@ -21,7 +21,6 @@ The system combines modern web technologies with local payment methods to create
 ### Payment Options
 - Cash payments
 - M-Pesa integration
-- Airtel Money integration 
 - QR code payment support
 
 ### Customer Engagement
@@ -53,7 +52,6 @@ The system combines modern web technologies with local payment methods to create
 - PostgreSQL database with Drizzle ORM
 - WebSocket support for real-time updates
 - M-Pesa API integration
-- Airtel Money API integration
 
 ## Getting Started
 
@@ -61,7 +59,6 @@ The system combines modern web technologies with local payment methods to create
 - Node.js (v18+)
 - PostgreSQL database
 - M-Pesa developer account (for payment processing)
-- Airtel Money developer account (for payment processing)
 
 ### Installation
 
@@ -84,8 +81,6 @@ The system combines modern web technologies with local payment methods to create
    MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
    MPESA_SHORTCODE=your_mpesa_shortcode
    MPESA_PASSKEY=your_mpesa_passkey
-   AIRTEL_API_KEY=your_airtel_api_key
-   AIRTEL_SECRET_KEY=your_airtel_secret_key
    ```
 
 4. Set up the database:
@@ -126,4 +121,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Shadcn/ui](https://ui.shadcn.com/) for the component library
 - [Drizzle ORM](https://orm.drizzle.team/) for database operations
 - [Safaricom M-Pesa API](https://developer.safaricom.co.ke/) for payment processing
-- [Airtel Money API](https://developers.airtel.africa/) for payment processing
