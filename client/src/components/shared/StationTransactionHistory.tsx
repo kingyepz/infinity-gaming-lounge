@@ -231,7 +231,14 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                     <TableCell>{tx.customerName}</TableCell>
                     <TableCell>{tx.gameName}</TableCell>
                     <TableCell>{formatCurrency(tx.amount)}</TableCell>
-                    <TableCell>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'Unknown'}</TableCell>
+                    <TableCell>
+                      {tx.createdAt ? (
+                        <div className="flex flex-col">
+                          <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
+                          <span className="text-xs text-gray-400">{new Date(tx.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                      ) : 'Unknown'}
+                    </TableCell>
                     <TableCell>
                       <Badge 
                         variant={
@@ -265,9 +272,14 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                             {/* Show reference for mobile money payments */}
                             {/* @ts-ignore */}
                             {(tx.paymentMethodInfo === 'mpesa' || tx.paymentMethodInfo === 'airtel') && tx.mpesaRef && (
-                              <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
-                                Ref: {tx.mpesaRef}
-                              </span>
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
+                                  Ref: {tx.mpesaRef.substring(0, 14)}{tx.mpesaRef.length > 14 ? '...' : ''}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
+                                </span>
+                              </div>
                             )}
                           </div>
                         ) : (
@@ -277,14 +289,24 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                               ? (String(tx.mpesaRef || '').startsWith('AR-') || String(tx.mpesaRef || '').startsWith('SIM-AIRTEL-') ? 
                                  <div>
                                    <span className="text-red-500 font-medium">Airtel</span>
-                                   <div className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
-                                     Ref: {tx.mpesaRef}
+                                   <div className="flex flex-col">
+                                     <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
+                                       Ref: {tx.mpesaRef.substring(0, 14)}{tx.mpesaRef.length > 14 ? '...' : ''}
+                                     </span>
+                                     <span className="text-xs text-gray-500">
+                                       {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
+                                     </span>
                                    </div>
                                  </div> : 
                                  <div>
                                    <span className="text-blue-500 font-medium">M-Pesa</span>
-                                   <div className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
-                                     Ref: {tx.mpesaRef}
+                                   <div className="flex flex-col">
+                                     <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
+                                       Ref: {tx.mpesaRef.substring(0, 14)}{tx.mpesaRef.length > 14 ? '...' : ''}
+                                     </span>
+                                     <span className="text-xs text-gray-500">
+                                       {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
+                                     </span>
                                    </div>
                                  </div>) 
                               : <span className="text-green-500 font-medium">Cash</span>}
