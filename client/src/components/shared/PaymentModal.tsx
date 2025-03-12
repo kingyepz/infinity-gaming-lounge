@@ -477,7 +477,6 @@ export default function PaymentModal({
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="cash">Cash</TabsTrigger>
               <TabsTrigger value="mpesa">M-Pesa</TabsTrigger>
-              <TabsTrigger value="airtel">Airtel</TabsTrigger>
               <TabsTrigger value="qrcode">QR Code</TabsTrigger>
             </TabsList>
             <TabsContent value="cash" className="mt-4">
@@ -640,9 +639,9 @@ export default function PaymentModal({
                     Select your preferred payment method and generate a QR code for payment
                   </p>
 
-                  <div className="flex justify-center space-x-4 mb-4">
+                  <div className="flex justify-center mb-4">
                     <Button
-                      variant={paymentMethod === "qr-mpesa" ? "default" : "outline"}
+                      variant="default"
                       onClick={() => {
                         setPaymentMethod("qr-mpesa" as PaymentMethod);
                         // Reset QR code states
@@ -651,26 +650,14 @@ export default function PaymentModal({
                       }}
                       className="flex-1"
                     >
-                      M-Pesa
-                    </Button>
-                    <Button
-                      variant={paymentMethod === "qr-airtel" ? "default" : "outline"}
-                      onClick={() => {
-                        setPaymentMethod("qr-airtel" as PaymentMethod);
-                        // Reset QR code states
-                        setQrCodeData(null);
-                        setQrRequestId(null);
-                      }}
-                      className="flex-1"
-                    >
-                      Airtel Money
+                      M-Pesa QR Code
                     </Button>
                   </div>
                   
-                  {!qrCodeData && (paymentMethod === "qr-mpesa" || paymentMethod === "qr-airtel") && (
+                  {!qrCodeData && paymentMethod === "qr-mpesa" && (
                     <div className="text-center p-4">
                       <Button 
-                        onClick={() => handleGenerateQRCode(paymentMethod === "qr-mpesa" ? "mpesa" : "airtel")}
+                        onClick={() => handleGenerateQRCode("mpesa")}
                         disabled={isProcessing}
                         className="w-full"
                       >
