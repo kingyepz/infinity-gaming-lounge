@@ -1512,19 +1512,25 @@ export default function AdminAnalytics() {
                     
                     {/* Active Filter Indicator */}
                     {filteredData && (
-                      <Badge variant="outline" className="gap-1 px-2 py-1">
-                        <CalendarIcon className="h-3 w-3" />
-                        <span>Filtered</span>
+                      <div className="flex gap-2 items-center">
+                        <Badge variant="outline" className="gap-1 px-2 py-1">
+                          <CalendarIcon className="h-3 w-3" />
+                          <span>Date: {filteredData?.dateRange?.startDate} to {filteredData?.dateRange?.endDate}</span>
+                        </Badge>
+                        <Badge variant="outline" className="gap-1 px-2 py-1">
+                          <ClockIcon className="h-3 w-3" />
+                          <span>Time: {filteredData?.timeRange?.startHour}:00 to {filteredData?.timeRange?.endHour}:00</span>
+                        </Badge>
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-4 w-4 rounded-full p-0" 
+                          className="h-5 w-5 rounded-full p-0" 
                           onClick={clearDateFilter}
                         >
                           <X className="h-3 w-3" />
                           <span className="sr-only">Clear filter</span>
                         </Button>
-                      </Badge>
+                      </div>
                     )}
                   </div>
                 </div>
