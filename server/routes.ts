@@ -477,12 +477,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/events", asyncHandler(async (_req, res) => {
-    // Implement database query for events data
-    res.json([
-      { id: 1, title: "FIFA Tournament", date: "2023-12-15", time: "14:00", prize: "5000 Points" },
-      { id: 2, title: "Call of Duty Marathon", date: "2023-12-22", time: "18:00", prize: "Free Hours" },
-      { id: 3, title: "Racing Championship", date: "2023-12-29", time: "16:00", prize: "Gaming Gear" }
-    ]);
+    try {
+      const eventsList = await db.select()
+        .from(events)
+        .orderBy(events.date);
+      
+      // If no events found, return empty array instead of mock data
+      res.json(eventsList.length > 0 ? eventsList : []);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      res.status(500).json({ error: "Failed to fetch events" });
+    }
   }));
 
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
