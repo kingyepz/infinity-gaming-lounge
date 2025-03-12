@@ -211,7 +211,21 @@ export default function POSDashboard() {
 
     const handleStartSession = async () => {
         try {
+            console.log("Starting session with values:", {
+                selectedStation,
+                selectedGame,
+                selectedCustomer,
+                selectedSessionType
+            });
+            
             if (!selectedStation || !selectedGame || !selectedCustomer || !selectedSessionType) {
+                console.error("Missing information for session start:", {
+                    hasStation: !!selectedStation,
+                    hasGame: !!selectedGame,
+                    hasCustomer: !!selectedCustomer,
+                    hasSessionType: !!selectedSessionType
+                });
+                
                 toast({
                     title: "Missing Information",
                     description: "Please select a game, customer, and session type",
@@ -390,7 +404,23 @@ export default function POSDashboard() {
                     <TabsContent value="sessions">
                         <div className="flex justify-between mb-4">
                             <h2 className="text-xl sm:text-2xl font-bold">Gaming Stations</h2>
-                            <Button onClick={() => setShowNewSessionModal(true)} size="sm">
+                            <Button 
+                                onClick={() => {
+                                    // Find the first available station and set it as selected
+                                    const availableStation = stations.find((s: any) => !s.currentCustomer);
+                                    if (availableStation) {
+                                        setSelectedStation(availableStation);
+                                        setShowNewSessionModal(true);
+                                    } else {
+                                        toast({
+                                            title: "No Available Stations",
+                                            description: "All stations are currently in use.",
+                                            variant: "destructive"
+                                        });
+                                    }
+                                }} 
+                                size="sm"
+                            >
                                 New Session
                             </Button>
                         </div>
