@@ -55,6 +55,11 @@ function Router() {
             <AdminAnalytics />
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/analytics">
+          <ProtectedRoute role="admin">
+            <AdminAnalytics />
+          </ProtectedRoute>
+        </Route>
 
         <Route component={NotFound} />
       </Switch>

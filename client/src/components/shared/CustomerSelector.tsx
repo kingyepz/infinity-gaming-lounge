@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { apiRequest } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface Customer {
@@ -30,7 +30,7 @@ export function CustomerSelector({ onSelectCustomer, onRegisterNewCustomer }: Cu
   useEffect(() => {
     async function fetchCustomers() {
       try {
-        const data = await apiRequest('GET', '/api/users/customers');
+        const data = await apiRequest({ path: '/api/users/customers' });
         setCustomers(data);
         setFilteredCustomers(data);
         setLoading(false);
