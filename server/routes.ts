@@ -291,6 +291,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw error;
     }
   }));
+  
+  // Add route for creating a new game
+  app.post("/api/games", asyncHandler(async (req, res) => {
+    try {
+      const gameData = req.body;
+      const game = await storage.createGame(gameData);
+      res.status(201).json(game);
+    } catch (error) {
+      console.error("Error creating game:", error);
+      throw error;
+    }
+  }));
+
+  // Add route for updating a game
+  app.patch("/api/games/:id", asyncHandler(async (req, res) => {
+    try {
+      const gameId = Number(req.params.id);
+      if (isNaN(gameId)) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+
+      const gameData = req.body;
+      const game = await storage.updateGame(gameId, gameData);
+      
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      
+      res.json(game);
+    } catch (error) {
+      console.error("Error updating game:", error);
+      throw error;
+    }
+  }));
+
+  // Add route for deleting a game
+  app.delete("/api/games/:id", asyncHandler(async (req, res) => {
+    try {
+      const gameId = Number(req.params.id);
+      if (isNaN(gameId)) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+
+      const success = await storage.deleteGame(gameId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Game not found or could not be deleted" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting game:", error);
+      throw error;
+    }
+  }));
 
   app.post("/api/transactions", asyncHandler(async (req, res) => {
     try {
