@@ -598,12 +598,12 @@ export default function POSDashboard() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-[80px]">ID</TableHead>
+                                                <TableHead className="w-[60px]">ID</TableHead>
                                                 <TableHead>Customer</TableHead>
                                                 <TableHead>Amount</TableHead>
-                                                <TableHead>Date</TableHead>
+                                                <TableHead>Date/Time</TableHead>
                                                 <TableHead>Status</TableHead>
-                                                <TableHead>Method</TableHead>
+                                                <TableHead>Method/Ref</TableHead>
                                                 <TableHead className="text-right">Action</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -613,7 +613,12 @@ export default function POSDashboard() {
                                                     <TableCell className="font-medium">#{tx.id}</TableCell>
                                                     <TableCell>{tx.customerName}</TableCell>
                                                     <TableCell>KES {Number(tx.amount).toFixed(2)}</TableCell>
-                                                    <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
+                                                            <span className="text-xs text-muted-foreground">{new Date(tx.createdAt).toLocaleTimeString()}</span>
+                                                        </div>
+                                                    </TableCell>
                                                     <TableCell>
                                                         <Badge variant={tx.paymentStatus === "completed" ? "default" : 
                                                                 tx.paymentStatus === "pending" ? "secondary" : 
@@ -622,7 +627,21 @@ export default function POSDashboard() {
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {tx.mpesaRef ? "M-Pesa" : tx.airtelRef ? "Airtel" : "Cash"}
+                                                        <div className="flex flex-col">
+                                                            <span className={
+                                                                tx.mpesaRef ? "text-blue-400" : 
+                                                                tx.airtelRef ? "text-red-400" : 
+                                                                "text-green-400"
+                                                            }>
+                                                                {tx.mpesaRef ? "M-Pesa" : tx.airtelRef ? "Airtel" : "Cash"}
+                                                            </span>
+                                                            {(tx.mpesaRef || tx.airtelRef) && (
+                                                                <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={tx.mpesaRef || tx.airtelRef}>
+                                                                    {tx.mpesaRef ? tx.mpesaRef.substring(0, 12) + "..." : 
+                                                                     tx.airtelRef ? tx.airtelRef.substring(0, 12) + "..." : ""}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         {tx.paymentStatus === "pending" && (
