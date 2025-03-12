@@ -51,17 +51,32 @@ export async function createTransaction(transactionData: {
 /**
  * Process a cash payment
  */
-export async function processCashPayment(transactionId: number, amount: number, userId?: number) {
+export async function processCashPayment(transactionId: number, amount: number, userId?: number, splitIndex?: number) {
   try {
-    const response = await apiRequest<{success: boolean; error?: string}>({
+    // Generate a unique reference for cash payments for consistent tracking
+    const cashReference = splitIndex !== undefined 
+      ? `CASH-${transactionId}-${splitIndex+1}` 
+      : `CASH-${transactionId}-${Date.now().toString().slice(-4)}`;
+    
+    const response = await apiRequest<{success: boolean; reference?: string; error?: string}>({
       method: 'POST',
       path: '/api/payments/cash',
       data: {
         transactionId,
         amount,
-        userId // Include optional userId for loyalty points
+        userId, // Include optional userId for loyalty points
+        reference: cashReference // Include a reference for tracking purposes
       }
     });
+    
+    // Ensure a reference is returned for consistency with mobile money payments
+    if(response.success) {
+      return {
+        ...response,
+        reference: response.reference || cashReference
+      };
+    }
+    
     return response;
   } catch (error) {
     console.error('Error processing cash payment:', error);

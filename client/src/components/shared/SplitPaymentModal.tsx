@@ -220,7 +220,8 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
         const result = await processCashPayment(
           transactionId, 
           actualPaymentAmount, 
-          payer?.customer?.id
+          payer?.customer?.id,
+          index // Pass split index for consistent reference generation
         );
         
         if (result.success) {
@@ -229,8 +230,8 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
             description: `Split payment ${index + 1} of ${numPayers} processed successfully.`,
           });
           
-          // Generate a reference for cash payments for tracking consistency
-          const cashReference = `CASH-${transactionId}-${index+1}`;
+          // Get the reference from the payment result
+          const cashReference = result.reference || `CASH-${transactionId}-${index+1}`;
           
           // Mark this payer as paid
           setPayers(prev => 
@@ -503,7 +504,7 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
                           <Badge variant="success" className="bg-green-500">
                             Paid via {payer.paymentMethod}
                           </Badge>
-                          {payer.transactionRef && (payer.paymentMethod === 'mpesa' || payer.paymentMethod === 'airtel') && (
+                          {payer.transactionRef && (
                             <span className="text-xs text-muted-foreground">
                               Ref: {payer.transactionRef.substring(0, 12)}{payer.transactionRef.length > 12 ? '...' : ''}
                             </span>
