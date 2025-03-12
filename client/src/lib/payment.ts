@@ -97,10 +97,14 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
       formattedPhone = phoneNumber.substring(1); // Remove the + sign
     }
     
-    // In development mode, we'll simulate a successful payment
-    // This is to avoid actual API calls during development
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+    // Simulation mode can be toggled for testing without actual M-Pesa API
+    const SIMULATION_MODE = true; // Set to false to use real M-Pesa API
+    
+    if (SIMULATION_MODE) {
       console.log('DEVELOPMENT MODE: Simulating M-Pesa payment for phone', formattedPhone);
+      
+      // Store simulation start time for status checking
+      localStorage.setItem(`mpesa-sim-${transactionId}`, Date.now().toString());
       
       // Return a simulated successful response
       return {
@@ -268,26 +272,23 @@ export async function initiateAirtelPayment(phoneNumber: string, amount: number,
  */
 export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
   try {
-    // In development mode, we'll simulate a successful payment status check
-    // This is to avoid actual API calls during development
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
-      // If the checkout ID starts with 'SIM-' it's a simulated transaction
-      if (checkoutRequestId.startsWith('SIM-')) {
-        console.log('DEVELOPMENT MODE: Simulating successful M-Pesa payment status check');
-        
-        // After 3 seconds, consider the payment successful (simulating a real-world delay)
-        if (Date.now() - parseInt(checkoutRequestId.replace('SIM-', '')) > 3000) {
-          return {
-            status: 'COMPLETED',
-            message: "Simulated M-Pesa payment completed successfully",
-            transactionId: parseInt(checkoutRequestId.split('-')[1]) || 0
-          };
-        } else {
-          return {
-            status: 'PENDING',
-            message: "Simulated M-Pesa payment is still processing"
-          };
-        }
+    // Simulation mode for testing without actual M-Pesa API
+    // Only use simulation for transactions that start with 'SIM-' 
+    if (checkoutRequestId.startsWith('SIM-')) {
+      console.log('DEVELOPMENT MODE: Simulating successful M-Pesa payment status check');
+      
+      // After 3 seconds, consider the payment successful (simulating a real-world delay)
+      if (Date.now() - parseInt(checkoutRequestId.replace('SIM-', '')) > 3000) {
+        return {
+          status: 'COMPLETED',
+          message: "Simulated M-Pesa payment completed successfully",
+          transactionId: parseInt(checkoutRequestId.split('-')[1]) || 0
+        };
+      } else {
+        return {
+          status: 'PENDING',
+          message: "Simulated M-Pesa payment is still processing"
+        };
       }
     }
     
@@ -343,9 +344,14 @@ export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
  */
 export async function generateMpesaQRCode(amount: number, transactionId: number, referenceNumber?: string) {
   try {
-    // In development mode, we'll simulate a successful QR code generation
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+    // Simulation mode for testing without actual M-Pesa QR code API
+    const SIMULATION_MODE = true; // Set to false to use real M-Pesa QR code API
+    
+    if (SIMULATION_MODE) {
       console.log('DEVELOPMENT MODE: Simulating M-Pesa QR code generation');
+      
+      // Store time for simulating payment completion
+      localStorage.setItem(`qr-payment-${transactionId}`, Date.now().toString());
       
       // Return a simulated successful response with a base64 encoded QR code
       // This is a placeholder QR code for demo purposes
@@ -405,8 +411,10 @@ export async function generateMpesaQRCode(amount: number, transactionId: number,
  */
 export async function checkMpesaQRPaymentStatus(transactionId: number) {
   try {
-    // In development mode, simulate a successful QR code payment status check
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+    // Simulation mode for testing without actual M-Pesa QR code API
+    const SIMULATION_MODE = true; // Set to false to use real M-Pesa QR code API
+    
+    if (SIMULATION_MODE) {
       console.log('DEVELOPMENT MODE: Simulating M-Pesa QR code payment status check');
       
       // After 5 seconds, consider the payment successful (simulating a real-world delay)
@@ -476,24 +484,24 @@ export async function checkMpesaQRPaymentStatus(transactionId: number) {
  */
 export async function checkAirtelPaymentStatus(referenceId: string) {
   try {
-    // In development mode, simulate a successful Airtel Money payment check
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
-      // If the reference ID starts with 'SIM-' it's a simulated transaction
-      if (referenceId.startsWith('SIM-AIRTEL-')) {
-        console.log('DEVELOPMENT MODE: Simulating successful Airtel Money payment status check');
-        
-        // After 3 seconds, consider the payment successful (simulating a real-world delay)
-        if (Date.now() - parseInt(referenceId.replace('SIM-AIRTEL-', '')) > 3000) {
-          return {
-            transactionStatus: 'SUCCESS',
-            message: "Simulated Airtel Money payment completed successfully"
-          };
-        } else {
-          return {
-            transactionStatus: 'PENDING',
-            message: "Simulated Airtel Money payment is still processing"
-          };
-        }
+    // Simulation mode for testing without actual Airtel Money API
+    const SIMULATION_MODE = true; // Set to false to use real Airtel Money API
+    
+    // Only process simulated transactions (starting with SIM-AIRTEL-)
+    if (SIMULATION_MODE && referenceId.startsWith('SIM-AIRTEL-')) {
+      console.log('DEVELOPMENT MODE: Simulating successful Airtel Money payment status check');
+      
+      // After 3 seconds, consider the payment successful (simulating a real-world delay)
+      if (Date.now() - parseInt(referenceId.replace('SIM-AIRTEL-', '')) > 3000) {
+        return {
+          transactionStatus: 'SUCCESS',
+          message: "Simulated Airtel Money payment completed successfully"
+        };
+      } else {
+        return {
+          transactionStatus: 'PENDING',
+          message: "Simulated Airtel Money payment is still processing"
+        };
       }
     }
     
@@ -705,15 +713,20 @@ export async function initiateMpesaAPIPayment(phoneNumber: string, amount: numbe
       { phoneNumber: formattedPhone, amount, transactionId, userId, splitPayment, splitIndex, splitTotal }
     );
     
-    // In development mode, we'll simulate a successful payment
-    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+    // Simulation mode for testing without actual M-Pesa API
+    const SIMULATION_MODE = true; // Set to false to use real M-Pesa API
+    
+    if (SIMULATION_MODE) {
       console.log('DEVELOPMENT MODE: Simulating M-Pesa API payment for phone', formattedPhone);
+      
+      // Create a timestamp to be used for status checking - will complete after 3 seconds
+      const timestamp = Date.now();
       
       // Return a simulated successful response
       return {
         success: true,
-        checkoutRequestId: `SIM-API-${Date.now()}`,
-        merchantRequestId: `SIM-MR-${Date.now()}`,
+        checkoutRequestId: `SIM-API-${timestamp}`,
+        merchantRequestId: `SIM-MR-${timestamp}`,
         message: "M-Pesa API payment simulation. In production, customer would receive an STK push."
       };
     }
