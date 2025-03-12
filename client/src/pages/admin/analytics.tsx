@@ -654,17 +654,33 @@ export default function AdminAnalytics() {
         return;
       }
       
+      // Validate time range if provided
+      if (reportStartHour > reportEndHour) {
+        toast({
+          title: "Invalid Time Range",
+          description: "Start hour must be before or equal to end hour",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Build the URL with query parameters
       let reportUrl = `/api/export/report/${reportType}/${reportFormat}`;
       
-      // Add date range if provided
+      // Add date range and time of day parameters
       const params = new URLSearchParams();
+      
+      // Date filtering
       if (reportStartDate) {
         params.append('startDate', reportStartDate);
       }
       if (reportEndDate) {
         params.append('endDate', reportEndDate);
       }
+      
+      // Time-of-day filtering
+      params.append('startHour', reportStartHour.toString());
+      params.append('endHour', reportEndHour.toString());
       
       // Append parameters to URL if any were provided
       if (params.toString()) {
@@ -674,9 +690,21 @@ export default function AdminAnalytics() {
       // Open in a new window to trigger download
       window.open(reportUrl, '_blank');
       
+      // Construct descriptive message including time filtering
+      let timeDescription = '';
+      if (timePreset === 'morning') {
+        timeDescription = ' for morning hours (06:00-11:59)';
+      } else if (timePreset === 'afternoon') {
+        timeDescription = ' for afternoon hours (12:00-17:59)';
+      } else if (timePreset === 'evening') {
+        timeDescription = ' for evening hours (18:00-23:59)';
+      } else if (reportStartHour !== 0 || reportEndHour !== 23) {
+        timeDescription = ` for hours ${reportStartHour}:00-${reportEndHour}:59`;
+      }
+      
       toast({
         title: "Custom Report Generated",
-        description: `Your custom ${reportType} report has been generated in ${reportFormat.toUpperCase()} format.`
+        description: `Your custom ${reportType} report${timeDescription} has been generated in ${reportFormat.toUpperCase()} format.`
       });
     } catch (error) {
       console.error("Error generating custom report:", error);
