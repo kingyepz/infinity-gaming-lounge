@@ -69,10 +69,18 @@ export default function PaymentModal({
       };
 
       console.log("Sending transaction data:", transactionData);
+      console.log("Creating transaction with data:", transactionData);
       const txResult = await createTransaction(transactionData);
+      console.log("Transaction creation result:", txResult);
 
       if (!txResult.success || !txResult.transactionId) {
-        throw new Error(txResult.error || "Failed to create transaction record");
+        setIsProcessing(false);
+        toast({
+          title: "Payment Error",
+          description: txResult.error || "Failed to create transaction record. Please try again.",
+          variant: "destructive"
+        });
+        return;
       }
 
       const transactionId = txResult.transactionId;

@@ -373,24 +373,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'duration'
       ];
 
-      // Create a clean transaction object only with valid columns
-      const transactionData = {};
-
-      // Add basic fields
-      transactionData.stationId = rawData.stationId;
-      transactionData.customerName = rawData.customerName;
-      transactionData.sessionType = rawData.sessionType;
-      transactionData.amount = rawData.amount;
-      transactionData.paymentStatus = "pending";
-
-      // Add optional fields
-      if (rawData.gameName) {
-        transactionData.gameName = rawData.gameName;
-      }
-
-      if (rawData.duration !== undefined && rawData.duration !== null) {
-        transactionData.duration = rawData.duration;
-      }
+      // Create a clean transaction object with proper typing to match database schema
+      const transactionData = {
+        stationId: Number(rawData.stationId),
+        customerName: String(rawData.customerName || "Walk-in Customer"), 
+        sessionType: rawData.sessionType === "hourly" ? "hourly" : "per_game",
+        amount: String(rawData.amount || "0"),
+        paymentStatus: "pending" as const,
+        gameName: rawData.gameName || null,
+        duration: (rawData.duration !== undefined && rawData.duration !== null) ? 
+          Number(rawData.duration) : null
+      };
 
       console.log("Final transaction data:", transactionData);
 
