@@ -254,6 +254,80 @@ export default function AdminAnalytics() {
     }
   };
 
+  // Function to open edit station dialog
+  const handleEditStationClick = (station: GameStation) => {
+    setEditStationId(station.id);
+    setEditStationName(station.name);
+    setShowEditStationDialog(true);
+  };
+
+  // Function to save edited station
+  const handleEditStation = async () => {
+    if (!editStationId || !editStationName) {
+      toast({
+        title: "Error",
+        description: "Station name cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await apiRequest({
+        path: `/api/stations/${editStationId}`,
+        method: "PATCH",
+        data: {
+          name: editStationName
+        }
+      });
+
+      toast({
+        title: "Station Updated",
+        description: `Station name updated to ${editStationName}`
+      });
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+      setShowEditStationDialog(false);
+      setEditStationId(null);
+      setEditStationName("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update station",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to delete station
+  const handleDeleteStation = async () => {
+    if (!stationToDelete) return;
+
+    try {
+      await apiRequest({
+        path: `/api/stations/${stationToDelete}`,
+        method: "DELETE"
+      });
+
+      toast({
+        title: "Station Deleted",
+        description: "Station has been deleted successfully"
+      });
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/stations"] });
+      setConfirmDeleteStationDialog(false);
+      setStationToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete station",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleAddGame = async () => {
     if (!newGameName) {
       toast({
@@ -290,6 +364,170 @@ export default function AdminAnalytics() {
       toast({
         title: "Error",
         description: "Failed to add game",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to open edit game dialog
+  const handleEditGameClick = (game: Game) => {
+    setEditGameId(game.id);
+    setEditGameName(game.name);
+    setEditGameDescription(game.description || "");
+    setEditGamePricePerSession(String(game.pricePerSession));
+    setEditGamePricePerHour(String(game.pricePerHour));
+    setShowEditGameDialog(true);
+  };
+
+  // Function to save edited game
+  const handleEditGame = async () => {
+    if (!editGameId || !editGameName) {
+      toast({
+        title: "Error",
+        description: "Game name cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await apiRequest({
+        path: `/api/games/${editGameId}`,
+        method: "PATCH",
+        data: {
+          name: editGameName,
+          description: editGameDescription,
+          pricePerSession: Number(editGamePricePerSession),
+          pricePerHour: Number(editGamePricePerHour)
+        }
+      });
+
+      toast({
+        title: "Game Updated",
+        description: `${editGameName} has been updated successfully`
+      });
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/games"] });
+      setShowEditGameDialog(false);
+      setEditGameId(null);
+      setEditGameName("");
+      setEditGameDescription("");
+      setEditGamePricePerSession("");
+      setEditGamePricePerHour("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update game",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to delete game
+  const handleDeleteGame = async () => {
+    if (!gameToDelete) return;
+
+    try {
+      await apiRequest({
+        path: `/api/games/${gameToDelete}`,
+        method: "DELETE"
+      });
+
+      toast({
+        title: "Game Deleted",
+        description: "Game has been deleted successfully"
+      });
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/games"] });
+      setConfirmDeleteGameDialog(false);
+      setGameToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete game",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Customer functions
+  const handleEditCustomerClick = (customer: User) => {
+    setEditCustomerId(customer.id);
+    setEditCustomerDisplayName(customer.displayName);
+    setEditCustomerGamingName(customer.gamingName);
+    setEditCustomerPhone(customer.phoneNumber);
+    setEditCustomerPoints(String(customer.points));
+    setShowEditCustomerDialog(true);
+  };
+
+  const handleEditCustomer = async () => {
+    if (!editCustomerId || !editCustomerDisplayName || !editCustomerPhone) {
+      toast({
+        title: "Error",
+        description: "Customer name and phone number cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await apiRequest({
+        path: `/api/users/${editCustomerId}`,
+        method: "PATCH",
+        data: {
+          displayName: editCustomerDisplayName,
+          gamingName: editCustomerGamingName,
+          phoneNumber: editCustomerPhone,
+          points: Number(editCustomerPoints)
+        }
+      });
+
+      toast({
+        title: "Customer Updated",
+        description: `${editCustomerDisplayName}'s information has been updated successfully`
+      });
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] });
+      setShowEditCustomerDialog(false);
+      setEditCustomerId(null);
+      setEditCustomerDisplayName("");
+      setEditCustomerGamingName("");
+      setEditCustomerPhone("");
+      setEditCustomerPoints("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update customer",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+
+    try {
+      await apiRequest({
+        path: `/api/users/${customerToDelete}`,
+        method: "DELETE"
+      });
+
+      toast({
+        title: "Customer Deleted",
+        description: "Customer has been deleted successfully"
+      });
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] });
+      setConfirmDeleteCustomerDialog(false);
+      setCustomerToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete customer",
         variant: "destructive"
       });
     }
@@ -801,9 +1039,74 @@ export default function AdminAnalytics() {
                         <p className="text-sm text-gray-400">Station available for use</p>
                       )}
                     </CardContent>
+                    <CardFooter className="pt-0 flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditStationClick(station)}
+                        disabled={!!station.currentCustomer}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => {
+                          setStationToDelete(station.id);
+                          setConfirmDeleteStationDialog(true);
+                        }}
+                        disabled={!!station.currentCustomer}
+                      >
+                        Delete
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>
+              
+              {/* Edit Station Dialog */}
+              <Dialog open={showEditStationDialog} onOpenChange={setShowEditStationDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Station</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="stationName">Station Name</Label>
+                      <Input
+                        id="stationName"
+                        placeholder="Enter station name"
+                        value={editStationName}
+                        onChange={(e) => setEditStationName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowEditStationDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleEditStation}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              {/* Delete Confirmation Dialog */}
+              <Dialog open={confirmDeleteStationDialog} onOpenChange={setConfirmDeleteStationDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this station? This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setConfirmDeleteStationDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteStation}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* Reservations Tab */}
@@ -911,9 +1214,103 @@ export default function AdminAnalytics() {
                         <Badge variant="outline">Per Hour: KES {game.pricePerHour}</Badge>
                       </div>
                     </CardContent>
+                    <CardFooter className="pt-0 flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditGameClick(game)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => {
+                          setGameToDelete(game.id);
+                          setConfirmDeleteGameDialog(true);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>
+              
+              {/* Edit Game Dialog */}
+              <Dialog open={showEditGameDialog} onOpenChange={setShowEditGameDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Game</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="gameName">Game Name</Label>
+                      <Input
+                        id="gameName"
+                        placeholder="Enter game name"
+                        value={editGameName}
+                        onChange={(e) => setEditGameName(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="gameDescription">Description</Label>
+                      <Textarea
+                        id="gameDescription"
+                        placeholder="Enter game description"
+                        value={editGameDescription}
+                        onChange={(e) => setEditGameDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="pricePerSession">Price Per Game (KES)</Label>
+                        <Input
+                          id="pricePerSession"
+                          type="number"
+                          placeholder="Price per game"
+                          value={editGamePricePerSession}
+                          onChange={(e) => setEditGamePricePerSession(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="pricePerHour">Price Per Hour (KES)</Label>
+                        <Input
+                          id="pricePerHour"
+                          type="number"
+                          placeholder="Price per hour"
+                          value={editGamePricePerHour}
+                          onChange={(e) => setEditGamePricePerHour(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowEditGameDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleEditGame}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              {/* Delete Confirmation Dialog */}
+              <Dialog open={confirmDeleteGameDialog} onOpenChange={setConfirmDeleteGameDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this game? This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setConfirmDeleteGameDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteGame}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* Customers Tab */}
@@ -935,6 +1332,7 @@ export default function AdminAnalytics() {
                             <TableHead>Phone</TableHead>
                             <TableHead>Loyalty Points</TableHead>
                             <TableHead>Joined</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -953,6 +1351,27 @@ export default function AdminAnalytics() {
                               <TableCell>
                                 {new Date(customer.createdAt).toLocaleDateString()}
                               </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleEditCustomerClick(customer)}
+                                  >
+                                    Edit
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setCustomerToDelete(customer.id);
+                                      setConfirmDeleteCustomerDialog(true);
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -961,6 +1380,78 @@ export default function AdminAnalytics() {
                   </CardContent>
                 </Card>
               </div>
+              
+              {/* Edit Customer Dialog */}
+              <Dialog open={showEditCustomerDialog} onOpenChange={setShowEditCustomerDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Customer</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="displayName">Display Name</Label>
+                      <Input
+                        id="displayName"
+                        placeholder="Enter customer name"
+                        value={editCustomerDisplayName}
+                        onChange={(e) => setEditCustomerDisplayName(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="gamingName">Gaming Name</Label>
+                      <Input
+                        id="gamingName"
+                        placeholder="Enter gaming name"
+                        value={editCustomerGamingName}
+                        onChange={(e) => setEditCustomerGamingName(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input
+                        id="phoneNumber"
+                        placeholder="Enter phone number"
+                        value={editCustomerPhone}
+                        onChange={(e) => setEditCustomerPhone(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="loyaltyPoints">Loyalty Points</Label>
+                      <Input
+                        id="loyaltyPoints"
+                        type="number"
+                        placeholder="Enter loyalty points"
+                        value={editCustomerPoints}
+                        onChange={(e) => setEditCustomerPoints(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowEditCustomerDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleEditCustomer}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              {/* Delete Confirmation Dialog */}
+              <Dialog open={confirmDeleteCustomerDialog} onOpenChange={setConfirmDeleteCustomerDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this customer? This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setConfirmDeleteCustomerDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteCustomer}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* Inventory Tab */}
