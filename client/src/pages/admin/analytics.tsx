@@ -257,23 +257,31 @@ export default function AdminAnalytics() {
   // Chart data
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
-  const revenueChartData = Array.from({ length: 7 }).map((_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
-    
-    const dayTransactions = transactions.filter(tx => 
-      new Date(tx.createdAt).toDateString() === date.toDateString() && 
-      tx.status === "completed"
-    );
-    
-    const amount = dayTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
-    
-    return {
-      date: dateStr,
-      amount: amount
-    };
-  }).reverse();
+  // Use API data if available, otherwise calculate from transactions
+  const revenueChartData = revenueByTimeFrame ? 
+    // Use the API data directly
+    revenueByTimeFrame.map(item => ({
+      date: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
+      amount: Number(item.amount)
+    })) :
+    // Fallback to calculated data
+    Array.from({ length: 7 }).map((_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      const dayTransactions = transactions.filter(tx => 
+        new Date(tx.createdAt).toDateString() === date.toDateString() && 
+        tx.paymentStatus === "completed"
+      );
+      
+      const amount = dayTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+      
+      return {
+        date: dateStr,
+        amount: amount
+      };
+    }).reverse();
 
   const paymentMethodChartData = [
     { name: 'Cash', value: completedTransactions.filter(tx => tx.paymentMethod === 'cash').length },
@@ -844,10 +852,10 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-lg sm:text-2xl font-bold">
-                        KES {dailyStats?.totalRevenue || todayRevenue}
+                        KES {dailyStats ? dailyStats.totalRevenue : todayRevenue}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {dailyStats?.completedSessions || completedTransactions.filter(tx => new Date(tx.createdAt).toDateString() === new Date().toDateString()).length} transactions
+                        {dailyStats ? dailyStats.completedSessions : completedTransactions.filter(tx => new Date(tx.createdAt).toDateString() === new Date().toDateString()).length} transactions
                       </p>
                     </CardContent>
                   </Card>
@@ -857,10 +865,10 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-lg sm:text-2xl font-bold">
-                        {customerActivity?.newCustomers || newCustomers}
+                        {customerActivity ? customerActivity.newCustomers : newCustomers}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {customerActivity?.returningCustomers || 0} returning customers
+                        {customerActivity ? (customerActivity.totalCustomers - customerActivity.newCustomers) : 0} returning customers
                       </p>
                     </CardContent>
                   </Card>
