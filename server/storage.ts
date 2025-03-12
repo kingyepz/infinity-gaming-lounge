@@ -1,5 +1,12 @@
-import { gameStations, games, transactions, users, payments } from "@shared/schema";
-import type { GameStation, InsertGameStation, Game, InsertGame, Transaction, InsertTransaction, User, InsertUser, Payment, InsertPayment } from "@shared/schema";
+import { gameStations, games, transactions, users, payments, stationCategories } from "@shared/schema";
+import type { 
+  GameStation, InsertGameStation, 
+  Game, InsertGame, 
+  Transaction, InsertTransaction, 
+  User, InsertUser, 
+  Payment, InsertPayment,
+  StationCategory, InsertStationCategory 
+} from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
@@ -510,6 +517,79 @@ export class StorageService {
     } catch (error) {
       console.error("Error getting hourly distribution:", error);
       return Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0, revenue: 0 }));
+    }
+  }
+
+  // Station Categories Methods
+  async getStationCategories(): Promise<StationCategory[]> {
+    try {
+      return await db.select().from(stationCategories).orderBy(stationCategories.name);
+    } catch (error) {
+      console.error("Error fetching station categories:", error);
+      return [];
+    }
+  }
+
+  async getStationCategoryById(id: number): Promise<StationCategory | null> {
+    try {
+      const results = await db.select()
+        .from(stationCategories)
+        .where(eq(stationCategories.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error("Error fetching station category by id:", error);
+      return null;
+    }
+  }
+
+  async createStationCategory(data: InsertStationCategory): Promise<StationCategory> {
+    try {
+      const [category] = await db.insert(stationCategories)
+        .values({
+          ...data,
+          createdAt: new Date()
+        })
+        .returning();
+      return category;
+    } catch (error) {
+      console.error("Error creating station category:", error);
+      throw error;
+    }
+  }
+
+  async updateStationCategory(id: number, data: Partial<StationCategory>): Promise<StationCategory | null> {
+    try {
+      const [updated] = await db.update(stationCategories)
+        .set(data)
+        .where(eq(stationCategories.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating station category:", error);
+      throw error;
+    }
+  }
+
+  async deleteStationCategory(id: number): Promise<boolean> {
+    try {
+      // First check if any game stations are using this category
+      const stationsWithCategory = await db.select()
+        .from(gameStations)
+        .where(eq(gameStations.categoryId, id));
+        
+      if (stationsWithCategory.length > 0) {
+        throw new Error(`Cannot delete category because it's used by ${stationsWithCategory.length} game stations`);
+      }
+      
+      const result = await db.delete(stationCategories)
+        .where(eq(stationCategories.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting station category:", error);
+      throw error;
     }
   }
 
