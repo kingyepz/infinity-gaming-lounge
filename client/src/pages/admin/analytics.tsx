@@ -2353,7 +2353,7 @@ export default function AdminAnalytics() {
                       <Card key={station.id} className={`bg-black/30 border-2 ${station.currentCustomer ? 'border-green-500' : 'border-primary/20'}`}>
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-center">
-                            <CardTitle className="text-base">Station {station.name}</CardTitle>
+                            <CardTitle className="text-base">{station.name}</CardTitle>
                             <Badge variant={station.currentCustomer ? "success" : "outline"}>
                               {station.currentCustomer ? "Active" : "Available"}
                             </Badge>
@@ -2419,7 +2419,7 @@ export default function AdminAnalytics() {
                         <Card key={station.id} className="bg-black/30 border-2 border-green-500">
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-center">
-                              <CardTitle className="text-base">Station {station.name}</CardTitle>
+                              <CardTitle className="text-base">{station.name}</CardTitle>
                               <Badge variant="success">Active</Badge>
                             </div>
                           </CardHeader>
@@ -2468,7 +2468,7 @@ export default function AdminAnalytics() {
                         <Card key={station.id} className="bg-black/30 border-2 border-primary/20">
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-center">
-                              <CardTitle className="text-base">Station {station.name}</CardTitle>
+                              <CardTitle className="text-base">{station.name}</CardTitle>
                               <Badge variant="outline">Available</Badge>
                             </div>
                           </CardHeader>
@@ -2524,7 +2524,7 @@ export default function AdminAnalytics() {
                             <TableBody>
                               {stationUtilization?.map((station) => (
                                 <TableRow key={station.id}>
-                                  <TableCell className="font-medium">Station {station.name}</TableCell>
+                                  <TableCell className="font-medium">{station.name}</TableCell>
                                   <TableCell>{station.totalHours.toFixed(1)} hrs</TableCell>
                                   <TableCell>
                                     <div className="flex items-center space-x-2">
