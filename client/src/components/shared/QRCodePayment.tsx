@@ -105,7 +105,7 @@ export default function QRCodePayment({
               <Button 
                 className="w-full" 
                 onClick={handleCheckStatus}
-                style={{ backgroundColor: colors[paymentType] }}
+                style={{ backgroundColor: mpesaColor }}
               >
                 Check Payment Status
               </Button>
@@ -116,7 +116,7 @@ export default function QRCodePayment({
         {status === "processing" && (
           <div className="flex flex-col items-center py-4">
             <div className="animate-spin mb-4">
-              <RefreshCw size={48} color={colors[paymentType]} />
+              <RefreshCw size={48} color={mpesaColor} />
             </div>
             <p className="text-center mb-2 font-semibold">Checking payment status...</p>
             <p className="text-center text-sm mb-4">
