@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import StationTransactionHistory from "@/components/shared/StationTransactionHistory";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -114,6 +115,20 @@ export default function AdminAnalytics() {
   const [editStationName, setEditStationName] = useState("");
   const [confirmDeleteStationDialog, setConfirmDeleteStationDialog] = useState(false);
   const [stationToDelete, setStationToDelete] = useState<number | null>(null);
+  
+  // Transaction History Dialog
+  const [showTransactionHistoryDialog, setShowTransactionHistoryDialog] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<any>(null);
+  
+  // Import the formatCurrency function from payment.ts
+  const formatCurrency = (amount: number | string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 2
+    }).format(numAmount);
+  };
   
   // Add Game Dialog
   const [showAddGameDialog, setShowAddGameDialog] = useState(false);
@@ -617,6 +632,14 @@ export default function AdminAnalytics() {
     setEditStationId(station.id);
     setEditStationName(station.name);
     setShowEditStationDialog(true);
+  };
+  
+  // Handle viewing transaction history for a station
+  const handleViewTransactionHistory = (station: any) => {
+    if (!station) return;
+    
+    setSelectedStation(station);
+    setShowTransactionHistoryDialog(true);
   };
 
   // Report generation handlers
@@ -2313,61 +2336,227 @@ export default function AdminAnalytics() {
                   Add Station
                 </Button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {stations.map((station) => (
-                  <Card key={station.id} className={`bg-black/30 border-2 ${station.currentCustomer ? 'border-green-500' : 'border-primary/20'}`}>
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-base">Station {station.name}</CardTitle>
-                        <Badge variant={station.currentCustomer ? "success" : "outline"}>
-                          {station.currentCustomer ? "Active" : "Available"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {station.currentCustomer ? (
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <strong>Customer:</strong> {station.currentCustomer}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Game:</strong> {station.currentGame}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Type:</strong> {station.sessionType === "per_game" ? "Per Game" : "Hourly"}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Started:</strong> {new Date(station.sessionStartTime).toLocaleTimeString()}
-                          </p>
+              
+              {/* Station Tabs */}
+              <Tabs defaultValue="overview" className="space-y-4">
+                <TabsList className="bg-black/20 p-1">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="active">Active Sessions</TabsTrigger>
+                  <TabsTrigger value="available">Available Stations</TabsTrigger>
+                  <TabsTrigger value="analytics">Station Analytics</TabsTrigger>
+                </TabsList>
+                
+                {/* Overview Tab - Shows all stations */}
+                <TabsContent value="overview">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {stations.map((station) => (
+                      <Card key={station.id} className={`bg-black/30 border-2 ${station.currentCustomer ? 'border-green-500' : 'border-primary/20'}`}>
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="text-base">Station {station.name}</CardTitle>
+                            <Badge variant={station.currentCustomer ? "success" : "outline"}>
+                              {station.currentCustomer ? "Active" : "Available"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {station.currentCustomer ? (
+                            <div className="space-y-2">
+                              <p className="text-sm">
+                                <strong>Customer:</strong> {station.currentCustomer}
+                              </p>
+                              <p className="text-sm">
+                                <strong>Game:</strong> {station.currentGame}
+                              </p>
+                              <p className="text-sm">
+                                <strong>Type:</strong> {station.sessionType === "per_game" ? "Per Game" : "Hourly"}
+                              </p>
+                              <p className="text-sm">
+                                <strong>Started:</strong> {new Date(station.sessionStartTime).toLocaleTimeString()}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-400">Station available for use</p>
+                          )}
+                        </CardContent>
+                        <CardFooter className="pt-0 flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditStationClick(station)}
+                            disabled={!!station.currentCustomer}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => {
+                              setStationToDelete(station.id);
+                              setConfirmDeleteStationDialog(true);
+                            }}
+                            disabled={!!station.currentCustomer}
+                          >
+                            Delete
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                {/* Active Sessions Tab - Shows only stations with active sessions */}
+                <TabsContent value="active">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {stations.filter(station => station.currentCustomer).length === 0 ? (
+                      <Card className="col-span-full bg-black/30 border-primary/20 p-6">
+                        <div className="text-center text-gray-400">
+                          <p>No active gaming sessions at the moment</p>
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-400">Station available for use</p>
-                      )}
-                    </CardContent>
-                    <CardFooter className="pt-0 flex justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditStationClick(station)}
-                        disabled={!!station.currentCustomer}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => {
-                          setStationToDelete(station.id);
-                          setConfirmDeleteStationDialog(true);
-                        }}
-                        disabled={!!station.currentCustomer}
-                      >
-                        Delete
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+                      </Card>
+                    ) : (
+                      stations.filter(station => station.currentCustomer).map((station) => (
+                        <Card key={station.id} className="bg-black/30 border-2 border-green-500">
+                          <CardHeader className="pb-2">
+                            <div className="flex justify-between items-center">
+                              <CardTitle className="text-base">Station {station.name}</CardTitle>
+                              <Badge variant="success">Active</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <p className="text-sm">
+                                <strong>Customer:</strong> {station.currentCustomer}
+                              </p>
+                              <p className="text-sm">
+                                <strong>Game:</strong> {station.currentGame}
+                              </p>
+                              <p className="text-sm">
+                                <strong>Type:</strong> {station.sessionType === "per_game" ? "Per Game" : "Hourly"}
+                              </p>
+                              <p className="text-sm">
+                                <strong>Started:</strong> {new Date(station.sessionStartTime).toLocaleTimeString()}
+                              </p>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="pt-0 flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewTransactionHistory(station)}
+                            >
+                              History
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+                
+                {/* Available Stations Tab - Shows only available stations */}
+                <TabsContent value="available">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {stations.filter(station => !station.currentCustomer).length === 0 ? (
+                      <Card className="col-span-full bg-black/30 border-primary/20 p-6">
+                        <div className="text-center text-gray-400">
+                          <p>All stations are currently in use</p>
+                        </div>
+                      </Card>
+                    ) : (
+                      stations.filter(station => !station.currentCustomer).map((station) => (
+                        <Card key={station.id} className="bg-black/30 border-2 border-primary/20">
+                          <CardHeader className="pb-2">
+                            <div className="flex justify-between items-center">
+                              <CardTitle className="text-base">Station {station.name}</CardTitle>
+                              <Badge variant="outline">Available</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-gray-400">Station available for use</p>
+                          </CardContent>
+                          <CardFooter className="pt-0 flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditStationClick(station)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => {
+                                setStationToDelete(station.id);
+                                setConfirmDeleteStationDialog(true);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+                
+                {/* Station Analytics Tab - Shows detailed station analytics */}
+                <TabsContent value="analytics">
+                  <div className="space-y-4">
+                    <Card className="bg-black/30 border-primary/20">
+                      <CardHeader>
+                        <CardTitle>Station Utilization</CardTitle>
+                        <CardDescription>Performance metrics for all gaming stations</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="w-full overflow-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Station</TableHead>
+                                <TableHead>Total Hours</TableHead>
+                                <TableHead>Utilization Rate</TableHead>
+                                <TableHead>Revenue</TableHead>
+                                <TableHead>Popular Games</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {stationUtilization?.map((station) => (
+                                <TableRow key={station.id}>
+                                  <TableCell className="font-medium">Station {station.name}</TableCell>
+                                  <TableCell>{station.totalHours.toFixed(1)} hrs</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center space-x-2">
+                                      <Progress value={station.utilizationRate} className="w-[60px]" />
+                                      <span>{Math.round(station.utilizationRate)}%</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{formatCurrency(station.revenue)}</TableCell>
+                                  <TableCell>
+                                    {station.popularGames?.length > 0 ? 
+                                      station.popularGames.slice(0, 2).join(', ') : 
+                                      'N/A'}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleViewTransactionHistory(stations.find(s => s.id === station.id))}
+                                    >
+                                      View History
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
               
               {/* Edit Station Dialog */}
               <Dialog open={showEditStationDialog} onOpenChange={setShowEditStationDialog}>
@@ -2409,6 +2598,28 @@ export default function AdminAnalytics() {
                       Cancel
                     </Button>
                     <Button variant="destructive" onClick={handleDeleteStation}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              {/* Transaction History Dialog */}
+              <Dialog open={showTransactionHistoryDialog} onOpenChange={setShowTransactionHistoryDialog}>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Transaction History</DialogTitle>
+                  </DialogHeader>
+                  <div className="max-h-[70vh] overflow-y-auto">
+                    {selectedStation && (
+                      <StationTransactionHistory 
+                        stationId={selectedStation.id} 
+                        stationName={selectedStation.name}
+                      />
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowTransactionHistoryDialog(false)}>
+                      Close
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
