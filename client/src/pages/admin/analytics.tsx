@@ -104,6 +104,11 @@ export default function AdminAnalytics() {
   const [editGameDescription, setEditGameDescription] = useState("");
   const [editGamePricePerSession, setEditGamePricePerSession] = useState("");
   const [editGamePricePerHour, setEditGamePricePerHour] = useState("");
+  
+  // Fetch data on component mount
+  useEffect(() => {
+    refreshAllData();
+  }, []);
   const [confirmDeleteGameDialog, setConfirmDeleteGameDialog] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<number | null>(null);
   
@@ -202,6 +207,7 @@ export default function AdminAnalytics() {
   const refreshAllData = async () => {
     setIsRefreshing(true);
     try {
+      console.log("Refreshing all dashboard data...");
       // Invalidate all queries to force refetch
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/stations"] }),
@@ -218,7 +224,7 @@ export default function AdminAnalytics() {
       
       toast({
         title: "Data refreshed",
-        description: "All dashboard data has been updated."
+        description: "All dashboard data has been updated from the database."
       });
     } catch (error) {
       console.error("Error refreshing data:", error);

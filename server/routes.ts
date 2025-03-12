@@ -235,35 +235,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/daily", asyncHandler(async (_req, res) => {
     try {
+      // Get active stations
       const stations = await db.select().from(gameStations);
-      const allTransactions = await db.select().from(transactions);
-
+      const activeStations = stations.filter(s => s.currentCustomer);
+      
+      // Get today's date with time set to midnight
       const now = new Date();
-      const dayStart = new Date(now.setHours(0, 0, 0, 0));
-
-      const dailyTransactions = allTransactions.filter(tx =>
-        new Date(tx.createdAt) >= dayStart
+      const dayStart = new Date(now);
+      dayStart.setHours(0, 0, 0, 0);
+      
+      // Get transactions created today
+      const dailyTransactions = await db.select()
+        .from(transactions)
+        .where(sql`${transactions.createdAt} >= ${dayStart}`);
+      
+      // Get completed transactions for today
+      const completedTransactions = dailyTransactions.filter(
+        tx => tx.paymentStatus === "completed"
       );
-
-      // Convert amount strings to numbers for calculations
-      const totalRevenue = dailyTransactions.reduce((sum, tx) => {
-        const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount;
+      
+      // Calculate total revenue from completed transactions
+      const totalRevenue = completedTransactions.reduce((sum, tx) => {
+        const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
         return sum + (amount || 0);
       }, 0);
-
+      
+      // Format the report with current active sessions and completed transactions
       const report = {
         totalRevenue,
-        activeSessions: stations.filter(s => s.currentCustomer).length,
-        completedSessions: dailyTransactions.length,
-        sessions: dailyTransactions.map(tx => ({
-          stationName: stations.find(s => s.id === tx.stationId)?.name || "Unknown",
-          customerName: tx.customerName || "Unknown",
-          duration: tx.sessionType === "per_game" ? "1 game" : `${tx.duration || 0} minutes`
-        }))
+        activeSessions: activeStations.length,
+        completedSessions: completedTransactions.length,
+        // Get both active and completed sessions for the sessions list
+        sessions: [
+          // First add active sessions
+          ...activeStations.map(station => ({
+            stationName: station.name,
+            customerName: station.currentCustomer || "Unknown",
+            duration: station.sessionType === "per_game" ? 
+              "1 game" : 
+              station.sessionStartTime ? 
+                `${Math.ceil((Date.now() - new Date(station.sessionStartTime).getTime()) / (1000 * 60))} minutes` : 
+                "0 minutes",
+            active: true
+          })),
+          // Then add completed transactions
+          ...completedTransactions.map(tx => {
+            const station = stations.find(s => s.id === tx.stationId);
+            return {
+              stationName: station?.name || "Unknown",
+              customerName: tx.customerName || "Unknown",
+              duration: tx.sessionType === "per_game" ? 
+                "1 game" : 
+                `${tx.duration || 0} minutes`,
+              active: false
+            };
+          })
+        ]
       };
-
+      
       res.json(report);
     } catch (error) {
+      console.error("Error getting daily report:", error);
       throw error;
     }
   }));
@@ -275,50 +307,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid time frame. Use daily, weekly, or monthly." });
       }
 
-      // Implement database query for revenue data based on timeframe
-      const revenueData = await storage.getRevenueByTimeFrame(timeFrame);
+      // Direct database query for revenue data based on timeframe
+      const now = new Date();
+      let startDate: Date;
+      
+      // Determine time range based on timeFrame
+      if (timeFrame === 'daily') {
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+      } else if (timeFrame === 'weekly') {
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+      } else { // monthly
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1);
+      }
+      
+      // Get all completed transactions within the time range
+      const completedTransactions = await db.select()
+        .from(transactions)
+        .where(sql`${transactions.createdAt} >= ${startDate}`)
+        .where(eq(transactions.paymentStatus, "completed"));
+      
+      // Calculate revenue by day
+      const revenueByDay: Record<string, number> = {};
+      
+      completedTransactions.forEach(transaction => {
+        const date = new Date(transaction.createdAt).toISOString().split('T')[0];
+        const amount = typeof transaction.amount === 'string' 
+          ? parseFloat(transaction.amount) 
+          : Number(transaction.amount);
+          
+        if (!revenueByDay[date]) {
+          revenueByDay[date] = 0;
+        }
+        revenueByDay[date] += amount;
+      });
+      
+      // Convert to array format
+      const revenueData = Object.entries(revenueByDay).map(([date, amount]) => ({
+        date,
+        amount
+      }));
+      
       res.json(revenueData);
     } catch (error) {
+      console.error("Error getting revenue data:", error);
       throw error;
     }
   }));
 
   app.get("/api/reports/popular-games", asyncHandler(async (_req, res) => {
     try {
-      // Use the storage service method instead of direct db query with desc()
-      const popularGames = await storage.getPopularGames();
-      res.json(popularGames);
+      // Direct database query for popular games
+      const gameStats = await db.select({
+        gameName: transactions.gameName,
+        count: sql`COUNT(*)`,
+        revenue: sql`SUM(${transactions.amount}::numeric)`
+      })
+      .from(transactions)
+      .where(sql`${transactions.gameName} IS NOT NULL`)
+      .where(eq(transactions.paymentStatus, "completed"))
+      .groupBy(transactions.gameName)
+      .orderBy(sql`COUNT(*) DESC`)
+      .limit(5);
+      
+      res.json(gameStats.map(stat => ({
+        name: stat.gameName,
+        count: Number(stat.count),
+        revenue: stat.revenue ? Number(stat.revenue) : 0
+      })));
     } catch (error) {
+      console.error("Error getting popular games:", error);
       throw error;
     }
   }));
 
   app.get("/api/reports/station-utilization", asyncHandler(async (_req, res) => {
     try {
-      // Implement database query for station utilization data
-      const stationUtilization = await storage.getStationUtilization();
+      // Get all stations first
+      const stations = await db.select().from(gameStations);
+      
+      // Get completed transactions to calculate utilization
+      const allTransactions = await db.select()
+        .from(transactions)
+        .where(eq(transactions.paymentStatus, "completed"));
+      
+      // Calculate utilization data
+      const stationUtilization = stations.map(station => {
+        // Count transactions for this station
+        const stationTransactions = allTransactions.filter(
+          t => t.stationId === station.id
+        );
+        
+        // Calculate total hours used
+        const totalHours = stationTransactions.reduce((total, t) => {
+          if (t.sessionType === 'hourly' && t.duration) {
+            return total + (t.duration / 60); // Convert minutes to hours
+          } else if (t.sessionType === 'per_game') {
+            return total + 0.5; // Estimate 30 minutes per game
+          }
+          return total;
+        }, 0);
+        
+        return {
+          stationId: station.id,
+          stationName: station.name,
+          sessionsCount: stationTransactions.length,
+          totalHours: parseFloat(totalHours.toFixed(1)),
+          revenue: stationTransactions.reduce((sum, t) => {
+            const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : Number(t.amount);
+            return sum + amount;
+          }, 0),
+          currentlyActive: station.currentCustomer !== null
+        };
+      });
+      
       res.json(stationUtilization);
     } catch (error) {
+      console.error("Error getting station utilization:", error);
       throw error;
     }
   }));
 
   app.get("/api/reports/customer-activity", asyncHandler(async (_req, res) => {
     try {
-      // Implement database query for customer activity data
-      const customerActivity = await storage.getCustomerActivity();
-      res.json(customerActivity);
+      // Get all customers
+      const customers = await db.select()
+        .from(users)
+        .where(eq(users.role, "customer"));
+      
+      // Get completed transactions
+      const allTransactions = await db.select()
+        .from(transactions)
+        .where(eq(transactions.paymentStatus, "completed"));
+      
+      // Get active sessions
+      const activeStations = await db.select()
+        .from(gameStations)
+        .where(sql`${gameStations.currentCustomer} IS NOT NULL`);
+      
+      // Count new customers in the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const newCustomers = customers.filter(
+        c => new Date(c.createdAt) >= thirtyDaysAgo
+      ).length;
+      
+      // Count transactions and calculate revenue
+      const totalSessions = allTransactions.length;
+      const totalRevenue = allTransactions.reduce((sum, t) => {
+        const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : Number(t.amount);
+        return sum + amount;
+      }, 0);
+      
+      res.json({
+        totalCustomers: customers.length,
+        newCustomers,
+        activeCustomers: activeStations.length,
+        totalSessions,
+        totalRevenue,
+        averageRevenue: totalSessions > 0 ? (totalRevenue / totalSessions) : 0
+      });
     } catch (error) {
+      console.error("Error getting customer activity:", error);
       throw error;
     }
   }));
 
   app.get("/api/reports/payment-methods", asyncHandler(async (_req, res) => {
     try {
-      // Implement database query for payment methods data
-      const paymentMethods = await storage.getPaymentMethods();
-      res.json(paymentMethods);
+      // Direct query to get payment method statistics
+      const paymentStats = await db.select({
+        paymentMethod: payments.paymentMethod,
+        count: sql`COUNT(*)`,
+        amount: sql`SUM(${payments.amount}::numeric)`
+      })
+      .from(payments)
+      .where(eq(payments.status, "completed"))
+      .groupBy(payments.paymentMethod);
+      
+      res.json(paymentStats.map(stat => ({
+        method: stat.paymentMethod,
+        count: Number(stat.count),
+        amount: stat.amount ? Number(stat.amount) : 0
+      })));
     } catch (error) {
+      console.error("Error getting payment methods:", error);
       throw error;
     }
   }));
