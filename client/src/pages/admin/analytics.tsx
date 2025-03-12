@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import InfinityLogo from "@/components/animations/InfinityLogo";
@@ -238,18 +239,25 @@ export default function AdminAnalytics() {
     { name: 'Card', value: completedTransactions.filter(tx => tx.paymentMethod === 'card').length },
   ].filter(item => item.value > 0);
 
-  const popularGamesData = Object.entries(
-    completedTransactions.reduce((acc, tx) => {
-      const game = tx.gameName;
-      if (!game) return acc;
-      if (!acc[game]) acc[game] = 0;
-      acc[game]++;
-      return acc;
-    }, {})
-  )
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+  // Use API data for popular games if available, otherwise calculate from transactions
+  const popularGamesData = popularGamesStats.length > 0 
+    ? popularGamesStats.map(game => ({ 
+        name: game.name, 
+        count: game.sessions,
+        revenue: game.revenue 
+      }))
+    : Object.entries(
+        completedTransactions.reduce((acc, tx) => {
+          const game = tx.gameName;
+          if (!game) return acc;
+          if (!acc[game]) acc[game] = 0;
+          acc[game]++;
+          return acc;
+        }, {})
+      )
+      .map(([name, count]) => ({ name, count, revenue: 0 }))
+      .sort((a, b) => (b.count as number) - (a.count as number))
+      .slice(0, 5);
 
   // Event handlers
   const handleAddStation = async () => {
@@ -872,6 +880,7 @@ export default function AdminAnalytics() {
                           <TableRow>
                             <TableHead>Game</TableHead>
                             <TableHead>Sessions</TableHead>
+                            <TableHead>Revenue</TableHead>
                             <TableHead>Popularity</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -880,11 +889,12 @@ export default function AdminAnalytics() {
                             <TableRow key={game.name}>
                               <TableCell>{game.name}</TableCell>
                               <TableCell>{game.count}</TableCell>
+                              <TableCell>KES {game.revenue?.toLocaleString() || '0'}</TableCell>
                               <TableCell>
                                 <div className="w-full bg-gray-700 rounded-full h-2">
                                   <div
                                     className="bg-primary rounded-full h-2"
-                                    style={{ width: `${(game.count / (popularGamesData[0]?.count || 1)) * 100}%` }}
+                                    style={{ width: `${((game.count as number) / ((popularGamesData[0]?.count as number) || 1)) * 100}%` }}
                                   ></div>
                                 </div>
                               </TableCell>
