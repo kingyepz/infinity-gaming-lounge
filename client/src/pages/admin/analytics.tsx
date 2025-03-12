@@ -146,6 +146,8 @@ export default function AdminAnalytics() {
   const [editCategoryOffPeakRate, setEditCategoryOffPeakRate] = useState("");
   const [editCategoryWeekendRate, setEditCategoryWeekendRate] = useState("");
   const [editCategoryDescription, setEditCategoryDescription] = useState("");
+  const [editCategoryColor, setEditCategoryColor] = useState("#6366F1");
+  const [editCategoryIcon, setEditCategoryIcon] = useState("gamepad");
   const [confirmDeleteCategoryDialog, setConfirmDeleteCategoryDialog] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   
@@ -762,6 +764,8 @@ export default function AdminAnalytics() {
     setEditCategoryOffPeakRate(category.offPeakRate ? category.offPeakRate.toString() : "");
     setEditCategoryWeekendRate(category.weekendRate ? category.weekendRate.toString() : "");
     setEditCategoryDescription(category.description || "");
+    setEditCategoryColor(category.color || "#6366F1");
+    setEditCategoryIcon(category.icon || "gamepad");
     setShowEditCategoryDialog(true);
   };
   
@@ -803,7 +807,9 @@ export default function AdminAnalytics() {
           peakHourRate,
           offPeakRate,
           weekendRate,
-          description: editCategoryDescription
+          description: editCategoryDescription,
+          color: editCategoryColor,
+          icon: editCategoryIcon
         }
       });
       
