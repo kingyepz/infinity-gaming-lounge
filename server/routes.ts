@@ -509,6 +509,582 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Customer Retention Analytics endpoint
+  app.get("/api/reports/customer-retention", asyncHandler(async (_req, res) => {
+    try {
+      const customers = await storage.getCustomers();
+      const transactions = await storage.getTransactions();
+      
+      // Group transactions by customer
+      const customerTransactions = {};
+      transactions.forEach(transaction => {
+        const customerId = transaction.userId;
+        if (customerId) {
+          if (!customerTransactions[customerId]) {
+            customerTransactions[customerId] = [];
+          }
+          customerTransactions[customerId].push(transaction);
+        }
+      });
+      
+      // Calculate retention metrics
+      const customerRetention = customers.map(customer => {
+        const customerTxs = customerTransactions[customer.id] || [];
+        
+        // Sort transactions by date
+        customerTxs.sort((a, b) => {
+          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        });
+        
+        const firstVisit = customerTxs.length > 0 ? customerTxs[0].createdAt : null;
+        const lastVisit = customerTxs.length > 0 ? customerTxs[customerTxs.length - 1].createdAt : null;
+        
+        // Calculate days since last visit
+        const daysSinceLastVisit = lastVisit 
+          ? Math.floor((new Date().getTime() - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24)) 
+          : null;
+        
+        // Calculate customer lifetime value (sum of all transactions)
+        const lifetimeValue = customerTxs.reduce((sum, tx) => {
+          const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+          return sum + amount;
+        }, 0);
+        
+        return {
+          customerId: customer.id,
+          customerName: customer.displayName,
+          visitsCount: customerTxs.length,
+          firstVisit,
+          lastVisit,
+          daysSinceLastVisit,
+          lifetimeValue,
+          avgTransactionValue: customerTxs.length > 0 ? lifetimeValue / customerTxs.length : 0,
+          loyaltyPoints: customer.points || 0
+        };
+      });
+      
+      // Calculate overall retention metrics
+      const activeCustomers = customerRetention.filter(c => c.daysSinceLastVisit !== null && c.daysSinceLastVisit <= 30).length;
+      const atRiskCustomers = customerRetention.filter(c => c.daysSinceLastVisit !== null && c.daysSinceLastVisit > 30 && c.daysSinceLastVisit <= 90).length;
+      const churned = customerRetention.filter(c => c.daysSinceLastVisit !== null && c.daysSinceLastVisit > 90).length;
+      const totalWithVisits = customerRetention.filter(c => c.visitsCount > 0).length;
+      
+      // Calculate retention rates
+      const retentionRate = totalWithVisits > 0 ? (activeCustomers / totalWithVisits) * 100 : 0;
+      const churnRate = totalWithVisits > 0 ? (churned / totalWithVisits) * 100 : 0;
+      
+      // Calculate repeat visit rate
+      const repeatVisitors = customerRetention.filter(c => c.visitsCount > 1).length;
+      const repeatVisitRate = totalWithVisits > 0 ? (repeatVisitors / totalWithVisits) * 100 : 0;
+      
+      // Return detailed data
+      res.json({
+        customerDetails: customerRetention,
+        summary: {
+          activeCustomers,
+          atRiskCustomers,
+          churned,
+          retentionRate,
+          churnRate,
+          repeatVisitRate,
+          totalCustomers: customers.length,
+          visitingCustomers: totalWithVisits,
+          avgVisitsPerCustomer: totalWithVisits > 0 
+            ? customerRetention.reduce((sum, c) => sum + c.visitsCount, 0) / totalWithVisits 
+            : 0,
+          avgCustomerLifetimeValue: totalWithVisits > 0
+            ? customerRetention.reduce((sum, c) => sum + c.lifetimeValue, 0) / totalWithVisits
+            : 0
+        }
+      });
+    } catch (error) {
+      console.error("Error calculating customer retention:", error);
+      res.status(500).json({ error: "Error calculating customer retention metrics" });
+    }
+  }));
+
+  // Station Utilization Heatmap endpoint
+  app.get("/api/reports/station-heatmap", asyncHandler(async (_req, res) => {
+    try {
+      const transactions = await storage.getTransactions();
+      const stations = await storage.getGameStations();
+      
+      // Initialize data structure
+      // For each day (0-6, Sunday-Saturday) and hour (0-23)
+      const heatmapData = [];
+      for (let day = 0; day < 7; day++) {
+        for (let hour = 0; hour < 24; hour++) {
+          heatmapData.push({
+            day,
+            hour,
+            value: 0,
+            count: 0,
+          });
+        }
+      }
+      
+      // Process transactions
+      transactions.forEach(tx => {
+        if (tx.createdAt) {
+          const date = new Date(tx.createdAt);
+          const day = date.getDay(); // 0-6, Sunday-Saturday
+          const hour = date.getHours(); // 0-23
+          
+          // Find the index in our heatmap array
+          const index = day * 24 + hour;
+          
+          // Increment count
+          heatmapData[index].count += 1;
+          
+          // For value, we use session duration if available, otherwise default values
+          if (tx.duration) {
+            if (tx.sessionType === 'hourly') {
+              heatmapData[index].value += tx.duration / 60; // Convert minutes to hours
+            } else {
+              heatmapData[index].value += 0.5; // Assume 30 mins for per_game
+            }
+          } else {
+            // If no duration, make assumptions based on session type
+            heatmapData[index].value += (tx.sessionType === 'hourly') ? 1 : 0.5;
+          }
+        }
+      });
+      
+      // Calculate utilization percentage
+      const totalStations = stations.length;
+      if (totalStations > 0) {
+        heatmapData.forEach(item => {
+          // Calculate utilization as percentage of stations in use
+          item.utilization = Math.min(100, (item.count / totalStations) * 100);
+        });
+      }
+      
+      res.json(heatmapData);
+    } catch (error) {
+      console.error("Error generating station heatmap:", error);
+      res.status(500).json({ error: "Error generating station utilization heatmap" });
+    }
+  }));
+
+  // Game Performance Metrics endpoint
+  app.get("/api/reports/game-performance", asyncHandler(async (_req, res) => {
+    try {
+      const transactions = await storage.getTransactions();
+      const allGames = await storage.getGames();
+      
+      // Group transactions by game
+      const gamePerformance = {};
+      
+      allGames.forEach(game => {
+        gamePerformance[game.name] = {
+          gameId: game.id,
+          gameName: game.name,
+          sessionCount: 0,
+          totalRevenue: 0,
+          totalDuration: 0,
+          averageDuration: 0,
+          peakHours: Array(24).fill(0),
+          revenuePerHour: 0,
+          pricePerSession: game.pricePerSession,
+          pricePerHour: game.pricePerHour,
+        };
+      });
+      
+      // Process transactions
+      transactions.forEach(tx => {
+        const gameName = tx.gameName;
+        if (gameName && gamePerformance[gameName]) {
+          const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+          
+          // Update counts and revenue
+          gamePerformance[gameName].sessionCount += 1;
+          gamePerformance[gameName].totalRevenue += amount;
+          
+          // Update duration
+          if (tx.duration) {
+            gamePerformance[gameName].totalDuration += tx.duration;
+          } else if (tx.sessionType === 'hourly') {
+            gamePerformance[gameName].totalDuration += 60; // Assume 1 hour
+          } else {
+            gamePerformance[gameName].totalDuration += 30; // Assume 30 mins for per_game
+          }
+          
+          // Update peak hours
+          if (tx.createdAt) {
+            const hour = new Date(tx.createdAt).getHours();
+            gamePerformance[gameName].peakHours[hour] += 1;
+          }
+        }
+      });
+      
+      // Calculate averages and derived metrics
+      Object.values(gamePerformance).forEach(game => {
+        if (game.sessionCount > 0) {
+          game.averageDuration = game.totalDuration / game.sessionCount;
+          game.revenuePerHour = (game.totalDuration > 0) 
+            ? (game.totalRevenue / (game.totalDuration / 60)) 
+            : 0;
+        }
+        
+        // Find peak playing times (top 3 hours)
+        game.topPlayingHours = game.peakHours
+          .map((count, hour) => ({ hour, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3)
+          .map(item => item.hour);
+      });
+      
+      res.json(Object.values(gamePerformance));
+    } catch (error) {
+      console.error("Error calculating game performance metrics:", error);
+      res.status(500).json({ error: "Error calculating game performance metrics" });
+    }
+  }));
+
+  // Revenue Breakdown endpoint
+  app.get("/api/reports/revenue-breakdown", asyncHandler(async (_req, res) => {
+    try {
+      const transactions = await storage.getTransactions();
+      
+      // Initialize revenue categories
+      const revenueBreakdown = {
+        hourly: 0,
+        perGame: 0,
+        food: 0,
+        beverages: 0,
+        merchandise: 0,
+        other: 0
+      };
+      
+      // Calculate totals for each category
+      transactions.forEach(tx => {
+        if (tx.paymentStatus === 'completed') {
+          const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+          
+          if (tx.sessionType === 'hourly') {
+            revenueBreakdown.hourly += amount;
+          } else if (tx.sessionType === 'per_game') {
+            revenueBreakdown.perGame += amount;
+          } else {
+            // For future extension with other transaction types
+            revenueBreakdown.other += amount;
+          }
+        }
+      });
+      
+      // Calculate percentages
+      const totalRevenue = Object.values(revenueBreakdown).reduce((sum, val) => sum + val, 0);
+      const result = {
+        categories: Object.keys(revenueBreakdown).map(key => ({
+          category: key,
+          amount: revenueBreakdown[key],
+          percentage: totalRevenue > 0 ? (revenueBreakdown[key] / totalRevenue) * 100 : 0
+        })),
+        totalRevenue
+      };
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error calculating revenue breakdown:", error);
+      res.status(500).json({ error: "Error calculating revenue breakdown" });
+    }
+  }));
+
+  // Loyalty Program Analytics endpoint
+  app.get("/api/reports/loyalty-analytics", asyncHandler(async (_req, res) => {
+    try {
+      const customers = await storage.getCustomers();
+      
+      // Calculate loyalty metrics
+      const totalPoints = customers.reduce((sum, customer) => sum + (customer.points || 0), 0);
+      const customersWithPoints = customers.filter(c => c.points && c.points > 0);
+      
+      // Segment customers by points
+      const loyaltySegments = [
+        { name: "Bronze", min: 1, max: 100, count: 0, totalPoints: 0 },
+        { name: "Silver", min: 101, max: 500, count: 0, totalPoints: 0 },
+        { name: "Gold", min: 501, max: 1000, count: 0, totalPoints: 0 },
+        { name: "Platinum", min: 1001, max: Infinity, count: 0, totalPoints: 0 }
+      ];
+      
+      // Count customers in each segment
+      customersWithPoints.forEach(customer => {
+        const points = customer.points || 0;
+        for (const segment of loyaltySegments) {
+          if (points >= segment.min && points <= segment.max) {
+            segment.count++;
+            segment.totalPoints += points;
+            break;
+          }
+        }
+      });
+      
+      // Calculate averages
+      loyaltySegments.forEach(segment => {
+        segment.avgPoints = segment.count > 0 ? segment.totalPoints / segment.count : 0;
+      });
+      
+      // Return results
+      res.json({
+        totalCustomers: customers.length,
+        customersWithPoints: customersWithPoints.length,
+        totalPointsIssued: totalPoints,
+        avgPointsPerCustomer: customersWithPoints.length > 0 ? totalPoints / customersWithPoints.length : 0,
+        segments: loyaltySegments,
+        topCustomers: customersWithPoints
+          .sort((a, b) => (b.points || 0) - (a.points || 0))
+          .slice(0, 10)
+          .map(c => ({
+            id: c.id,
+            name: c.displayName,
+            points: c.points || 0
+          }))
+      });
+    } catch (error) {
+      console.error("Error calculating loyalty analytics:", error);
+      res.status(500).json({ error: "Error calculating loyalty program analytics" });
+    }
+  }));
+
+  // Comparative Analysis endpoint
+  app.get("/api/reports/comparative-analysis", asyncHandler(async (req, res) => {
+    try {
+      const { period = 'monthly', current, previous } = req.query;
+      
+      // Get all transactions
+      const transactions = await storage.getTransactions();
+      
+      // Helper function to parse date ranges
+      const getDateRange = (periodType, dateString) => {
+        const date = dateString ? new Date(dateString) : new Date();
+        let startDate = new Date(date);
+        let endDate = new Date(date);
+        
+        if (periodType === 'monthly') {
+          startDate.setDate(1);
+          startDate.setHours(0, 0, 0, 0);
+          
+          endDate.setMonth(endDate.getMonth() + 1);
+          endDate.setDate(0); // Last day of current month
+          endDate.setHours(23, 59, 59, 999);
+        } else if (periodType === 'weekly') {
+          const day = date.getDay();
+          startDate.setDate(date.getDate() - day); // Start of week (Sunday)
+          startDate.setHours(0, 0, 0, 0);
+          
+          endDate.setDate(date.getDate() + (6 - day)); // End of week (Saturday)
+          endDate.setHours(23, 59, 59, 999);
+        } else if (periodType === 'yearly') {
+          startDate.setMonth(0, 1);
+          startDate.setHours(0, 0, 0, 0);
+          
+          endDate.setMonth(11, 31);
+          endDate.setHours(23, 59, 59, 999);
+        }
+        
+        return { startDate, endDate };
+      };
+      
+      // Define current period
+      const currentPeriod = getDateRange(period, current);
+      
+      // Define previous period
+      let previousPeriod;
+      if (previous) {
+        previousPeriod = getDateRange(period, previous);
+      } else {
+        // If no previous date is specified, calculate it based on period
+        previousPeriod = { startDate: new Date(currentPeriod.startDate), endDate: new Date(currentPeriod.endDate) };
+        
+        if (period === 'monthly') {
+          previousPeriod.startDate.setMonth(previousPeriod.startDate.getMonth() - 1);
+          previousPeriod.endDate.setMonth(previousPeriod.endDate.getMonth() - 1);
+        } else if (period === 'weekly') {
+          previousPeriod.startDate.setDate(previousPeriod.startDate.getDate() - 7);
+          previousPeriod.endDate.setDate(previousPeriod.endDate.getDate() - 7);
+        } else if (period === 'yearly') {
+          previousPeriod.startDate.setFullYear(previousPeriod.startDate.getFullYear() - 1);
+          previousPeriod.endDate.setFullYear(previousPeriod.endDate.getFullYear() - 1);
+        }
+      }
+      
+      // Filter transactions for current and previous periods
+      const filterTransactionsByPeriod = (startDate, endDate) => {
+        return transactions.filter(tx => {
+          if (!tx.createdAt) return false;
+          const txDate = new Date(tx.createdAt);
+          return txDate >= startDate && txDate <= endDate;
+        });
+      };
+      
+      const currentTransactions = filterTransactionsByPeriod(
+        currentPeriod.startDate, 
+        currentPeriod.endDate
+      );
+      
+      const previousTransactions = filterTransactionsByPeriod(
+        previousPeriod.startDate, 
+        previousPeriod.endDate
+      );
+      
+      // Calculate metrics for each period
+      const calculateMetrics = (txs) => {
+        const totalRevenue = txs.reduce((sum, tx) => {
+          const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+          return sum + amount;
+        }, 0);
+        
+        const completedTransactions = txs.filter(tx => tx.paymentStatus === 'completed');
+        const pendingTransactions = txs.filter(tx => tx.paymentStatus === 'pending');
+        
+        // Group by game
+        const gameStats = {};
+        txs.forEach(tx => {
+          if (tx.gameName) {
+            if (!gameStats[tx.gameName]) {
+              gameStats[tx.gameName] = { count: 0, revenue: 0 };
+            }
+            gameStats[tx.gameName].count++;
+            const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+            gameStats[tx.gameName].revenue += amount;
+          }
+        });
+        
+        // Group by station
+        const stationStats = {};
+        txs.forEach(tx => {
+          if (tx.stationId) {
+            const stationId = tx.stationId.toString();
+            if (!stationStats[stationId]) {
+              stationStats[stationId] = { count: 0, revenue: 0 };
+            }
+            stationStats[stationId].count++;
+            const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+            stationStats[stationId].revenue += amount;
+          }
+        });
+        
+        // Get unique customers
+        const uniqueCustomers = new Set();
+        txs.forEach(tx => {
+          if (tx.userId) {
+            uniqueCustomers.add(tx.userId);
+          }
+        });
+        
+        return {
+          totalRevenue,
+          transactionCount: txs.length,
+          completedTransactions: completedTransactions.length,
+          pendingTransactions: pendingTransactions.length,
+          uniqueCustomers: uniqueCustomers.size,
+          avgTransactionValue: txs.length > 0 ? totalRevenue / txs.length : 0,
+          topGames: Object.entries(gameStats)
+            .map(([name, stats]) => ({ name, ...stats }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5),
+          topStations: Object.entries(stationStats)
+            .map(([id, stats]) => ({ id, ...stats }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5)
+        };
+      };
+      
+      const currentMetrics = calculateMetrics(currentTransactions);
+      const previousMetrics = calculateMetrics(previousTransactions);
+      
+      // Calculate percent changes
+      const calculateChange = (current, previous) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+      
+      const changes = {
+        totalRevenue: calculateChange(currentMetrics.totalRevenue, previousMetrics.totalRevenue),
+        transactionCount: calculateChange(currentMetrics.transactionCount, previousMetrics.transactionCount),
+        uniqueCustomers: calculateChange(currentMetrics.uniqueCustomers, previousMetrics.uniqueCustomers),
+        avgTransactionValue: calculateChange(currentMetrics.avgTransactionValue, previousMetrics.avgTransactionValue)
+      };
+      
+      // Return comparative analysis
+      res.json({
+        periodType: period,
+        currentPeriod: {
+          startDate: currentPeriod.startDate,
+          endDate: currentPeriod.endDate,
+          metrics: currentMetrics
+        },
+        previousPeriod: {
+          startDate: previousPeriod.startDate,
+          endDate: previousPeriod.endDate,
+          metrics: previousMetrics
+        },
+        changes
+      });
+    } catch (error) {
+      console.error("Error generating comparative analysis:", error);
+      res.status(500).json({ error: "Error generating comparative analysis" });
+    }
+  }));
+
+  // Predictive Analytics endpoint
+  app.get("/api/reports/predictive-analytics", asyncHandler(async (_req, res) => {
+    try {
+      const transactions = await storage.getTransactions();
+      
+      // Group transactions by day of week
+      const dayOfWeekStats = Array(7).fill(0).map(() => ({ count: 0, revenue: 0 }));
+      
+      transactions.forEach(tx => {
+        if (tx.createdAt) {
+          const date = new Date(tx.createdAt);
+          const dayOfWeek = date.getDay(); // 0-6, Sunday-Saturday
+          
+          dayOfWeekStats[dayOfWeek].count++;
+          const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+          dayOfWeekStats[dayOfWeek].revenue += amount;
+        }
+      });
+      
+      // Calculate average revenue per day of week
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayAverages = daysOfWeek.map((day, index) => ({
+        day,
+        averageRevenue: dayOfWeekStats[index].revenue / Math.max(1, dayOfWeekStats[index].count),
+        totalRevenue: dayOfWeekStats[index].revenue,
+        transactionCount: dayOfWeekStats[index].count
+      }));
+      
+      // Generate next 7 days forecast
+      const today = new Date();
+      const forecast = Array(7).fill(0).map((_, index) => {
+        const forecastDate = new Date(today);
+        forecastDate.setDate(today.getDate() + index);
+        
+        const dayOfWeek = forecastDate.getDay();
+        const dayAverage = dayAverages[dayOfWeek];
+        
+        return {
+          date: forecastDate.toISOString().split('T')[0],
+          day: daysOfWeek[dayOfWeek],
+          predictedRevenue: dayAverage.averageRevenue * (dayAverage.transactionCount > 0 ? 1 : 0),
+          confidence: Math.min(100, dayAverage.transactionCount * 5), // Simple confidence calculation
+          basedOnTransactions: dayAverage.transactionCount
+        };
+      });
+      
+      // Return forecast
+      res.json({
+        dayAverages,
+        forecast,
+        nextWeekTotal: forecast.reduce((sum, day) => sum + day.predictedRevenue, 0)
+      });
+    } catch (error) {
+      console.error("Error generating predictive analytics:", error);
+      res.status(500).json({ error: "Error generating predictive analytics" });
+    }
+  }));
+
   app.get("/api/games", asyncHandler(async (_req, res) => {
     try {
       const gamesList = await db.select().from(games).orderBy(desc(games.name));
