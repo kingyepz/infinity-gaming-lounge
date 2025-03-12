@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiRequest, formatCurrency } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/payment";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "../ui/badge";
 
@@ -59,10 +60,11 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
       // Use different endpoints based on payment method
       const endpoint = `/api/payments/${method}`;
       
-      const response = await apiRequest(endpoint, {
-        method: 'POST',
-        data: paymentData
-      });
+      const response = await apiRequest(
+        'POST',
+        endpoint,
+        paymentData
+      );
       
       if (response.success) {
         toast({
