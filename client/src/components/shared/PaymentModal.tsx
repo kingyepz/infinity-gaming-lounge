@@ -39,6 +39,8 @@ export default function PaymentModal({
   const [mpesaStatus, setMpesaStatus] = useState<PaymentStatus>("idle");
   const [airtelStatus, setAirtelStatus] = useState<PaymentStatus>("idle");
   const [showSplitPayment, setShowSplitPayment] = useState(false); // State for split payment modal
+  const [mpesaRef, setMpesaRef] = useState<string | null>(null); // Track M-Pesa transaction reference
+  const [airtelRef, setAirtelRef] = useState<string | null>(null); // Track Airtel Money transaction reference
   const { toast } = useToast();
 
   // Calculate duration if session is active (in minutes)
@@ -361,6 +363,11 @@ export default function PaymentModal({
                     <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
                     <p className="font-semibold mb-2">Payment Successful</p>
                     <p className="text-sm mb-4">The M-Pesa payment has been processed successfully.</p>
+                    {mpesaRef && (
+                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center">
+                        Transaction Reference: <span className="font-mono">{mpesaRef}</span>
+                      </p>
+                    )}
                   </div>
                 )}
                 {mpesaStatus === "failed" && (
@@ -412,6 +419,11 @@ export default function PaymentModal({
                     <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
                     <p className="font-semibold mb-2">Payment Successful</p>
                     <p className="text-sm mb-4">The Airtel Money payment has been processed successfully.</p>
+                    {airtelRef && (
+                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center">
+                        Transaction Reference: <span className="font-mono">{airtelRef}</span>
+                      </p>
+                    )}
                   </div>
                 )}
                 {airtelStatus === "failed" && (

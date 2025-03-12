@@ -247,28 +247,48 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                       {tx.paymentStatus === 'completed' ? (
                         // @ts-ignore - paymentMethodInfo is a dynamic property we added
                         tx.paymentMethodInfo ? (
-                          <span className={
-                            // @ts-ignore
-                            tx.paymentMethodInfo === 'mpesa' ? "text-blue-500" : 
-                            // @ts-ignore
-                            tx.paymentMethodInfo === 'airtel' ? "text-red-500" : 
-                            "text-green-500"
-                          }>
+                          <div className="flex flex-col">
+                            <span className={
+                              // @ts-ignore
+                              tx.paymentMethodInfo === 'mpesa' ? "text-blue-500 font-medium" : 
+                              // @ts-ignore
+                              tx.paymentMethodInfo === 'airtel' ? "text-red-500 font-medium" : 
+                              "text-green-500 font-medium"
+                            }>
+                              {/* @ts-ignore */}
+                              {tx.paymentMethodInfo === 'mpesa' ? "M-Pesa" : 
+                               // @ts-ignore
+                               tx.paymentMethodInfo === 'airtel' ? "Airtel" : 
+                               "Cash"}
+                            </span>
+                            
+                            {/* Show reference for mobile money payments */}
                             {/* @ts-ignore */}
-                            {tx.paymentMethodInfo === 'mpesa' ? "M-Pesa" : 
-                             // @ts-ignore
-                             tx.paymentMethodInfo === 'airtel' ? "Airtel" : 
-                             "Cash"}
-                          </span>
+                            {(tx.paymentMethodInfo === 'mpesa' || tx.paymentMethodInfo === 'airtel') && tx.mpesaRef && (
+                              <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
+                                Ref: {tx.mpesaRef}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           // Fallback to original logic
-                          <span>
+                          <div className="flex flex-col">
                             {tx.mpesaRef 
                               ? (String(tx.mpesaRef || '').startsWith('AR-') || String(tx.mpesaRef || '').startsWith('SIM-AIRTEL-') ? 
-                                 <span className="text-red-500">Airtel</span> : 
-                                 <span className="text-blue-500">M-Pesa</span>) 
-                              : <span className="text-green-500">Cash</span>}
-                          </span>
+                                 <div>
+                                   <span className="text-red-500 font-medium">Airtel</span>
+                                   <div className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
+                                     Ref: {tx.mpesaRef}
+                                   </div>
+                                 </div> : 
+                                 <div>
+                                   <span className="text-blue-500 font-medium">M-Pesa</span>
+                                   <div className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
+                                     Ref: {tx.mpesaRef}
+                                   </div>
+                                 </div>) 
+                              : <span className="text-green-500 font-medium">Cash</span>}
+                          </div>
                         )
                       ) : (
                         <span className="text-gray-500">Pending</span>
