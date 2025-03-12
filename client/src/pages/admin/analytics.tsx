@@ -93,6 +93,9 @@ export default function AdminAnalytics() {
   const [dashboardPeriod, setDashboardPeriod] = useState<string>('month');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [timeOfDayFilter, setTimeOfDayFilter] = useState<string>('all');
+  const [startHour, setStartHour] = useState<number>(0);
+  const [endHour, setEndHour] = useState<number>(23);
   const [isApplyingFilter, setIsApplyingFilter] = useState(false);
   const [filteredData, setFilteredData] = useState<any>(null);
   
