@@ -190,6 +190,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Station Categories API Routes
+  
+  // Get all station categories
+  app.get("/api/station-categories", asyncHandler(async (_req, res) => {
+    try {
+      const categories = await storage.getStationCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error getting station categories:", error);
+      throw error;
+    }
+  }));
+  
+  // Get station category by ID
+  app.get("/api/station-categories/:id", asyncHandler(async (req, res) => {
+    try {
+      const categoryId = Number(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const category = await storage.getStationCategoryById(categoryId);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json(category);
+    } catch (error) {
+      console.error("Error getting station category:", error);
+      throw error;
+    }
+  }));
+  
+  // Create a new station category
+  app.post("/api/station-categories", asyncHandler(async (req, res) => {
+    try {
+      const categoryData = req.body;
+      const category = await storage.createStationCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating station category:", error);
+      throw error;
+    }
+  }));
+  
+  // Update a station category
+  app.patch("/api/station-categories/:id", asyncHandler(async (req, res) => {
+    try {
+      const categoryId = Number(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const categoryData = req.body;
+      const category = await storage.updateStationCategory(categoryId, categoryData);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating station category:", error);
+      throw error;
+    }
+  }));
+  
+  // Delete a station category
+  app.delete("/api/station-categories/:id", asyncHandler(async (req, res) => {
+    try {
+      const categoryId = Number(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      try {
+        const success = await storage.deleteStationCategory(categoryId);
+        
+        if (!success) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        
+        res.status(204).end();
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("Cannot delete category")) {
+          return res.status(400).json({ message: error.message });
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error deleting station category:", error);
+      throw error;
+    }
+  }));
+
   app.get("/api/reports/current", asyncHandler(async (_req, res) => {
     try {
       const stations = await db.select().from(gameStations);
