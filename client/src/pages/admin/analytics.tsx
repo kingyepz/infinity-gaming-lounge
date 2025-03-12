@@ -74,7 +74,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import axios from "axios";
-import type { GameStation, Game, User, Transaction } from "@shared/schema";
+import type { GameStation, Game, User, Transaction, StationCategory } from "@shared/schema";
 
 export default function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -118,6 +118,29 @@ export default function AdminAnalytics() {
   const [editStationName, setEditStationName] = useState("");
   const [confirmDeleteStationDialog, setConfirmDeleteStationDialog] = useState(false);
   const [stationToDelete, setStationToDelete] = useState<number | null>(null);
+  
+  // Station Category Management
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryType, setNewCategoryType] = useState<string>("standard");
+  const [newCategoryHourlyRate, setNewCategoryHourlyRate] = useState("");
+  const [newCategoryPeakHourRate, setNewCategoryPeakHourRate] = useState("");
+  const [newCategoryOffPeakRate, setNewCategoryOffPeakRate] = useState("");
+  const [newCategoryWeekendRate, setNewCategoryWeekendRate] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  
+  // Edit Category Dialog
+  const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryType, setEditCategoryType] = useState<string>("standard");
+  const [editCategoryHourlyRate, setEditCategoryHourlyRate] = useState("");
+  const [editCategoryPeakHourRate, setEditCategoryPeakHourRate] = useState("");
+  const [editCategoryOffPeakRate, setEditCategoryOffPeakRate] = useState("");
+  const [editCategoryWeekendRate, setEditCategoryWeekendRate] = useState("");
+  const [editCategoryDescription, setEditCategoryDescription] = useState("");
+  const [confirmDeleteCategoryDialog, setConfirmDeleteCategoryDialog] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   
   // Transaction History Dialog
   const [showTransactionHistoryDialog, setShowTransactionHistoryDialog] = useState(false);
@@ -273,6 +296,12 @@ export default function AdminAnalytics() {
   const { data: loyaltyAnalytics = { segments: [], topCustomers: [] } } = useQuery({
     queryKey: ["/api/reports/loyalty-analytics"],
     queryFn: () => apiRequest({ path: "/api/reports/loyalty-analytics" })
+  });
+  
+  // Fetch station categories data
+  const { data: stationCategories = [] } = useQuery({
+    queryKey: ["/api/station-categories"],
+    queryFn: () => apiRequest({ path: "/api/station-categories" })
   });
   
   // State for comparative analysis period selection
@@ -643,6 +672,186 @@ export default function AdminAnalytics() {
     
     setSelectedStation(station);
     setShowTransactionHistoryDialog(true);
+  };
+  
+  // Category Management Handlers
+  const handleAddCategory = async () => {
+    if (!newCategoryName) {
+      toast({
+        title: "Error",
+        description: "Category name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const hourlyRate = newCategoryHourlyRate 
+        ? parseFloat(newCategoryHourlyRate) 
+        : null;
+      
+      const peakHourRate = newCategoryPeakHourRate 
+        ? parseFloat(newCategoryPeakHourRate) 
+        : null;
+      
+      const offPeakRate = newCategoryOffPeakRate 
+        ? parseFloat(newCategoryOffPeakRate) 
+        : null;
+      
+      const weekendRate = newCategoryWeekendRate 
+        ? parseFloat(newCategoryWeekendRate) 
+        : null;
+      
+      await apiRequest({
+        path: "/api/station-categories",
+        method: "POST",
+        data: {
+          name: newCategoryName,
+          type: newCategoryType,
+          hourlyRate,
+          peakHourRate,
+          offPeakRate,
+          weekendRate,
+          description: newCategoryDescription
+        }
+      });
+      
+      toast({
+        title: "Success",
+        description: `Category "${newCategoryName}" has been added successfully`,
+        variant: "success"
+      });
+      
+      // Reset form and refresh data
+      setNewCategoryName("");
+      setNewCategoryType("standard");
+      setNewCategoryHourlyRate("");
+      setNewCategoryPeakHourRate("");
+      setNewCategoryOffPeakRate("");
+      setNewCategoryWeekendRate("");
+      setNewCategoryDescription("");
+      setShowAddCategoryDialog(false);
+      
+      // Refresh categories data
+      queryClient.invalidateQueries({ queryKey: ["/api/station-categories"] });
+    } catch (error) {
+      console.error("Error adding category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add category. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to open edit category dialog
+  const handleEditCategoryClick = (category: StationCategory) => {
+    setEditCategoryId(category.id);
+    setEditCategoryName(category.name);
+    setEditCategoryType(category.type);
+    setEditCategoryHourlyRate(category.hourlyRate ? category.hourlyRate.toString() : "");
+    setEditCategoryPeakHourRate(category.peakHourRate ? category.peakHourRate.toString() : "");
+    setEditCategoryOffPeakRate(category.offPeakRate ? category.offPeakRate.toString() : "");
+    setEditCategoryWeekendRate(category.weekendRate ? category.weekendRate.toString() : "");
+    setEditCategoryDescription(category.description || "");
+    setShowEditCategoryDialog(true);
+  };
+  
+  // Function to update category
+  const handleUpdateCategory = async () => {
+    if (!editCategoryId || !editCategoryName) {
+      toast({
+        title: "Error",
+        description: "Category name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const hourlyRate = editCategoryHourlyRate 
+        ? parseFloat(editCategoryHourlyRate) 
+        : null;
+      
+      const peakHourRate = editCategoryPeakHourRate 
+        ? parseFloat(editCategoryPeakHourRate) 
+        : null;
+      
+      const offPeakRate = editCategoryOffPeakRate 
+        ? parseFloat(editCategoryOffPeakRate) 
+        : null;
+      
+      const weekendRate = editCategoryWeekendRate 
+        ? parseFloat(editCategoryWeekendRate) 
+        : null;
+      
+      await apiRequest({
+        path: `/api/station-categories/${editCategoryId}`,
+        method: "PATCH",
+        data: {
+          name: editCategoryName,
+          type: editCategoryType,
+          hourlyRate,
+          peakHourRate,
+          offPeakRate,
+          weekendRate,
+          description: editCategoryDescription
+        }
+      });
+      
+      toast({
+        title: "Success",
+        description: `Category "${editCategoryName}" has been updated successfully`,
+        variant: "success"
+      });
+      
+      // Close dialog and refresh data
+      setShowEditCategoryDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/station-categories"] });
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update category. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to confirm delete category
+  const handleDeleteCategoryClick = (categoryId: number) => {
+    setCategoryToDelete(categoryId);
+    setConfirmDeleteCategoryDialog(true);
+  };
+  
+  // Function to delete category
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    
+    try {
+      await apiRequest({
+        path: `/api/station-categories/${categoryToDelete}`,
+        method: "DELETE"
+      });
+      
+      toast({
+        title: "Success",
+        description: "Category has been deleted successfully",
+        variant: "success"
+      });
+      
+      // Close dialog and refresh data
+      setConfirmDeleteCategoryDialog(false);
+      setCategoryToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/station-categories"] });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete category. It may be in use by one or more stations.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Report generation handlers
