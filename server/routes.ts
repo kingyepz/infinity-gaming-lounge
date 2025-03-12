@@ -372,17 +372,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const actualColumns = Object.keys(transactions);
       console.log("Actual database columns:", actualColumns);
 
-      // Insert transaction using a simplified approach to avoid column issues
-      const validColumns = [
-        'stationId',
-        'customerName',
-        'gameName',
-        'sessionType',
-        'amount',
-        'paymentStatus',
-        'duration'
-      ];
-
       // Create a clean transaction object with proper typing to match database schema
       const transactionData = {
         stationId: Number(rawData.stationId),
@@ -397,13 +386,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Final transaction data:", transactionData);
 
-      // Execute insert - ensure we're wrapping the transaction data in an array
-      const [result] = await db.insert(transactions).values([transactionData]).returning();
-
-      res.json(result);
+      try {
+        // Execute insert - ensure we're wrapping the transaction data in an array
+        const [result] = await db.insert(transactions).values([transactionData]).returning();
+        
+        if (!result) {
+          console.error("Transaction creation failed: No result returned");
+          return res.status(500).json({ 
+            success: false, 
+            error: "No transaction record created" 
+          });
+        }
+        
+        // Return a standardized response with success flag and the transaction data
+        return res.json({ 
+          success: true, 
+          transaction: result,
+          transactionId: result.id
+        });
+      } catch (dbError) {
+        console.error("Database error:", dbError);
+        return res.status(500).json({ 
+          success: false, 
+          error: dbError.message || "Database error creating transaction" 
+        });
+      }
     } catch (error) {
       console.error("Transaction creation error:", error);
-      res.status(500).json({ error: error.message || "Failed to create transaction" });
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message || "Failed to create transaction" 
+      });
     }
   }));
 

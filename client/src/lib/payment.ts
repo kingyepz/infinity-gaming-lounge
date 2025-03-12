@@ -14,14 +14,30 @@ export async function createTransaction(transactionData: {
   duration: number | null;
 }) {
   try {
-    const response = await apiRequest<any[]>({
+    const response = await apiRequest<{
+      success: boolean;
+      transaction?: any;
+      transactionId?: number;
+      error?: string;
+    }>({
       method: 'POST',
       path: '/api/transactions',
       data: transactionData
     });
+    
+    // Check if the response has a success flag and transaction ID
+    if (response.success && response.transactionId) {
+      return { 
+        success: true, 
+        transactionId: response.transactionId,
+        transaction: response.transaction
+      };
+    }
+    
+    // If there's no success flag or it's false, handle the error
     return { 
-      success: true, 
-      transactionId: response[0]?.id 
+      success: false, 
+      error: response.error || 'Failed to create transaction'
     };
   } catch (error) {
     console.error('Error creating transaction:', error);
