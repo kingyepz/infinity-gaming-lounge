@@ -377,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactionData = {
         stationId: Number(rawData.stationId),
         customerName: String(rawData.customerName || "Walk-in Customer"), 
-        sessionType: rawData.sessionType === "hourly" ? "hourly" : "per_game",
+        sessionType: rawData.sessionType === "hourly" ? "hourly" : "per_game" as const,
         amount: String(rawData.amount || "0"),
         paymentStatus: "pending" as const,
         gameName: rawData.gameName || null,
@@ -387,8 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Final transaction data:", transactionData);
 
-      // Execute insert
-      const [result] = await db.insert(transactions).values(transactionData).returning();
+      // Execute insert - ensure we're wrapping the transaction data in an array
+      const [result] = await db.insert(transactions).values([transactionData]).returning();
 
       res.json(result);
     } catch (error) {

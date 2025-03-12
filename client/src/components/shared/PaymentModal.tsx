@@ -86,19 +86,37 @@ export default function PaymentModal({
       const transactionId = txResult.transactionId;
 
       if (paymentMethod === "cash") {
-        // Process cash payment
-        const { processCashPayment } = await import("@/lib/payment");
-        const result = await processCashPayment(transactionId, amount, userId);
+        try {
+          // Process cash payment
+          const { processCashPayment } = await import("@/lib/payment");
+          console.log("Processing cash payment for transaction:", transactionId, "amount:", amount, "userId:", userId);
+          const result = await processCashPayment(transactionId, amount, userId);
+          console.log("Cash payment result:", result);
 
-        if (result.success) {
+          if (result.success) {
+            toast({
+              title: "Payment Successful",
+              description: "Cash payment processed successfully.",
+              variant: "success"
+            });
+            onPaymentComplete();
+            onClose();
+          } else {
+            setIsProcessing(false);
+            toast({
+              title: "Payment Failed",
+              description: result.error || "Failed to process cash payment. Please try again.",
+              variant: "destructive"
+            });
+          }
+        } catch (error) {
+          console.error("Cash payment error:", error);
+          setIsProcessing(false);
           toast({
-            title: "Payment Successful",
-            description: "Cash payment processed successfully."
+            title: "Payment Error",
+            description: error instanceof Error ? error.message : "An unexpected error occurred processing the cash payment.",
+            variant: "destructive"
           });
-          onPaymentComplete();
-          onClose();
-        } else {
-          throw new Error(result.error || "Failed to process cash payment");
         }
       } else if (paymentMethod === "mpesa") {
         if (!mpesaPhoneNumber) {
