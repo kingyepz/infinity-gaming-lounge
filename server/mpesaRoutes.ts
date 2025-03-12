@@ -319,4 +319,117 @@ router.post('/callback', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Generate QR code for M-Pesa payment
+ * POST /api/mpesa/qrcode
+ */
+router.post('/qrcode', async (req: Request, res: Response) => {
+  try {
+    // Define validation schema for QR code request
+    const qrCodeRequestSchema = z.object({
+      amount: z.number().int().positive(),
+      transactionId: z.number().int().positive(),
+      referenceNumber: z.string().max(20).optional(),
+      trxCode: z.string().max(2).optional()
+    });
+    
+    // Validate request body
+    const requestData = qrCodeRequestSchema.safeParse(req.body);
+    
+    if (!requestData.success) {
+      PaymentDebugger.logError('mpesaRoutes', 'qrcode:validation', requestData.error);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request data',
+        details: requestData.error.errors
+      });
+    }
+    
+    const { amount, transactionId, referenceNumber, trxCode } = requestData.data;
+    
+    PaymentDebugger.log('mpesaRoutes', 'qrcode:request', {
+      amount,
+      transactionId,
+      referenceNumber: referenceNumber || `TX-${transactionId}`
+    });
+    
+    // Generate QR code
+    const response = await enhancedMpesaService.generateQRCode({
+      amount,
+      transactionId,
+      referenceNumber: referenceNumber || `TX-${transactionId}`,
+      trxCode
+    });
+    
+    // Return QR code data
+    return res.status(200).json({
+      success: response.ResponseCode === '0',
+      message: response.ResponseDescription,
+      data: {
+        qrCode: response.QRCode,
+        requestId: response.RequestID || `QR-${transactionId}`,
+        transactionId
+      }
+    });
+  } catch (error) {
+    PaymentDebugger.logError('mpesaRoutes', 'qrcode:error', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    });
+  }
+});
+
+/**
+ * Check QR transaction status
+ * GET /api/mpesa/qrcode/status/:transactionId
+ */
+router.get('/qrcode/status/:transactionId', async (req: Request, res: Response) => {
+  try {
+    const { transactionId } = req.params;
+    
+    if (!transactionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction ID is required'
+      });
+    }
+    
+    PaymentDebugger.log('mpesaRoutes', 'qrcode/status:request', {
+      transactionId
+    });
+    
+    // For QR transactions, we use a different ID format: QR-{transactionId}
+    const checkoutRequestId = `QR-${transactionId}`;
+    
+    // Get transaction record
+    const transactionRecord = enhancedMpesaService.getTransactionByCheckoutRequestId(checkoutRequestId);
+    
+    if (!transactionRecord) {
+      return res.status(404).json({
+        success: false,
+        error: 'QR code transaction not found'
+      });
+    }
+    
+    // For QR payments, we don't have a direct status check API
+    // Instead, we check if it's been updated in our records
+    return res.status(200).json({
+      success: transactionRecord.status === 'completed',
+      status: transactionRecord.status,
+      message: transactionRecord.resultDesc || `Transaction ${transactionRecord.status}`,
+      transactionId: transactionRecord.transactionId
+    });
+  } catch (error) {
+    PaymentDebugger.logError('mpesaRoutes', 'qrcode/status:error', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    });
+  }
+});
+
+// Export router
 export default router;

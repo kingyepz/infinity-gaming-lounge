@@ -327,6 +327,139 @@ export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
 }
 
 /**
+ * Generate QR code for M-Pesa payment
+ */
+export async function generateMpesaQRCode(amount: number, transactionId: number, referenceNumber?: string) {
+  try {
+    // In development mode, we'll simulate a successful QR code generation
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      console.log('DEVELOPMENT MODE: Simulating M-Pesa QR code generation');
+      
+      // Return a simulated successful response with a base64 encoded QR code
+      // This is a placeholder QR code for demo purposes
+      const placeholderQRCode = 'iVBORw0KGgoAAAANSUhEUgAAAIQAAACECAYAAABRRIIvAAAAAklEQVR4AewaftIAAAOSSURBVO3BQa7jRgADweyHvv8ld45+SIBgMYnHrsjMH1hrXYa11nUZ1lqXYa11GdZal2GtdRnWWpdhrXUZ1lqXYa11GdZal2GtdRnWWpdhrXUZ1lqX4YNDIn+TMToidyJKxjMidyJKxm9EfDKstS7DWusyrLUuw1rrMnxwWcZNIk+IfCIjRTwh441DNxkp4g2RmzJuGtZal2GtdRnWWpfhgy8WeZORIp4QeUPkJpGbiIyIJ0TeiPiXDGutYFhrXYa11mX44B8nkiKeEHlGJEVkxE8SeUbkXzKstS7DWusyrLUuwwf/MJGeUUSUiBKRIkrEExk9oojcJPKThrXWZVhrXYa11mX44ItF/k1GdkSJSBElomcUkR5RInpGiejZEU+I/KRhrXUZ1lqXYa11GT64TOSniaQdmR3RM4pIimgRo0ekiGdEnhF5Q+SmYa11GdZal2GtdRk+OCQyMorIjOgRJaJEzIiekSJSRMkoETUjRfSMFNEySsSMKBFPiLwxrLUuw1rrMqy1LsMH/xERN0XMiJ5RIlJEiegZRaRH9IwikSKyI0XMiO/0rw1rrWBYa12GtdZl+OBQxBMiT0TMiJ5RRJ4QmRE9o0jUiO6IEVFE3hC5KWJGvDGstS7DWusyrLUuwweHRJ4QeSJiRvSMFJERRaRF9IwU0TN6RI3IjtgRm2GtdRnWWpdhrXUZPvgyETWiRbSIGdEzRkSL6BlFpGfMiDdERkTLSBEtokdkxLPDWusyrLUuw1rrMnxwKKJlzIie0SJ6RpHoGUWkZ2RHz5gRL4icUUTe+JXDWusyrLUuw1rrMnxwWcSTiBExIlpEy0gRKSJFtIwZ0SNyxIjYEVmiR7SMlpEd0SNaxE3DWusyrLUuw1rrMnzwZUQyokS0jBTRMlJEi+gZM6JGjIgZ0SNGRHbEiMiOJ0RGRInYEW8Ma63LsNa6DGuty/DBlyoSI+KNiJaRIlrGjOgZPeJV3hjZETOiZ/SIJzJ+0rDWugxrrcsw9gcPiLwhkiJaRBHJiJ4xI3rEE3kjokVkR8+YESMiRfSMGTEibhrWWpdhrXUZ1lqX4YNDIn+TMSOeEUkRLaJEzIge0SNyRIvoGTOiRaSIGZEdNw1rrWBYa12GtdZl+OCyjJtEnhA5IyJFvBHRMlpEz8gRM6JlpIiWkSJaxoh4QmRGfNKw1roMa63LsNa6DB98scg3jBgRPSNFpIiW0TN6xDOyI1pEdvSMGTEiciNGxE3DWusyrLUuw1rrMnzwDxN5I+KmiOyIF5Ed0SJ6RM+YEUXkmYiMeHZYa12GtdZlWGtdhrXWZVhrXYa11mVYa12GtdZlWGtdhrXWZVhrXYa11mVYa12GtdZlWGtdhv8BRG6XuC9VJSsAAAAASUVORK5CYII=';
+      
+      return {
+        success: true,
+        qrCode: placeholderQRCode,
+        requestId: `QR-${transactionId}`,
+        message: "QR code generated successfully (simulated)"
+      };
+    }
+    
+    const response = await apiRequest<{
+      success: boolean;
+      message?: string;
+      data?: {
+        qrCode: string;
+        requestId: string;
+        transactionId: number;
+      };
+      error?: string;
+    }>({
+      method: 'POST',
+      path: '/api/mpesa/qrcode',
+      data: {
+        amount,
+        transactionId,
+        referenceNumber: referenceNumber || `TX-${transactionId}`,
+      }
+    });
+    
+    if (response.success && response.data?.qrCode) {
+      return {
+        success: true,
+        qrCode: response.data.qrCode,
+        requestId: response.data.requestId,
+        message: response.message || 'QR code generated successfully'
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to generate QR code'
+    };
+  } catch (error) {
+    console.error('Error generating M-Pesa QR code:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Check M-Pesa QR code payment status
+ */
+export async function checkMpesaQRPaymentStatus(transactionId: number) {
+  try {
+    // In development mode, simulate a successful QR code payment status check
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      console.log('DEVELOPMENT MODE: Simulating M-Pesa QR code payment status check');
+      
+      // After 5 seconds, consider the payment successful (simulating a real-world delay)
+      const qrCodeGenerationTime = localStorage.getItem(`qr-payment-${transactionId}`);
+      if (qrCodeGenerationTime && (Date.now() - parseInt(qrCodeGenerationTime)) > 5000) {
+        return {
+          success: true,
+          status: 'COMPLETED',
+          message: "Simulated QR code payment completed successfully"
+        };
+      } else {
+        // Store the generation time if not already stored
+        if (!qrCodeGenerationTime) {
+          localStorage.setItem(`qr-payment-${transactionId}`, Date.now().toString());
+        }
+        return {
+          success: false,
+          status: 'PENDING',
+          message: "Simulated QR code payment is still processing. Please scan the QR code."
+        };
+      }
+    }
+    
+    const response = await apiRequest<{
+      success: boolean;
+      status?: string;
+      message?: string;
+      error?: string;
+    }>({
+      method: 'GET',
+      path: `/api/mpesa/qrcode/status/${transactionId}`
+    });
+    
+    if (response.success) {
+      return {
+        success: true,
+        status: 'COMPLETED',
+        message: response.message || 'Payment completed successfully'
+      };
+    }
+    
+    if (response.status === 'pending') {
+      return {
+        success: false,
+        status: 'PENDING',
+        message: 'Payment is still pending. Please scan the QR code and complete the payment.'
+      };
+    }
+    
+    return {
+      success: false,
+      status: response.status || 'FAILED',
+      message: response.message || 'Payment failed or status unknown'
+    };
+  } catch (error) {
+    console.error('Error checking M-Pesa QR payment status:', error);
+    return {
+      success: false,
+      status: 'ERROR',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+}
+
+/**
  * Check Airtel Money payment status
  */
 export async function checkAirtelPaymentStatus(referenceId: string) {
