@@ -9,6 +9,8 @@ import { games, transactions, gameStations, users, payments, rewards, events, bo
 import { desc, eq, sql, inArray } from "drizzle-orm";
 import { mpesaService } from "./mpesa";
 import { airtelMoneyService } from "./airtel";
+import { PaymentDebugger } from "./paymentDebugger";
+import mpesaRoutes from "./mpesaRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -1429,6 +1431,9 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
       });
     }
   }));
+
+  // Register enhanced M-Pesa routes
+  app.use('/api/mpesa', mpesaRoutes);
 
       // Error handling middleware
   app.use((err: any, _req: any, res: any, _next: any) => {
