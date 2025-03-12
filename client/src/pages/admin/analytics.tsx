@@ -448,6 +448,83 @@ export default function AdminAnalytics() {
     setShowEditStationDialog(true);
   };
 
+  // Report generation handlers
+  const handleGenerateReport = async (type: string, format: string) => {
+    try {
+      setIsGeneratingReport(true);
+      
+      // Construct the report URL
+      const reportUrl = `/api/export/report/${type}/${format}`;
+      
+      // Open in a new window to trigger download
+      window.open(reportUrl, '_blank');
+      
+      toast({
+        title: "Report Generated",
+        description: `Your ${type} report has been generated in ${format.toUpperCase()} format.`
+      });
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast({
+        title: "Generation Failed",
+        description: "There was a problem generating the report.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+  
+  // Function to generate custom report
+  const handleGenerateCustomReport = async () => {
+    try {
+      setIsGeneratingReport(true);
+      
+      if (!reportType || !reportFormat) {
+        toast({
+          title: "Missing Information",
+          description: "Please select a report type and format.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Build the URL with query parameters
+      let reportUrl = `/api/export/report/${reportType}/${reportFormat}`;
+      
+      // Add date range if provided
+      const params = new URLSearchParams();
+      if (reportStartDate) {
+        params.append('startDate', reportStartDate);
+      }
+      if (reportEndDate) {
+        params.append('endDate', reportEndDate);
+      }
+      
+      // Append parameters to URL if any were provided
+      if (params.toString()) {
+        reportUrl += `?${params.toString()}`;
+      }
+      
+      // Open in a new window to trigger download
+      window.open(reportUrl, '_blank');
+      
+      toast({
+        title: "Custom Report Generated",
+        description: `Your custom ${reportType} report has been generated in ${reportFormat.toUpperCase()} format.`
+      });
+    } catch (error) {
+      console.error("Error generating custom report:", error);
+      toast({
+        title: "Generation Failed",
+        description: "There was a problem generating the custom report.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   // Function to save edited station
   const handleEditStation = async () => {
     if (!editStationId || !editStationName) {
@@ -1595,27 +1672,51 @@ export default function AdminAnalytics() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Button className="flex items-center justify-between w-full">
+                      <Button 
+                        className="flex items-center justify-between w-full"
+                        onClick={() => handleGenerateReport('revenue', 'pdf')}
+                        disabled={isGeneratingReport}
+                      >
                         <span>Revenue Report</span>
                         <DownloadIcon className="h-4 w-4" />
                       </Button>
-                      <Button className="flex items-center justify-between w-full">
+                      <Button 
+                        className="flex items-center justify-between w-full"
+                        onClick={() => handleGenerateReport('customers', 'pdf')}
+                        disabled={isGeneratingReport}
+                      >
                         <span>Customer Activity</span>
                         <DownloadIcon className="h-4 w-4" />
                       </Button>
-                      <Button className="flex items-center justify-between w-full">
+                      <Button 
+                        className="flex items-center justify-between w-full"
+                        onClick={() => handleGenerateReport('usage', 'pdf')}
+                        disabled={isGeneratingReport}
+                      >
                         <span>Station Usage</span>
                         <DownloadIcon className="h-4 w-4" />
                       </Button>
-                      <Button className="flex items-center justify-between w-full">
+                      <Button 
+                        className="flex items-center justify-between w-full"
+                        onClick={() => handleGenerateReport('games', 'pdf')}
+                        disabled={isGeneratingReport}
+                      >
                         <span>Game Popularity</span>
                         <DownloadIcon className="h-4 w-4" />
                       </Button>
-                      <Button className="flex items-center justify-between w-full">
+                      <Button 
+                        className="flex items-center justify-between w-full"
+                        onClick={() => handleGenerateReport('inventory', 'pdf')}
+                        disabled={isGeneratingReport}
+                      >
                         <span>Inventory Status</span>
                         <DownloadIcon className="h-4 w-4" />
                       </Button>
-                      <Button className="flex items-center justify-between w-full">
+                      <Button 
+                        className="flex items-center justify-between w-full"
+                        onClick={() => handleGenerateReport('financial', 'pdf')}
+                        disabled={isGeneratingReport}
+                      >
                         <span>Financial Summary</span>
                         <DownloadIcon className="h-4 w-4" />
                       </Button>
@@ -1631,15 +1732,26 @@ export default function AdminAnalytics() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Start Date</Label>
-                        <Input type="date" />
+                        <Input 
+                          type="date" 
+                          value={reportStartDate}
+                          onChange={(e) => setReportStartDate(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>End Date</Label>
-                        <Input type="date" />
+                        <Input 
+                          type="date" 
+                          value={reportEndDate}
+                          onChange={(e) => setReportEndDate(e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Report Type</Label>
-                        <Select defaultValue="revenue">
+                        <Select 
+                          value={reportType}
+                          onValueChange={(value) => setReportType(value)}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select report type" />
                           </SelectTrigger>
@@ -1648,12 +1760,17 @@ export default function AdminAnalytics() {
                             <SelectItem value="usage">Station Usage</SelectItem>
                             <SelectItem value="games">Game Popularity</SelectItem>
                             <SelectItem value="customers">Customer Activity</SelectItem>
+                            <SelectItem value="inventory">Inventory Status</SelectItem>
+                            <SelectItem value="financial">Financial Summary</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <Label>Format</Label>
-                        <Select defaultValue="csv">
+                        <Select 
+                          value={reportFormat}
+                          onValueChange={(value) => setReportFormat(value)}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select format" />
                           </SelectTrigger>
@@ -1665,7 +1782,20 @@ export default function AdminAnalytics() {
                         </Select>
                       </div>
                     </div>
-                    <Button className="w-full md:w-auto">Generate Custom Report</Button>
+                    <Button 
+                      className="w-full md:w-auto"
+                      onClick={handleGenerateCustomReport}
+                      disabled={isGeneratingReport}
+                    >
+                      {isGeneratingReport ? (
+                        <>
+                          <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        "Generate Custom Report"
+                      )}
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
