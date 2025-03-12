@@ -489,6 +489,7 @@ export default function AdminAnalytics() {
         queryClient.invalidateQueries({ queryKey: ["/api/games"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/transactions"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/station-categories"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/daily"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/revenue/weekly"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/popular-games"] }),
@@ -2556,6 +2557,7 @@ export default function AdminAnalytics() {
                   <TabsTrigger value="active">Active Sessions</TabsTrigger>
                   <TabsTrigger value="available">Available Stations</TabsTrigger>
                   <TabsTrigger value="analytics">Station Analytics</TabsTrigger>
+                  <TabsTrigger value="categories">Categories</TabsTrigger>
                 </TabsList>
                 
                 {/* Overview Tab - Shows all stations */}
