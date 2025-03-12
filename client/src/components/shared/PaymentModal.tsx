@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon } from "lucide-react";
 import QRCodePayment from "./QRCodePayment";
-import { SplitPaymentModal } from './SplitPaymentModal'; // Import the new component
+import SplitPaymentModal from './SplitPaymentModal'; // Import the new component
 
 type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode" | "qr-mpesa" | "qr-airtel";
 
