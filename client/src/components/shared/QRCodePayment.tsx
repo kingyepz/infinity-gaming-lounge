@@ -24,14 +24,52 @@ export default function QRCodePayment({
   const [status, setStatus] = useState<"pending" | "processing" | "completed" | "failed">("pending");
   const [isPolling, setIsPolling] = useState(false);
   
-  // Generate QR code data for M-Pesa payment
-  const qrData = `https://tinypesa.com/infinity-gaming-lounge?amount=${amount}&account=TX-${transactionId}`;
+  // M-Pesa QR code is provided by the API and displayed directly
+  // We will fetch it in the useEffect hook
+  const [qrCodeImage, setQrCodeImage] = useState<string>("");
   
   // M-Pesa brand color
   const mpesaColor = "#4CAF50"; // Green for M-Pesa
 
-  // Start polling for payment status
+  // Fetch QR code on component mount and start polling for payment status
   useEffect(() => {
+    // Function to initialize and fetch the QR code
+    const initializeQRCode = async () => {
+      try {
+        // For the QR-M-Pesa payment method, we generate the QR code using the M-Pesa API
+        const response = await fetch(`/api/mpesa/qrcode`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            amount,
+            transactionId,
+            referenceNumber: `TX-${transactionId}`
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.QRCode) {
+          // Set the QR code image received from the API
+          setQrCodeImage(data.QRCode);
+        } else {
+          console.error("Failed to generate QR code:", data.error || "Unknown error");
+          setStatus("failed");
+        }
+      } catch (error) {
+        console.error("Error generating QR code:", error);
+        setStatus("failed");
+      }
+    };
+    
+    // Initialize QR code when component mounts
+    if (status === "pending" && !qrCodeImage) {
+      initializeQRCode();
+    }
+    
+    // Set up payment status polling
     let pollInterval: NodeJS.Timeout;
     
     if (status === "processing" && !isPolling) {
@@ -62,7 +100,7 @@ export default function QRCodePayment({
         clearInterval(pollInterval);
       }
     };
-  }, [status, isPolling, onCheckStatus, onComplete]);
+  }, [status, isPolling, onCheckStatus, onComplete, amount, transactionId, qrCodeImage]);
   
   const handleCheckStatus = async () => {
     setStatus("processing");
@@ -79,14 +117,25 @@ export default function QRCodePayment({
         {status === "pending" && (
           <>
             <div className="mb-4 py-2 px-4 bg-white rounded-lg">
-              <QRCodeSVG
-                value={qrData}
-                size={200}
-                level="H"
-                includeMargin={true}
-                fgColor="#000000"
-                bgColor="#FFFFFF"
-              />
+              {qrCodeImage ? (
+                // If we have a QR code image from M-Pesa API, display it
+                <img 
+                  src={`data:image/png;base64,${qrCodeImage}`} 
+                  alt="M-Pesa QR Code" 
+                  width={200} 
+                  height={200}
+                />
+              ) : (
+                // Fallback to generated QR code if API fails
+                <QRCodeSVG
+                  value={`TX-${transactionId}-${amount}`}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                  fgColor="#000000"
+                  bgColor="#FFFFFF"
+                />
+              )}
             </div>
             <p className="text-center mb-2">
               Scan this QR code with your M-Pesa app

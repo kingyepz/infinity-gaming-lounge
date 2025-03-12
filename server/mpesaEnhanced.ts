@@ -561,14 +561,18 @@ export class EnhancedMpesaService {
       // Transaction code (default to BG = Buy Goods)
       const trxCode = requestData.trxCode || 'BG';
       
-      // Build request payload
+      // Build request payload based on Safaricom's M-Pesa Ratiba API specification
       const payload = {
         MerchantName: "Infinity Gaming Lounge",
         RefNo: referenceNumber,
         Amount: Math.round(requestData.amount),
         TrxCode: trxCode,
         CPI: this.config.shortCode, // Customer Payment Identifier (shortCode)
-        Size: "300" // QR code size
+        Size: "300", // QR code size
+        MerchantCode: this.config.shortCode,
+        AmountType: "Fixed", // Fixed/Variable 
+        Currency: "KES",
+        GenerateInvoice: false
       };
       
       // Make request to M-Pesa QR code API

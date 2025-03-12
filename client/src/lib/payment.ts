@@ -283,12 +283,12 @@ export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
 }
 
 /**
- * Generate QR code for M-Pesa payment
+ * Generate QR code for M-Pesa payment using Safaricom's official Ratiba API
  */
 export async function generateMpesaQRCode(amount: number, transactionId: number, referenceNumber?: string) {
   try {
-    // Simulation mode for testing without actual M-Pesa QR code API
-    const SIMULATION_MODE = true; // Set to false to use real M-Pesa QR code API
+    // Determine if we should use simulation mode or real API
+    const SIMULATION_MODE = false; // Set to true to use simulated QR codes for testing
     
     if (SIMULATION_MODE) {
       console.log('DEVELOPMENT MODE: Simulating M-Pesa QR code generation');
@@ -308,12 +308,22 @@ export async function generateMpesaQRCode(amount: number, transactionId: number,
       };
     }
     
+    // Log the request
+    console.log("Generating M-Pesa QR code for transaction:", {
+      amount,
+      transactionId,
+      referenceNumber: referenceNumber || `TX-${transactionId}`
+    });
+    
+    // Make request to our backend API which calls Safaricom's M-Pesa Ratiba API
     const response = await apiRequest<{
       success: boolean;
       message?: string;
       data?: {
-        qrCode: string;
-        requestId: string;
+        QRCode: string;
+        RequestID: string;
+        ResponseCode: string;
+        ResponseDescription: string;
         transactionId: number;
       };
       error?: string;
@@ -327,13 +337,25 @@ export async function generateMpesaQRCode(amount: number, transactionId: number,
       }
     });
     
+    // Log success/error
     if (response.success && response.data) {
+      console.log("Successfully generated M-Pesa QR code:", {
+        requestId: response.data.RequestID,
+        hasQRCode: !!response.data.QRCode,
+        responseCode: response.data.ResponseCode,
+        responseDesc: response.data.ResponseDescription
+      });
+      
       return {
         success: true,
-        qrCode: response.data.qrCode || '',
-        requestId: response.data.requestId || `QR-${transactionId}`,
-        message: response.message || 'QR code generated successfully'
+        qrCode: response.data.QRCode || '',
+        requestId: response.data.RequestID || `QR-${transactionId}`,
+        message: response.message || 'QR code generated successfully',
+        responseCode: response.data.ResponseCode,
+        responseDescription: response.data.ResponseDescription
       };
+    } else {
+      console.error("Failed to generate M-Pesa QR code:", response.error || "Unknown error");
     }
     
     return {
