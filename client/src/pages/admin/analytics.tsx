@@ -2210,7 +2210,7 @@ export default function AdminAnalytics() {
                       <div className="space-y-2">
                         <Label>Time Preset</Label>
                         <Select 
-                          value={timePreset || "all-day"}
+                          value={timePreset || "all"}
                           onValueChange={(value) => {
                             setTimePreset(value);
                             // Set hours based on preset
@@ -2223,7 +2223,7 @@ export default function AdminAnalytics() {
                             } else if (value === "evening") {
                               setReportStartHour(18);
                               setReportEndHour(23);
-                            } else if (value === "all-day") {
+                            } else if (value === "all") {
                               setReportStartHour(0);
                               setReportEndHour(23);
                             }
