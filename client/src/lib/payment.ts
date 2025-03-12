@@ -142,9 +142,9 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
       if (enhancedResponse.success && enhancedResponse.data) {
         return {
           success: true,
-          checkoutRequestId: enhancedResponse.data.checkoutRequestId,
-          merchantRequestId: enhancedResponse.data.merchantRequestId,
-          message: enhancedResponse.data.customerMessage
+          checkoutRequestId: enhancedResponse.data?.checkoutRequestId || '',
+          merchantRequestId: enhancedResponse.data?.merchantRequestId || '',
+          message: enhancedResponse.data?.customerMessage || 'M-Pesa payment request initiated successfully'
         };
       } else if (enhancedResponse.error) {
         // Handle specific enhanced M-Pesa errors
@@ -155,6 +155,12 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
           };
         }
         return { success: false, error: enhancedResponse.error };
+      } else {
+        // If there's no error but the response isn't successful
+        return { 
+          success: false, 
+          error: "Unknown error with M-Pesa request. Please try again or use a different payment method."
+        };
       }
     } catch (enhancedError) {
       console.log('Enhanced M-Pesa integration not available, falling back to legacy integration');
@@ -305,8 +311,14 @@ export async function checkMpesaPaymentStatus(checkoutRequestId: string) {
       if (enhancedResponse.success && enhancedResponse.data) {
         return {
           status: enhancedResponse.data.resultCode === '0' ? 'COMPLETED' : 'FAILED',
-          message: enhancedResponse.data.resultDesc,
-          transactionId: enhancedResponse.data.transactionId
+          message: enhancedResponse.data.resultDesc || 'M-Pesa payment status checked successfully',
+          transactionId: enhancedResponse.data.transactionId || 0
+        };
+      } else {
+        // No data available - might be pending
+        return {
+          status: 'PENDING',
+          message: enhancedResponse.message || 'Payment is still being processed'
         };
       }
     } catch (enhancedError) {
@@ -366,11 +378,11 @@ export async function generateMpesaQRCode(amount: number, transactionId: number,
       }
     });
     
-    if (response.success && response.data?.qrCode) {
+    if (response.success && response.data) {
       return {
         success: true,
-        qrCode: response.data.qrCode,
-        requestId: response.data.requestId,
+        qrCode: response.data.qrCode || '',
+        requestId: response.data.requestId || `QR-${transactionId}`,
         message: response.message || 'QR code generated successfully'
       };
     }

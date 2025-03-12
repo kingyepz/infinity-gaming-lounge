@@ -110,10 +110,18 @@ export interface MPesaTransaction {
 }
 
 export class EnhancedMpesaService {
-  private config: z.infer<typeof mpesaConfigSchema>;
+  private config: z.infer<typeof mpesaConfigSchema> = {
+    consumerKey: "",
+    consumerSecret: "",
+    passKey: "",
+    shortCode: "",
+    callbackUrl: "",
+    transactionType: "CustomerPayBillOnline",
+    environment: "sandbox"
+  };
   private accessToken: string | null = null;
   private tokenExpiry: Date | null = null;
-  private baseUrl: string;
+  private baseUrl: string = "https://sandbox.safaricom.co.ke";
   private transactionRecords: Map<string, MPesaTransaction> = new Map();
   
   constructor(config: Partial<z.infer<typeof mpesaConfigSchema>> = {}) {
