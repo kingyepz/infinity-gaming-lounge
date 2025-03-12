@@ -74,9 +74,42 @@ import type { GameStation, Game, User, Transaction } from "@shared/schema";
 
 export default function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  
+  // Function to refresh all dashboard data
+  const refreshAllData = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/stations"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/games"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/transactions"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/daily"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/revenue/weekly"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/popular-games"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/station-utilization"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/customer-activity"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/payment-methods"] })
+      ]);
+      
+      toast({
+        title: "Data refreshed",
+        description: "All dashboard data has been updated"
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh some data sources",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   // Add Station Dialog
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
@@ -758,6 +791,19 @@ export default function AdminAnalytics() {
               <TabsTrigger value="security">Security</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
+            
+            {/* Global Refresh Button */}
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="outline"
+                onClick={refreshAllData}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary"
+              >
+                <RefreshCwIcon className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh All Data'}
+              </Button>
+            </div>
             
             {/* Overview Tab */}
             <TabsContent value="overview">
