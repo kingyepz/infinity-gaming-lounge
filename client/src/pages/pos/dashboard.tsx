@@ -362,18 +362,15 @@ export default function POSDashboard() {
 
     return (
         <div className="min-h-screen bg-[#0f1218] text-white relative overflow-hidden">
-            {/* Header with Logo */}
-            <div className="w-full flex justify-center items-center py-4">
-                <div className="flex flex-col items-center">
-                    <InfinityLogo />
-                    <h1 className="text-2xl font-bold text-[#4794f8]">INFINITY GAMING LOUNGE</h1>
-                </div>
-            </div>
-            
             <div className="flex">
                 {/* Left Sidebar */}
-                <div className="w-64 bg-[#151a23] min-h-[calc(100vh-120px)] border-r border-[#212936]">
-                    <div className="p-1">
+                <div className="w-64 bg-[#151a23] min-h-screen border-r border-[#212936]">
+                    {/* Sidebar Header with Logo */}
+                    <div className="py-4 px-4 border-b border-[#212936]">
+                        <h1 className="text-xl font-bold text-[#4794f8]">INFINITY GAMING LOUNGE</h1>
+                    </div>
+                    
+                    <div className="p-2">
                         <Button
                             variant="ghost"
                             className={`w-full justify-start py-2 px-3 mb-1 ${activeTab === 'reservations' ? 'bg-[#212936] text-[#4794f8]' : 'hover:bg-[#212936] hover:text-white text-gray-300'}`}
@@ -490,50 +487,9 @@ export default function POSDashboard() {
                 
                 {/* Main content */}
                 <div className="flex-1 flex flex-col">
-                    {/* Top horizontal nav bar */}
-                    <div className="h-10 border-b border-[#212936] flex items-center px-4 bg-[#151a23]">
-                        <div className="flex space-x-8">
-                            <Button 
-                                variant="ghost" 
-                                className={`py-1 px-3 rounded-none border-b-2 ${activeTab === 'overview' ? 'border-[#4794f8] text-[#4794f8]' : 'border-transparent hover:text-white text-gray-300'}`}
-                                onClick={() => switchTab('overview')}
-                            >
-                                Overview
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                className={`py-1 px-3 rounded-none border-b-2 ${activeTab === 'analytics' ? 'border-[#4794f8] text-[#4794f8]' : 'border-transparent hover:text-white text-gray-300'}`}
-                                onClick={() => switchTab('analytics')}
-                            >
-                                Analytics
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                className={`py-1 px-3 rounded-none border-b-2 ${activeTab === 'reports' ? 'border-[#4794f8] text-[#4794f8]' : 'border-transparent hover:text-white text-gray-300'}`}
-                                onClick={() => switchTab('reports')}
-                            >
-                                Reports
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                className={`py-1 px-3 rounded-none border-b-2 ${activeTab === 'stations' ? 'border-[#4794f8] text-[#4794f8]' : 'border-transparent hover:text-white text-gray-300'}`}
-                                onClick={() => switchTab('stations')}
-                            >
-                                Stations
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                className={`py-1 px-3 rounded-none border-b-2 ${activeTab === 'reserve' ? 'border-[#4794f8] text-[#4794f8]' : 'border-transparent hover:text-white text-gray-300'}`}
-                                onClick={() => switchTab('reserve')}
-                            >
-                                Reservations
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Main content area */}
-                    <div className="flex-1 bg-[#0f1218] p-6 overflow-auto">
-                        <Tabs defaultValue={activeTab} value={activeTab} className="w-full mt-2">
+                    {/* Main content area with bottom navigation */}
+                    <div className="flex-1 p-6 overflow-auto">
+                        <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
                             <TabsContent value="overview" className="mt-0 outline-none">
                                 <div className="space-y-4 sm:space-y-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -576,111 +532,21 @@ export default function POSDashboard() {
                                             </CardContent>
                                         </Card>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                        <Card className="bg-[#151a23] border-[#212936]">
-                                            <CardHeader>
-                                                <CardTitle className="text-base">Gaming Stations</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                    {stations.slice(0, 4).map((station: any) => (
-                                                        <div key={station.id} className={`px-4 py-3 rounded-md flex items-center justify-between ${station.currentCustomer ? 'bg-[#213045]' : 'bg-[#1d212b]'}`}>
-                                                            <div>
-                                                                <div className="font-medium">{station.name}</div>
-                                                                <div className="text-xs text-gray-400">
-                                                                    {station.currentCustomer ? `${station.currentCustomer} • ${station.currentGame || ''}` : 'Available'}
-                                                                </div>
-                                                            </div>
-                                                            {station.currentCustomer ? (
-                                                                <Badge className="bg-[#4794f8] hover:bg-[#3a7fd8]">Active</Badge>
-                                                            ) : (
-                                                                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Free</Badge>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm" 
-                                                    className="w-full mt-3"
-                                                    onClick={() => switchTab('stations')}
-                                                >
-                                                    View All Stations
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
-                                        
-                                        <Card className="bg-[#151a23] border-[#212936]">
-                                            <CardHeader>
-                                                <CardTitle className="text-base">Recent Transactions</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="space-y-2">
-                                                    {transactions.slice(0, 4).map((tx: any) => (
-                                                        <div key={tx.id} className="px-4 py-2 rounded-md flex items-center justify-between bg-[#1d212b]">
-                                                            <div>
-                                                                <div className="font-medium">{tx.customerName || "Unknown customer"}</div>
-                                                                <div className="text-xs text-gray-400">
-                                                                    {new Date(tx.createdAt).toLocaleString()}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className="font-medium">KES {Number(tx.amount).toFixed(2)}</div>
-                                                                <div className="text-xs">
-                                                                    {tx.paymentStatus === "completed" ? (
-                                                                        <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-                                                                            Paid
-                                                                        </Badge>
-                                                                    ) : (
-                                                                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                                                                            Pending
-                                                                        </Badge>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm" 
-                                                    className="w-full mt-3"
-                                                    onClick={() => switchTab('payments')}
-                                                >
-                                                    View All Transactions
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
                                 </div>
                             </TabsContent>
                             
+                            <TabsContent value="analytics" className="mt-0 outline-none">
+                                <h2 className="text-2xl font-bold mb-4">Analytics Dashboard</h2>
+                                <p>Analytics content will appear here</p>
+                            </TabsContent>
+                            
+                            <TabsContent value="reports" className="mt-0 outline-none">
+                                <h2 className="text-2xl font-bold mb-4">Reports</h2>
+                                <p>Reports content will appear here</p>
+                            </TabsContent>
+                            
                             <TabsContent value="stations" className="mt-0 outline-none">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-2xl font-bold">Gaming Stations</h2>
-                                    <Button 
-                                        onClick={() => {
-                                            // Find the first available station and set it as selected
-                                            const availableStation = stations.find((s: any) => !s.currentCustomer);
-                                            if (availableStation) {
-                                                setSelectedStation(availableStation);
-                                                setShowNewSessionModal(true);
-                                            } else {
-                                                toast({
-                                                    title: "No Available Stations",
-                                                    description: "All stations are currently in use.",
-                                                    variant: "destructive"
-                                                });
-                                            }
-                                        }} 
-                                        size="sm"
-                                        className="bg-[#4794f8] hover:bg-[#3a7fd8]"
-                                    >
-                                        New Session
-                                    </Button>
-                                </div>
-                                
+                                <h2 className="text-2xl font-bold mb-4">Gaming Stations</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {stations.map((station: any) => (
                                         <Card key={station.id} className={`${station.currentCustomer ? 'bg-[#213045] border-[#4794f8]/30' : 'bg-[#151a23] border-[#212936]'} relative overflow-hidden`}>
@@ -703,14 +569,6 @@ export default function POSDashboard() {
                                                             <span className="text-gray-400">Game:</span>
                                                             <span>{station.currentGame}</span>
                                                         </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-400">Session Type:</span>
-                                                            <span>{station.sessionType === 'hourly' ? 'Hourly' : 'Per Game'}</span>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-400">Started:</span>
-                                                            <span>{new Date(station.sessionStartTime).toLocaleTimeString()}</span>
-                                                        </div>
                                                         <div className="flex justify-center mt-3 gap-2">
                                                             <Button 
                                                                 variant="outline" 
@@ -719,16 +577,6 @@ export default function POSDashboard() {
                                                                 onClick={() => handleEndSession(station)}
                                                             >
                                                                 End Session
-                                                            </Button>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    setSelectedStation(station);
-                                                                    setShowTransactionHistoryModal(true);
-                                                                }}
-                                                            >
-                                                                <HistoryIcon className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -745,17 +593,6 @@ export default function POSDashboard() {
                                                         >
                                                             Start Session
                                                         </Button>
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="sm" 
-                                                            className="w-full"
-                                                            onClick={() => {
-                                                                setSelectedStation(station);
-                                                                setShowTransactionHistoryModal(true);
-                                                            }}
-                                                        >
-                                                            View History
-                                                        </Button>
                                                     </div>
                                                 )}
                                             </CardContent>
@@ -763,118 +600,48 @@ export default function POSDashboard() {
                                     ))}
                                 </div>
                             </TabsContent>
-
-                            <TabsContent value="payments" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Payments</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                                    <Card className="bg-[#151a23] border-[#212936]">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">KES {todayRevenue.toFixed(2)}</div>
-                                            <p className="text-xs text-gray-400">+350 from yesterday</p>
-                                        </CardContent>
-                                    </Card>
-                                    
-                                    <Card className="bg-[#151a23] border-[#212936]">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">KES {pendingAmount.toFixed(2)}</div>
-                                            <p className="text-xs text-gray-400">{pendingTransactions.length} transactions</p>
-                                        </CardContent>
-                                    </Card>
-                                    
-                                    <Card className="bg-[#151a23] border-[#212936]">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">Cash Payments</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{paymentMethodStats.cash || 0}</div>
-                                            <p className="text-xs text-gray-400">Most popular method</p>
-                                        </CardContent>
-                                    </Card>
-                                    
-                                    <Card className="bg-[#151a23] border-[#212936]">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">M-Pesa Payments</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{paymentMethodStats.mpesa || 0}</div>
-                                            <p className="text-xs text-gray-400">Mobile money</p>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                                
-                                <h3 className="text-xl font-semibold mb-4">Pending Transactions</h3>
-                                <Card className="bg-[#151a23] border-[#212936] overflow-hidden">
-                                    <CardContent className="p-0">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow className="hover:bg-[#212936]/50">
-                                                    <TableHead>ID</TableHead>
-                                                    <TableHead>Customer</TableHead>
-                                                    <TableHead>Amount</TableHead>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                    <TableHead className="text-right">Action</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {pendingTransactions.length === 0 ? (
-                                                    <TableRow>
-                                                        <TableCell colSpan={6} className="text-center text-gray-400">No pending transactions</TableCell>
-                                                    </TableRow>
-                                                ) : (
-                                                    pendingTransactions.map((tx: any) => (
-                                                        <TableRow key={tx.id} className="hover:bg-[#212936]/50">
-                                                            <TableCell className="font-medium">{tx.id}</TableCell>
-                                                            <TableCell>{tx.customerName || "Unknown"}</TableCell>
-                                                            <TableCell>KES {Number(tx.amount).toFixed(2)}</TableCell>
-                                                            <TableCell>{new Date(tx.createdAt).toLocaleString()}</TableCell>
-                                                            <TableCell>
-                                                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                                                                    Pending
-                                                                </Badge>
-                                                            </TableCell>
-                                                            <TableCell className="text-right">
-                                                                <Button 
-                                                                    variant="outline" 
-                                                                    size="sm"
-                                                                    onClick={() => handleClearPayment(tx.id)}
-                                                                >
-                                                                    Mark as Paid
-                                                                </Button>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))
-                                                )}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-
-                            <TabsContent value="analytics" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-                                <Card className="bg-[#151a23] border-[#212936]">
-                                    <CardContent className="pt-6">
-                                        <p className="text-gray-400">Analytics dashboard coming soon</p>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
                             
-                            <TabsContent value="reports" className="mt-0 outline-none">
-                                <h2 className="text-2xl font-bold mb-4">Reports</h2>
-                                <Card className="bg-[#151a23] border-[#212936]">
-                                    <CardContent className="pt-6">
-                                        <p className="text-gray-400">Reports dashboard coming soon</p>
-                                    </CardContent>
-                                </Card>
+                            <TabsContent value="reservations" className="mt-0 outline-none">
+                                <h2 className="text-2xl font-bold mb-4">Reservations</h2>
+                                <p>Reservations content will appear here</p>
                             </TabsContent>
                         </Tabs>
+                    </div>
+                    
+                    {/* Bottom horizontal navigation */}
+                    <div className="h-12 border-t border-[#212936] flex items-center justify-center px-4 bg-[#151a23]">
+                        <div className="flex space-x-8">
+                            <div 
+                                className={`cursor-pointer py-1 px-3 ${activeTab === 'overview' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                                onClick={() => switchTab('overview')}
+                            >
+                                Overview
+                            </div>
+                            <div 
+                                className={`cursor-pointer py-1 px-3 ${activeTab === 'analytics' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                                onClick={() => switchTab('analytics')}
+                            >
+                                Analytics
+                            </div>
+                            <div 
+                                className={`cursor-pointer py-1 px-3 ${activeTab === 'reports' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                                onClick={() => switchTab('reports')}
+                            >
+                                Reports
+                            </div>
+                            <div 
+                                className={`cursor-pointer py-1 px-3 ${activeTab === 'stations' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                                onClick={() => switchTab('stations')}
+                            >
+                                Stations
+                            </div>
+                            <div 
+                                className={`cursor-pointer py-1 px-3 ${activeTab === 'reservations' ? 'text-[#4794f8]' : 'text-gray-300 hover:text-white'}`}
+                                onClick={() => switchTab('reservations')}
+                            >
+                                Reservations
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -941,24 +708,8 @@ export default function POSDashboard() {
                                     <SelectValue placeholder="Select session type" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1d212b] border-[#212936] text-white">
-                                    {selectedGame ? (
-                                        (() => {
-                                            const game = games.find((g: any) => g.id.toString() === selectedGame);
-                                            const perSessionPrice = game?.pricePerSession || 40;
-                                            const hourlyPrice = game?.pricePerHour || 200;
-                                            return (
-                                                <>
-                                                    <SelectItem value="per_game">Per Game (KES {perSessionPrice})</SelectItem>
-                                                    <SelectItem value="hourly">Hourly (KES {hourlyPrice} / hour)</SelectItem>
-                                                </>
-                                            );
-                                        })()
-                                    ) : (
-                                        <>
-                                            <SelectItem value="per_game">Per Game (Select a game first)</SelectItem>
-                                            <SelectItem value="hourly">Hourly (Select a game first)</SelectItem>
-                                        </>
-                                    )}
+                                    <SelectItem value="per_game">Per Game</SelectItem>
+                                    <SelectItem value="hourly">Hourly</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
