@@ -12,8 +12,8 @@ import fs from 'fs';
 import path from 'path';
 
 // Report type definitions
-export type ReportType = 'revenue' | 'usage' | 'games' | 'customers' | 'inventory' | 'financial';
-export type ReportFormat = 'csv' | 'pdf' | 'excel';
+export type ReportType = 'revenue' | 'usage' | 'games' | 'customers' | 'inventory' | 'financial' | 'loyalty' | 'hourly' | 'comparative' | 'predictive' | 'heatmap' | 'segmentation';
+export type ReportFormat = 'csv' | 'pdf' | 'excel' | 'json';
 
 export interface ReportOptions {
   type: ReportType;
@@ -23,6 +23,10 @@ export interface ReportOptions {
   stationId?: number;
   gameId?: number;
   userId?: number;
+  startHour?: number;
+  endHour?: number;
+  comparePeriod?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  segmentType?: 'frequency' | 'spending' | 'age' | 'games';
 }
 
 // Create temp directory if it doesn't exist
@@ -49,6 +53,8 @@ export async function generateReport(options: ReportOptions, res: Response): Pro
         return generateExcel(data, options.type, res);
       case 'pdf':
         return generatePDF(data, options.type, res);
+      case 'json':
+        return generateJSON(data, options.type, res);
       default:
         throw new Error(`Unsupported format: ${options.format}`);
     }
