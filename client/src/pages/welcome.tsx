@@ -89,7 +89,7 @@ export default function WelcomePage() {
           >
             <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
             <UsersIcon className="mr-2 h-5 w-5" />
-            <span className="relative z-10">Staff Portal</span>
+            <span className="relative z-10 text-white font-semibold text-lg">Staff Portal</span>
           </Button>
 
           <Button
@@ -98,7 +98,7 @@ export default function WelcomePage() {
           >
             <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-primary/40 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
             <ShieldIcon className="mr-2 h-5 w-5" />
-            <span className="relative z-10">Admin Portal</span>
+            <span className="relative z-10 text-white font-semibold text-lg">Admin Portal</span>
           </Button>
         </div>
 
