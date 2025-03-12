@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -55,16 +55,44 @@ export const bookings = pgTable("bookings", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+export const stationMaintenanceStatusEnum = pgEnum('station_maintenance_status', [
+  'operational', 'maintenance', 'repair', 'offline'
+]);
+
+export const stationCategoryTypes = pgEnum('station_category_type', [
+  'console', 'pc', 'vr', 'racing', 'arcade', 'mobile', 'other'
+]);
+
+export const stationCategories = pgTable("station_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: stationCategoryTypes("type").notNull(),
+  description: text("description"),
+  color: text("color").default("#6366F1"), // Default color for the category
+  icon: text("icon").default("gamepad"), // Default icon name
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 export const gameStations = pgTable("game_stations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // "Game Station 1" etc
   isActive: boolean("is_active").default(true),
+  categoryId: integer("category_id"), // FK to stationCategories
+  status: stationMaintenanceStatusEnum("status").default("operational"),
+  specs: text("specs"), // Hardware/software specs
+  location: text("location"), // Physical location in the gaming lounge
   currentCustomer: text("current_customer"),
   currentGame: text("current_game"),
   sessionType: text("session_type", { enum: ["per_game", "hourly"] }),
   sessionStartTime: timestamp("session_start_time"),
   baseRate: integer("base_rate").default(40), // 40 KES per game
   hourlyRate: integer("hourly_rate").default(200), // 200 KES per hour
+  peakHourRate: integer("peak_hour_rate"), // Optional rate for peak hours
+  offPeakRate: integer("off_peak_rate"), // Optional rate for off-peak hours
+  weekendRate: integer("weekend_rate"), // Optional rate for weekends
+  lastMaintenance: timestamp("last_maintenance"), // When was the last maintenance
+  nextMaintenance: timestamp("next_maintenance"), // When is the next scheduled maintenance
+  notes: text("notes"), // Additional notes
 });
 
 export const games = pgTable("games", {
@@ -118,9 +146,28 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true
 });
 
+export const insertStationCategorySchema = createInsertSchema(stationCategories).pick({
+  name: true,
+  type: true,
+  description: true,
+  color: true,
+  icon: true
+});
+
 export const insertGameStationSchema = createInsertSchema(gameStations).pick({
   name: true,
-  isActive: true
+  isActive: true,
+  categoryId: true,
+  status: true,
+  specs: true,
+  location: true,
+  hourlyRate: true,
+  baseRate: true,
+  peakHourRate: true,
+  offPeakRate: true,
+  weekendRate: true,
+  notes: true,
+  sessionType: true
 });
 
 export const insertGameSchema = createInsertSchema(games);
@@ -164,6 +211,8 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type StationCategory = typeof stationCategories.$inferSelect;
+export type InsertStationCategory = z.infer<typeof insertStationCategorySchema>;
 export type GameStation = typeof gameStations.$inferSelect;
 export type InsertGameStation = z.infer<typeof insertGameStationSchema>;
 export type Game = typeof games.$inferSelect;
