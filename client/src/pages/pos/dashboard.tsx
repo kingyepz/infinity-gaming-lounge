@@ -62,17 +62,17 @@ export default function POSDashboard() {
     // Main queries for data
     const { data: stations = [], isLoading: stationsLoading, refetch: refetchStations } = useQuery({
         queryKey: ["/api/stations"],
-        queryFn: () => apiRequest("GET", "/api/stations")
+        queryFn: () => apiRequest({ path: "/api/stations" })
     });
 
     const { data: games = [], isLoading: gamesLoading } = useQuery({
         queryKey: ["/api/games"],
-        queryFn: () => apiRequest("GET", "/api/games")
+        queryFn: () => apiRequest({ path: "/api/games" })
     });
 
     const { data: customers = [], isLoading: customersLoading } = useQuery({
         queryKey: ["/api/users/customers"],
-        queryFn: () => apiRequest("GET", "/api/users/customers")
+        queryFn: () => apiRequest({ path: "/api/users/customers" })
     });
 
     const { data: transactions = [], refetch: refetchTransactions } = useQuery<Transaction[]>({
@@ -211,14 +211,18 @@ export default function POSDashboard() {
                 return;
             }
 
-            const response = await apiRequest("POST", "/api/sessions/start", {
-                stationId: selectedStation.id,
-                customerId: selectedCustomer.id,
-                customerName: selectedCustomer.displayName,
-                gameId: selectedGame,
-                sessionType: selectedSessionType,
-                baseRate: 40, // Fixed rate per game
-                hourlyRate: 200 // Fixed hourly rate
+            const response = await apiRequest({
+                path: "/api/sessions/start",
+                method: "POST",
+                data: {
+                    stationId: selectedStation.id,
+                    customerId: selectedCustomer.id,
+                    customerName: selectedCustomer.displayName,
+                    gameId: selectedGame,
+                    sessionType: selectedSessionType,
+                    baseRate: 40, // Fixed rate per game
+                    hourlyRate: 200 // Fixed hourly rate
+                }
             });
 
             if (!response) {
