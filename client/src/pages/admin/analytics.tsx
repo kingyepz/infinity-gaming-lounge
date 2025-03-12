@@ -1061,59 +1061,521 @@ export default function AdminAnalytics() {
 
             {/* Analytics Tab */}
             <TabsContent value="analytics">
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-6">
+                {/* Analytics Header with Tabs */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold">Advanced Analytics</h2>
+                    <p className="text-muted-foreground">Comprehensive business intelligence dashboard</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={refreshAllData}
+                      disabled={isRefreshing}
+                      className="flex items-center gap-1"
+                    >
+                      <RefreshCwIcon className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      Refresh Data
+                    </Button>
+                    <Select 
+                      value={comparePeriod} 
+                      onValueChange={(value) => setComparePeriod(value)}
+                    >
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Key Performance Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <DollarSignIcon className="h-5 w-5 text-primary" />
+                        Total Revenue
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-3xl font-bold">KES {dailyStats?.totalRevenue || 0}</p>
+                        <div className="flex items-center gap-2 text-sm">
+                          {comparativeAnalysis?.changes?.revenue > 0 ? (
+                            <Badge variant="success" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              +{comparativeAnalysis?.changes?.revenue || 0}%
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              {comparativeAnalysis?.changes?.revenue || 0}%
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground">vs previous {comparePeriod}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <GamepadIcon className="h-5 w-5 text-primary" />
+                        Completed Sessions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-3xl font-bold">{dailyStats?.completedSessions || 0}</p>
+                        <div className="flex items-center gap-2 text-sm">
+                          {comparativeAnalysis?.changes?.sessions > 0 ? (
+                            <Badge variant="success" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              +{comparativeAnalysis?.changes?.sessions || 0}%
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              {comparativeAnalysis?.changes?.sessions || 0}%
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground">vs previous {comparePeriod}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <UsersIcon className="h-5 w-5 text-primary" />
+                        Active Customers
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-3xl font-bold">{customerActivity?.returningCustomers || 0}</p>
+                        <div className="flex items-center gap-2 text-sm">
+                          {comparativeAnalysis?.changes?.customerRetention > 0 ? (
+                            <Badge variant="success" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              +{comparativeAnalysis?.changes?.customerRetention || 0}%
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              {comparativeAnalysis?.changes?.customerRetention || 0}%
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground">retention rate</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <TrophyIcon className="h-5 w-5 text-primary" />
+                        Average Revenue
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-3xl font-bold">KES {dailyStats?.averageRevenue || 0}</p>
+                        <div className="flex items-center gap-2 text-sm">
+                          {comparativeAnalysis?.changes?.averageRevenue > 0 ? (
+                            <Badge variant="success" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              +{comparativeAnalysis?.changes?.averageRevenue || 0}%
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <ActivityIcon className="h-3 w-3" />
+                              {comparativeAnalysis?.changes?.averageRevenue || 0}%
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground">per session</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Revenue & Predictive Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card className="bg-black/30 border-primary/20 lg:col-span-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart2Icon className="h-5 w-5 text-primary" />
+                        Revenue Trends
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={revenueChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                          <XAxis dataKey="date" stroke="#888" />
+                          <YAxis stroke="#888" />
+                          <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                          <Legend />
+                          <Bar dataKey="amount" name="Revenue (KES)" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <LineChartIcon className="h-5 w-5 text-primary" />
+                        Revenue Forecast
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={predictiveAnalytics?.forecast || []}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                          <XAxis dataKey="day" stroke="#888" />
+                          <YAxis stroke="#888" />
+                          <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="predicted" 
+                            name="Forecast (KES)" 
+                            stroke="hsl(var(--primary))" 
+                            activeDot={{ r: 8 }} 
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="actual" 
+                            name="Actual (KES)" 
+                            stroke="#10b981" 
+                            strokeDasharray="5 5" 
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <div className="mt-3 border-t border-border pt-3">
+                        <h4 className="font-semibold mb-1">Next Week Forecast</h4>
+                        <div className="flex items-center justify-between">
+                          <p>Projected Revenue</p>
+                          <p className="font-bold text-primary">KES {predictiveAnalytics?.nextWeekTotal || 0}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Customer Retention & Station Heatmap */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <UsersRoundIcon className="h-5 w-5 text-primary" />
+                        Customer Retention
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="flex flex-col items-center justify-center p-3 bg-black/20 rounded-lg">
+                          <p className="text-sm text-muted-foreground">New Customers</p>
+                          <p className="text-3xl font-bold">{customerActivity?.newCustomers || 0}</p>
+                          <p className="text-xs text-muted-foreground">Last 30 days</p>
+                        </div>
+                        <div className="flex flex-col items-center justify-center p-3 bg-black/20 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Return Rate</p>
+                          <p className="text-3xl font-bold">{customerActivity?.returnRate || 0}%</p>
+                          <p className="text-xs text-muted-foreground">Customer loyalty</p>
+                        </div>
+                      </div>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Returning', value: customerActivity?.returningCustomers || 0 },
+                              { name: 'New', value: customerActivity?.newCustomers || 0 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            innerRadius={60}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            <Cell fill="hsl(var(--primary))" />
+                            <Cell fill="#10b981" />
+                          </Pie>
+                          <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <TrelloIcon className="h-5 w-5 text-primary" />
+                        Station Usage Heatmap
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                          <div key={day} className="text-center text-xs text-muted-foreground">{day}</div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {stationHeatmap.map((cell, idx) => {
+                          const intensity = cell.value > 0 
+                            ? Math.min(100, Math.max(20, cell.value * 5)) 
+                            : 0;
+                          
+                          return (
+                            <div 
+                              key={idx}
+                              className="aspect-square rounded-sm flex items-center justify-center text-xs"
+                              style={{ 
+                                backgroundColor: `hsla(var(--primary), ${intensity}%)`,
+                                position: 'relative'
+                              }}
+                              title={`${cell.day} at ${cell.hour}:00 - ${cell.value} sessions`}
+                            >
+                              {cell.value > 0 && cell.value}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                          <span className="text-xs text-muted-foreground">Low</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-primary/50"></div>
+                          <span className="text-xs text-muted-foreground">Medium</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-primary/90"></div>
+                          <span className="text-xs text-muted-foreground">High</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Game Performance & Revenue Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <PackageIcon className="h-5 w-5 text-primary" />
+                        Game Performance
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[300px] pr-4">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Game</TableHead>
+                              <TableHead>Sessions</TableHead>
+                              <TableHead>Revenue</TableHead>
+                              <TableHead>Engagement</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {gamePerformance.map((game) => (
+                              <TableRow key={game.name}>
+                                <TableCell className="font-medium">{game.name}</TableCell>
+                                <TableCell>{game.sessions}</TableCell>
+                                <TableCell>KES {game.revenue}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Progress value={game.engagement} className="h-2" />
+                                    <span className="text-xs">{game.engagement}%</span>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSignIcon className="h-5 w-5 text-primary" />
+                        Revenue Breakdown
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={revenueBreakdown?.categories || []}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {revenueBreakdown?.categories?.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={index === 0 
+                                  ? 'hsl(var(--primary))' 
+                                  : index === 1 
+                                    ? '#10b981' 
+                                    : index === 2 
+                                      ? '#f59e0b' 
+                                      : '#6366f1'
+                                } 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} 
+                            formatter={(value) => [`KES ${value}`, 'Revenue']}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Loyalty Analytics & Payment Methods */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <BadgePercentIcon className="h-5 w-5 text-primary" />
+                        Loyalty Program Analytics
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                        {loyaltyAnalytics?.segments?.map((segment) => (
+                          <div key={segment.name} className="flex flex-col items-center justify-center p-2 bg-black/20 rounded-lg">
+                            <p className="text-xs text-muted-foreground">{segment.name}</p>
+                            <p className="text-lg font-bold">{segment.count}</p>
+                            <p className="text-xs text-muted-foreground">customers</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-sm">Top Customers by Points</h4>
+                        <ScrollArea className="h-[150px]">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Points</TableHead>
+                                <TableHead>Visits</TableHead>
+                                <TableHead>Value</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {loyaltyAnalytics?.topCustomers?.map((customer) => (
+                                <TableRow key={customer.id}>
+                                  <TableCell className="font-medium">{customer.name}</TableCell>
+                                  <TableCell>{customer.points}</TableCell>
+                                  <TableCell>{customer.visits}</TableCell>
+                                  <TableCell>KES {customer.totalSpent}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <TagIcon className="h-5 w-5 text-primary" />
+                        Payment Methods
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Cash', value: paymentMethodStats.cash || 0 },
+                              { name: 'M-Pesa', value: paymentMethodStats.mpesa || 0 },
+                              { name: 'Airtel', value: paymentMethodStats.airtel || 0 },
+                              { name: 'Card', value: paymentMethodStats.card || 0 },
+                              { name: 'QR', value: paymentMethodStats.qr || 0 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            <Cell fill="hsl(var(--primary))" />
+                            <Cell fill="#10b981" />
+                            <Cell fill="#f59e0b" />
+                            <Cell fill="#6366f1" />
+                            <Cell fill="#ec4899" />
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} 
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Hourly Distribution */}
                 <Card className="bg-black/30 border-primary/20">
-                  <CardHeader>
-                    <CardTitle>Revenue Analysis</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2">
+                      <ClockIcon className="h-5 w-5 text-primary" />
+                      Hourly Traffic Distribution
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={revenueChartData}>
+                      <BarChart data={hourlyDistribution}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                        <XAxis dataKey="date" stroke="#888" />
+                        <XAxis 
+                          dataKey="hour" 
+                          stroke="#888"
+                          tickFormatter={(hour) => `${hour}:00`} 
+                        />
                         <YAxis stroke="#888" />
-                        <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
-                        <Bar dataKey="amount" fill="hsl(var(--primary))" />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
+                          formatter={(value, name) => [name === 'count' ? value : `KES ${value}`, name === 'count' ? 'Sessions' : 'Revenue']}
+                          labelFormatter={(hour) => `${hour}:00 - ${hour+1}:00`}
+                        />
+                        <Legend />
+                        <Bar dataKey="count" name="Sessions" fill="hsl(var(--primary))" />
+                        <Bar dataKey="revenue" name="Revenue (KES)" fill="#10b981" />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card className="bg-black/30 border-primary/20">
-                    <CardHeader>
-                      <CardTitle>Total Revenue</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">KES {customerActivity?.totalRevenue || totalRevenue}</p>
-                      <p className="text-sm text-muted-foreground">Lifetime earnings</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-black/30 border-primary/20">
-                    <CardHeader>
-                      <CardTitle>Completed Sessions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">
-                        {customerActivity?.totalSessions || completedTransactions.length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Total completed sessions</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-black/30 border-primary/20">
-                    <CardHeader>
-                      <CardTitle>Total Customers</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">
-                        {customerActivity?.totalCustomers || customers.length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Registered customers</p>
-                    </CardContent>
-                  </Card>
-                </div>
               </div>
             </TabsContent>
 
