@@ -379,7 +379,7 @@ export default function POSDashboard() {
 
             <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full relative">
                 <div className="w-full md:w-64 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
-                    <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
+                    <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent md:overflow-x-visible">
                         <TabsTrigger value="overview" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <GamepadIcon className="w-4 h-4 mr-2" />
                             <span className="hidden sm:inline">Overview</span>
@@ -459,7 +459,7 @@ export default function POSDashboard() {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="sessions">
+                    <TabsContent value="sessions" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                         <div className="flex justify-between mb-4">
                             <h2 className="text-xl sm:text-2xl font-bold">Gaming Stations</h2>
                             <Button 
@@ -565,7 +565,7 @@ export default function POSDashboard() {
                         />
                     </TabsContent>
 
-                    <TabsContent value="customers">
+                    <TabsContent value="customers" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                         <div className="flex flex-col space-y-4">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-xl sm:text-2xl font-bold">Customers</h2>
@@ -609,7 +609,7 @@ export default function POSDashboard() {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="payments">
+                    <TabsContent value="payments" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                         <div className="flex flex-col space-y-4">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-xl sm:text-2xl font-bold">Payments</h2>
@@ -721,7 +721,7 @@ export default function POSDashboard() {
                         </div>
                     </TabsContent>
                     
-                    <TabsContent value="loyalty">
+                    <TabsContent value="loyalty" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                         <div className="flex flex-col space-y-4">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-xl sm:text-2xl font-bold">Loyalty Program</h2>
