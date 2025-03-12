@@ -92,7 +92,7 @@ export default function AdminAnalytics() {
   // Report time-based filtering
   const [reportStartHour, setReportStartHour] = useState<number>(0);
   const [reportEndHour, setReportEndHour] = useState<number>(23);
-  const [timePreset, setTimePreset] = useState<string>('all-day');
+  const [timePreset, setTimePreset] = useState<string>('all');
   
   // Interactive dashboard filters
   const [dashboardPeriod, setDashboardPeriod] = useState<string>('month');
@@ -355,9 +355,10 @@ export default function AdminAnalytics() {
       
       // Add time range parameters - use preset if available, otherwise use hours
       if (timeOfDayFilter && timeOfDayFilter !== 'custom') {
+        // Send the named preset as the source of truth
         params.timePreset = timeOfDayFilter;
       } else {
-        // Custom time range
+        // Custom time range - fall back to direct hour values
         params.startHour = startHour;
         params.endHour = endHour;
       }
@@ -1464,6 +1465,7 @@ export default function AdminAnalytics() {
                                   size="sm"
                                   onClick={() => {
                                     setTimeOfDayFilter('all');
+                                    // Set the hour ranges that correspond to 'all'
                                     setStartHour(0);
                                     setEndHour(23);
                                   }}
@@ -1475,6 +1477,7 @@ export default function AdminAnalytics() {
                                   size="sm"
                                   onClick={() => {
                                     setTimeOfDayFilter('morning');
+                                    // Set the hour ranges that correspond to 'morning'
                                     setStartHour(6);
                                     setEndHour(11);
                                   }}
@@ -1486,6 +1489,7 @@ export default function AdminAnalytics() {
                                   size="sm"
                                   onClick={() => {
                                     setTimeOfDayFilter('afternoon');
+                                    // Set the hour ranges that correspond to 'afternoon'
                                     setStartHour(12);
                                     setEndHour(17);
                                   }}
@@ -1497,6 +1501,7 @@ export default function AdminAnalytics() {
                                   size="sm"
                                   onClick={() => {
                                     setTimeOfDayFilter('evening');
+                                    // Set the hour ranges that correspond to 'evening'
                                     setStartHour(18);
                                     setEndHour(23);
                                   }}
@@ -2228,7 +2233,7 @@ export default function AdminAnalytics() {
                             <SelectValue placeholder="Select time preset" />
                           </SelectTrigger>
                           <SelectContent className="bg-black/90">
-                            <SelectItem value="all-day">All Day (00:00-23:59)</SelectItem>
+                            <SelectItem value="all">All Day (00:00-23:59)</SelectItem>
                             <SelectItem value="morning">Morning (06:00-11:59)</SelectItem>
                             <SelectItem value="afternoon">Afternoon (12:00-17:59)</SelectItem>
                             <SelectItem value="evening">Evening (18:00-23:59)</SelectItem>
