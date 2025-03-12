@@ -42,6 +42,8 @@ export default function PaymentModal({
   const [showSplitPayment, setShowSplitPayment] = useState(false); // State for split payment modal
   const [mpesaRef, setMpesaRef] = useState<string | null>(null); // Track M-Pesa transaction reference
   const [airtelRef, setAirtelRef] = useState<string | null>(null); // Track Airtel Money transaction reference
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null); // QR Code data
+  const [qrRequestId, setQrRequestId] = useState<string | null>(null); // QR request ID for status checking
   const { toast } = useToast();
   
   // Helper function to reset the station status after payment
@@ -345,6 +347,113 @@ export default function PaymentModal({
 
   const handleSplitPaymentClose = () => {
     setShowSplitPayment(false);
+  };
+  
+  // QR Code payment methods
+  const handleGenerateQRCode = async (type: "mpesa" | "airtel") => {
+    try {
+      setIsProcessing(true);
+      
+      // Create transaction first
+      const { createTransaction } = await import("@/lib/payment");
+      const transactionData = {
+        stationId: station.id,
+        customerName: station.currentCustomer || "Walk-in Customer",
+        gameName: station.currentGame || "Unknown Game",
+        sessionType: station.sessionType || "per_game",
+        amount: String(amount),
+        duration: station.sessionType === "hourly" ? duration : null
+      };
+      
+      console.log("Creating transaction for QR payment:", transactionData);
+      const txResult = await createTransaction(transactionData);
+      
+      if (!txResult.success || !txResult.transactionId) {
+        setIsProcessing(false);
+        toast({
+          title: "Transaction Error",
+          description: txResult.error || "Failed to create transaction record for QR code payment",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const transactionId = txResult.transactionId;
+      
+      // Generate QR code
+      const { generateMpesaQRCode } = await import("@/lib/payment");
+      const qrResult = await generateMpesaQRCode(amount, transactionId);
+      
+      if (qrResult.success && qrResult.qrCode) {
+        setQrCodeData(qrResult.qrCode);
+        setQrRequestId(qrResult.requestId || null);
+        setIsProcessing(false);
+      } else {
+        toast({
+          title: "QR Code Error",
+          description: qrResult.error || "Failed to generate QR code",
+          variant: "destructive"
+        });
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      toast({
+        title: "QR Code Error", 
+        description: error instanceof Error ? error.message : "An unexpected error occurred", 
+        variant: "destructive"
+      });
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleCheckQRStatus = async () => {
+    try {
+      if (!transactionId) {
+        return { status: "ERROR", message: "Transaction ID is missing" };
+      }
+      
+      const { checkMpesaQRPaymentStatus } = await import("@/lib/payment");
+      const result = await checkMpesaQRPaymentStatus(transactionId);
+      return result;
+    } catch (error) {
+      console.error("Error checking QR payment status:", error);
+      return { 
+        status: "ERROR", 
+        message: error instanceof Error ? error.message : "Failed to check payment status" 
+      };
+    }
+  };
+  
+  const handleQRPaymentComplete = async () => {
+    try {
+      // Reset the station status after QR payment
+      const paymentType = paymentMethod === "qr-mpesa" ? "QR-MPesa" : "QR-Airtel";
+      await resetStationStatus(paymentType);
+      
+      toast({
+        title: "Payment Successful",
+        description: "QR code payment processed successfully."
+      });
+      
+      onPaymentComplete();
+      onClose();
+    } catch (error) {
+      console.error("Error completing QR payment:", error);
+    }
+  };
+  
+  const handleQRRetry = () => {
+    // Reset QR code data and status
+    setQrCodeData(null);
+    setQrRequestId(null);
+    
+    // Start over with new QR code generation
+    if (paymentMethod === "qr-mpesa") {
+      handleGenerateQRCode("mpesa");
+    } else if (paymentMethod === "qr-airtel") {
+      handleGenerateQRCode("airtel");
+    }
   };
 
 
