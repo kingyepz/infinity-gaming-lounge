@@ -2656,6 +2656,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         userId,
         startHour,
         endHour,
+        timePreset,
         comparePeriod,
         segmentType
       } = req.query;
@@ -2702,12 +2703,35 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
       }
       
       // Handle time filtering parameters
-      if (startHour) {
-        reportOptions.startHour = Number(startHour);
-      }
-      
-      if (endHour) {
-        reportOptions.endHour = Number(endHour);
+      if (timePreset) {
+        // Time preset takes precedence over explicit hours
+        switch (timePreset) {
+          case 'morning':
+            reportOptions.startHour = 6;
+            reportOptions.endHour = 11;
+            break;
+          case 'afternoon':
+            reportOptions.startHour = 12;
+            reportOptions.endHour = 17;
+            break;
+          case 'evening':
+            reportOptions.startHour = 18;
+            reportOptions.endHour = 23;
+            break;
+          case 'all':
+          default:
+            reportOptions.startHour = 0;
+            reportOptions.endHour = 23;
+        }
+      } else if (startHour || endHour) {
+        // Use explicit hour parameters if no preset and hours are provided
+        if (startHour) {
+          reportOptions.startHour = Number(startHour);
+        }
+        
+        if (endHour) {
+          reportOptions.endHour = Number(endHour);
+        }
       }
       
       // Handle comparison period for comparative reports

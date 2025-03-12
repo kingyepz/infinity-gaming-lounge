@@ -25,6 +25,7 @@ export interface ReportOptions {
   userId?: number;
   startHour?: number;
   endHour?: number;
+  timePreset?: 'morning' | 'afternoon' | 'evening' | 'all';
   comparePeriod?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   segmentType?: 'frequency' | 'spending' | 'age' | 'games';
 }
