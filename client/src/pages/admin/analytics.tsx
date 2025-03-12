@@ -202,6 +202,58 @@ export default function AdminAnalytics() {
     queryKey: ["/api/reports/payment-methods"],
     queryFn: () => apiRequest({ path: "/api/reports/payment-methods" })
   });
+  
+  // Added advanced analytics queries
+  const { data: hourlyDistribution = [] } = useQuery({
+    queryKey: ["/api/reports/hourly-distribution"],
+    queryFn: () => apiRequest({ path: "/api/reports/hourly-distribution" })
+  });
+  
+  const { data: customerRetention = { customerDetails: [], summary: {} } } = useQuery({
+    queryKey: ["/api/reports/customer-retention"],
+    queryFn: () => apiRequest({ path: "/api/reports/customer-retention" })
+  });
+  
+  const { data: stationHeatmap = [] } = useQuery({
+    queryKey: ["/api/reports/station-heatmap"],
+    queryFn: () => apiRequest({ path: "/api/reports/station-heatmap" })
+  });
+  
+  const { data: gamePerformance = [] } = useQuery({
+    queryKey: ["/api/reports/game-performance"],
+    queryFn: () => apiRequest({ path: "/api/reports/game-performance" })
+  });
+  
+  const { data: revenueBreakdown = { categories: [], totalRevenue: 0 } } = useQuery({
+    queryKey: ["/api/reports/revenue-breakdown"],
+    queryFn: () => apiRequest({ path: "/api/reports/revenue-breakdown" })
+  });
+  
+  const { data: loyaltyAnalytics = { segments: [], topCustomers: [] } } = useQuery({
+    queryKey: ["/api/reports/loyalty-analytics"],
+    queryFn: () => apiRequest({ path: "/api/reports/loyalty-analytics" })
+  });
+  
+  // State for comparative analysis period selection
+  const [comparePeriod, setComparePeriod] = useState('monthly');
+  
+  const { data: comparativeAnalysis = { 
+    periodType: 'monthly', 
+    currentPeriod: { metrics: {} }, 
+    previousPeriod: { metrics: {} }, 
+    changes: {} 
+  } } = useQuery({
+    queryKey: ["/api/reports/comparative-analysis", comparePeriod],
+    queryFn: () => apiRequest({ 
+      path: `/api/reports/comparative-analysis?period=${comparePeriod}` 
+    }),
+    enabled: true,
+  });
+  
+  const { data: predictiveAnalytics = { dayAverages: [], forecast: [], nextWeekTotal: 0 } } = useQuery({
+    queryKey: ["/api/reports/predictive-analytics"],
+    queryFn: () => apiRequest({ path: "/api/reports/predictive-analytics" })
+  });
 
   // Refresh functionality
   const refreshAllData = async () => {
@@ -219,7 +271,16 @@ export default function AdminAnalytics() {
         queryClient.invalidateQueries({ queryKey: ["/api/reports/popular-games"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/station-utilization"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/customer-activity"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/reports/payment-methods"] })
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/payment-methods"] }),
+        // New advanced analytics endpoints
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/hourly-distribution"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/customer-retention"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/station-heatmap"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/game-performance"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/revenue-breakdown"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/loyalty-analytics"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/comparative-analysis"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/reports/predictive-analytics"] })
       ]);
       
       toast({
