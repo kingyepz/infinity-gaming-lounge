@@ -157,6 +157,42 @@ export default function AdminAnalytics() {
     queryKey: ["/api/users/customers"],
     queryFn: () => apiRequest({ path: "/api/users/customers" })
   });
+  
+  // Fetch analytics data from reports endpoints
+  const { data: dailyStats = { totalRevenue: 0, completedSessions: 0, averageRevenue: 0 } } = useQuery({
+    queryKey: ["/api/reports/daily"],
+    queryFn: () => apiRequest({ path: "/api/reports/daily" })
+  });
+  
+  const { data: revenueByTimeFrame = { totalRevenue: 0, completedSessions: 0, averageRevenue: 0 } } = useQuery({
+    queryKey: ["/api/reports/revenue/weekly"],
+    queryFn: () => apiRequest({ path: "/api/reports/revenue/weekly" })
+  });
+  
+  const { data: popularGamesStats = [] } = useQuery({
+    queryKey: ["/api/reports/popular-games"],
+    queryFn: () => apiRequest({ path: "/api/reports/popular-games" })
+  });
+  
+  const { data: stationUtilization = [] } = useQuery({
+    queryKey: ["/api/reports/station-utilization"],
+    queryFn: () => apiRequest({ path: "/api/reports/station-utilization" })
+  });
+  
+  const { data: customerActivity = { 
+    newCustomers: 0, 
+    returningCustomers: 0,
+    returnRate: 0,
+    avgSessionDuration: 0
+  } } = useQuery({
+    queryKey: ["/api/reports/customer-activity"],
+    queryFn: () => apiRequest({ path: "/api/reports/customer-activity" })
+  });
+  
+  const { data: paymentMethodStats = [] } = useQuery({
+    queryKey: ["/api/reports/payment-methods"],
+    queryFn: () => apiRequest({ path: "/api/reports/payment-methods" })
+  });
 
   // Derived statistics
   const activeStations = stations.filter((station) => station.currentCustomer).length;
@@ -727,8 +763,14 @@ export default function AdminAnalytics() {
                       <div className="text-lg sm:text-2xl font-bold">
                         {activeStations}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {stations.length} total stations
+                      <div className="mt-2">
+                        <Progress 
+                          value={Math.round((activeStations / (stations.length || 1)) * 100)} 
+                          className="h-2" 
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {Math.round((activeStations / (stations.length || 1)) * 100)}% of {stations.length} stations
                       </p>
                     </CardContent>
                   </Card>
@@ -738,10 +780,10 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-lg sm:text-2xl font-bold">
-                        KES {todayRevenue}
+                        KES {dailyStats?.totalRevenue || todayRevenue}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {completedTransactions.filter(tx => new Date(tx.createdAt).toDateString() === new Date().toDateString()).length} transactions
+                        {dailyStats?.completedSessions || completedTransactions.filter(tx => new Date(tx.createdAt).toDateString() === new Date().toDateString()).length} transactions
                       </p>
                     </CardContent>
                   </Card>
@@ -751,10 +793,10 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-lg sm:text-2xl font-bold">
-                        {newCustomers}
+                        {customerActivity?.newCustomers || newCustomers}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {customers.length} total customers
+                        {customerActivity?.returningCustomers || 0} returning customers
                       </p>
                     </CardContent>
                   </Card>
