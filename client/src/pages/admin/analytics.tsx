@@ -2890,7 +2890,7 @@ export default function AdminAnalytics() {
                                       {category.icon === 'headset' && <HeadphonesIcon className="h-5 w-5 mr-2" />}
                                       {category.icon === 'vr' && <EyeIcon className="h-5 w-5 mr-2" />}
                                       {category.icon === 'racing' && <CarIcon className="h-5 w-5 mr-2" />}
-                                      {category.icon === 'arcade' && <GameControllerIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'arcade' && <GamepadIcon className="h-5 w-5 mr-2" />}
                                       {category.icon === 'mobile' && <SmartphoneIcon className="h-5 w-5 mr-2" />}
                                       <h3 className="font-bold text-white">{category.name}</h3>
                                     </div>
@@ -2915,14 +2915,14 @@ export default function AdminAnalytics() {
                                         size="sm"
                                         onClick={() => handleEditCategoryClick(category)}
                                       >
-                                        <Pencil className="h-4 w-4" />
+                                        <PencilIcon className="h-4 w-4" />
                                       </Button>
                                       <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleDeleteCategoryClick(category.id)}
                                       >
-                                        <Trash className="h-4 w-4" />
+                                        <TrashIcon className="h-4 w-4" />
                                       </Button>
                                     </div>
                                   </div>
