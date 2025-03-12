@@ -12,8 +12,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon } from "lucide-react";
 import QRCodePayment from "./QRCodePayment";
+import { SplitPaymentModal } from './SplitPaymentModal'; // Import the new component
 
-type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode" | "qr-mpesa" | "qr-airtel";
+type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode";
 
 type PaymentStatus = "idle" | "processing" | "completed" | "failed";
 
@@ -37,6 +38,7 @@ export default function PaymentModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [mpesaStatus, setMpesaStatus] = useState<PaymentStatus>("idle");
   const [airtelStatus, setAirtelStatus] = useState<PaymentStatus>("idle");
+  const [showSplitPayment, setShowSplitPayment] = useState(false); // State for split payment modal
   const { toast } = useToast();
 
   // Calculate duration if session is active (in minutes)
@@ -72,7 +74,7 @@ export default function PaymentModal({
       if (!txResult.success || !txResult.transactionId) {
         throw new Error(txResult.error || "Failed to create transaction record");
       }
-      
+
       const transactionId = txResult.transactionId;
 
       if (paymentMethod === "cash") {
@@ -236,7 +238,18 @@ export default function PaymentModal({
     return () => clearInterval(pollInterval);
   };
 
+  const handleOpenSplitPayment = () => {
+    setShowSplitPayment(true);
+    onClose(); // Close the main payment modal
+  };
+
+  const handleSplitPaymentClose = () => {
+    setShowSplitPayment(false);
+  };
+
+
   return (
+    <>
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] bg-black/50 border-primary/20 text-white">
         <DialogHeader>
@@ -375,7 +388,7 @@ export default function PaymentModal({
                 )}
               </div>
             </TabsContent>
-            
+
             <TabsContent value="qrcode" className="mt-4">
               {/* QR Code Payment UI */}
               <div className="space-y-4">
@@ -386,7 +399,7 @@ export default function PaymentModal({
                   <p className="text-center mb-4">
                     Select your preferred payment method and scan the QR code
                   </p>
-                  
+
                   <div className="flex justify-center space-x-4 mb-4">
                     <Button
                       variant={paymentMethod === "qr-mpesa" ? "default" : "outline"}
@@ -409,7 +422,7 @@ export default function PaymentModal({
                       Airtel Money
                     </Button>
                   </div>
-                  
+
                   {paymentMethod === "qr-mpesa" && (
                     <div className="mt-4">
                       <QRCodePayment
@@ -439,7 +452,7 @@ export default function PaymentModal({
                       />
                     </div>
                   )}
-                  
+
                   {paymentMethod === "qr-airtel" && (
                     <div className="mt-4">
                       <QRCodePayment
@@ -473,6 +486,14 @@ export default function PaymentModal({
               </div>
             </TabsContent>
           </Tabs>
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={handleOpenSplitPayment}
+            disabled={isProcessing}
+          >
+            Split Payment
+          </Button>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} disabled={isProcessing}>
@@ -481,5 +502,12 @@ export default function PaymentModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <SplitPaymentModal
+        isOpen={showSplitPayment}
+        onClose={handleSplitPaymentClose}
+        station={station}
+        onPaymentComplete={onPaymentComplete}
+      />
+    </>
   );
 }

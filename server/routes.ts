@@ -306,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get actual database columns to ensure we only use valid ones
       const actualColumns = Object.keys(transactions);
       console.log("Actual database columns:", actualColumns);
-      
+
       // Insert transaction using a simplified approach to avoid column issues
       const validColumns = [
         'stationId',
@@ -317,38 +317,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'paymentStatus',
         'duration'
       ];
-      
+
       // Create a clean transaction object only with valid columns
       const transactionData = {};
-      
+
       // Add basic fields
       transactionData.stationId = rawData.stationId;
       transactionData.customerName = rawData.customerName;
       transactionData.sessionType = rawData.sessionType;
       transactionData.amount = rawData.amount;
       transactionData.paymentStatus = "pending";
-      
+
       // Add optional fields
       if (rawData.gameName) {
         transactionData.gameName = rawData.gameName;
       }
-      
+
       if (rawData.duration !== undefined && rawData.duration !== null) {
         transactionData.duration = rawData.duration;
       }
-      
+
       console.log("Final transaction data:", transactionData);
-      
+
       // Execute insert
       const [result] = await db.insert(transactions).values(transactionData).returning();
-      
+
       res.json(result);
     } catch (error) {
       console.error("Transaction creation error:", error);
       res.status(500).json({ error: error.message || "Failed to create transaction" });
     }
   }));
-  
+
   // Add a GET endpoint to retrieve all transactions
   app.get("/api/transactions", asyncHandler(async (_req, res) => {
     try {
@@ -366,12 +366,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(stationId)) {
         return res.status(400).json({ message: "Invalid station ID" });
       }
-      
+
       const stationTransactions = await db.select()
         .from(transactions)
         .where(eq(transactions.stationId, stationId))
         .orderBy(desc(transactions.createdAt));
-      
+
       res.json(stationTransactions);
     } catch (error) {
       console.error("Error fetching transactions by station:", error);
@@ -444,45 +444,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(rewards)
         .where(eq(rewards.available, true))
         .orderBy(rewards.points);
-      
+
       res.json(rewardsList);
     } catch (error) {
       console.error("Error fetching rewards:", error);
       res.status(500).json({ error: "Failed to fetch rewards" });
     }
   }));
-  
+
   // Add reward redemption endpoint
   app.post("/api/rewards/redeem", asyncHandler(async (req, res) => {
     try {
       const { userId, rewardId } = req.body;
-      
+
       if (!userId || !rewardId) {
         return res.status(400).json({ error: "Missing required fields" });
       }
-      
+
       // Get the reward
       const [reward] = await db.select()
         .from(rewards)
         .where(eq(rewards.id, rewardId));
-      
+
       if (!reward) {
         return res.status(404).json({ error: "Reward not found" });
       }
-      
+
       if (!reward.available) {
         return res.status(400).json({ error: "Reward is not available" });
       }
-      
+
       // Check if user has enough points
       const [user] = await db.select()
         .from(users)
         .where(eq(users.id, userId));
-      
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       if ((user.points || 0) < reward.points) {
         return res.status(400).json({ 
           error: "Insufficient points", 
@@ -490,10 +490,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           available: user.points || 0
         });
       }
-      
+
       // Redeem points
       const newPointsBalance = await storage.redeemLoyaltyPoints(userId, reward.points);
-      
+
       res.json({
         success: true,
         message: `Successfully redeemed ${reward.title}`,
@@ -613,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments/mpesa", asyncHandler(async (req, res) => {
     try {
       const { PaymentDebugger } = await import('./paymentDebugger');
-      
+
       PaymentDebugger.log('mpesa', 'request', req.body);
       const paymentData = mpesaPaymentSchema.parse(req.body);
       PaymentDebugger.log('mpesa', 'validated_data', paymentData);
@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accountReference: `TXN-${paymentData.transactionId}`,
         transactionDesc: "Payment for gaming services"
       });
-      
+
       PaymentDebugger.log('mpesa', 'stk_response', response);
 
       try {
@@ -634,16 +634,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentStatus: "pending",
           mpesaRef: response.MerchantRequestID
         };
-        
+
         PaymentDebugger.log('mpesa', 'update_data', updateData);
         await db.update(transactions)
           .set(updateData)
           .where(eq(transactions.id, paymentData.transactionId));
-          
+
         PaymentDebugger.log('mpesa', 'transaction_updated', { transactionId: paymentData.transactionId });
       } catch (dbError) {
         PaymentDebugger.logError('mpesa', 'transaction_update', dbError);
-        
+
         // If the update fails, try with just payment status as a fallback
         try {
           await db.update(transactions)
@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               paymentStatus: "pending"
             })
             .where(eq(transactions.id, paymentData.transactionId));
-            
+
           PaymentDebugger.log('mpesa', 'transaction_updated_fallback', { transactionId: paymentData.transactionId });
         } catch (fallbackError) {
           PaymentDebugger.logError('mpesa', 'transaction_update_fallback', fallbackError);
@@ -670,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phoneNumber: paymentData.phoneNumber,
           createdAt: new Date()
         };
-        
+
         PaymentDebugger.log('mpesa', 'payment_record', paymentRecord);
         await db.insert(payments).values([paymentRecord as any]);
         PaymentDebugger.log('mpesa', 'payment_record_created', { reference: response.MerchantRequestID });
@@ -688,7 +688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       const { PaymentDebugger } = await import('./paymentDebugger');
       PaymentDebugger.logError('mpesa', 'payment_initiation', error);
-      
+
       res.status(500).json({
         success: false,
         error: error.message || "Failed to initiate M-Pesa payment"
@@ -718,7 +718,7 @@ app.get("/api/payments/airtel/status/:referenceId", asyncHandler(async (req, res
           await db.update(transactions)
             .set({ paymentStatus: "completed" })
             .where(eq(transactions.id, payment[0].transactionId));
-          
+
           // Also update payment status
           await db.update(payments)
             .set({ status: "completed" })
@@ -809,7 +809,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
           .set({ paymentStatus: "completed" })
           .where(eq(transactions.mpesaRef, MerchantRequestID))
           .returning();
-        
+
         // If we have a transaction and the customer is a registered user, award loyalty points
         if (updatedTransaction) {
           try {
@@ -818,7 +818,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
               .from(payments)
               .where(eq(payments.transactionId, updatedTransaction.id))
               .limit(1);
-            
+
             if (payment[0]) {
               // Find the user by phone number 
               if (payment[0].phoneNumber) {
@@ -826,12 +826,12 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
                   .from(users)
                   .where(eq(users.phoneNumber, payment[0].phoneNumber))
                   .limit(1);
-                
+
                 if (user[0]) {
                   // Award points based on payment amount (1 point for every 10 KES)
                   const amountNum = parseFloat(payment[0].amount);
                   const pointsToAward = Math.floor(amountNum / 10);
-                  
+
                   if (pointsToAward > 0) {
                     await storage.awardLoyaltyPoints(user[0].id, pointsToAward);
                     console.log(`Awarded ${pointsToAward} points to user ${user[0].id} for M-Pesa transaction`);
@@ -869,7 +869,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
       // Default to cash payment if not specified
       const method = paymentMethod || "cash";
-      
+
       // Find the transaction to get the amount if not provided
       let transactionAmount = amount;
       if (!transactionAmount) {
@@ -878,7 +878,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
             .from(transactions)
             .where(eq(transactions.id, transactionId))
             .limit(1);
-            
+
           if (transaction && transaction.length > 0) {
             transactionAmount = transaction[0].amount;
           } else {
@@ -906,7 +906,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         phoneNumber: phoneNumber || null,
         createdAt: new Date()
       };
-      
+
       console.log("Creating payment record:", paymentData);
       const [payment] = await db.insert(payments).values([paymentData as any]).returning();
 
@@ -927,7 +927,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
             })
             .where(eq(transactions.id, transactionId))
             .returning();
-            
+
           console.log("Transaction updated:", result);
         } catch (err) {
           console.error("Error updating transaction:", err);
@@ -954,9 +954,12 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
     try {
       const { PaymentDebugger } = await import('./paymentDebugger');
       PaymentDebugger.log('cash', 'request', req.body);
-      
+
       const paymentData = cashPaymentSchema.parse(req.body);
       PaymentDebugger.log('cash', 'validated_data', paymentData);
+
+      // Check if this is a split payment
+      const isSplitPayment = paymentData.splitPayment || false;
 
       // Create payment record with status=completed
       const paymentRecord = {
@@ -964,12 +967,16 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
         amount: String(paymentData.amount),
         paymentMethod: "cash",
         status: "completed",
-        createdAt: new Date()
+        createdAt: new Date(),
+        // Add split payment details if applicable
+        splitPayment: isSplitPayment ? true : undefined,
+        splitIndex: isSplitPayment ? paymentData.splitIndex : undefined,
+        splitTotal: isSplitPayment ? paymentData.splitTotal : undefined
       };
-      
+
       PaymentDebugger.log('cash', 'payment_record', paymentRecord);
       const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
-      
+
       if (!payment) {
         PaymentDebugger.logError('cash', 'payment_record_creation', 'No payment record returned');
         return res.status(500).json({
@@ -977,36 +984,68 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
           error: "Failed to create cash payment record"
         });
       }
-      
+
       PaymentDebugger.log('cash', 'payment_record_created', payment);
 
-      // Update transaction status to completed
-      try {
-        await db.update(transactions)
-          .set({ 
-            paymentStatus: "completed" 
-          })
-          .where(eq(transactions.id, paymentData.transactionId));
-          
-        PaymentDebugger.log('cash', 'transaction_updated', { transactionId: paymentData.transactionId });
-      } catch (updateError) {
-        PaymentDebugger.logError('cash', 'transaction_update', updateError);
-        // Even if the update fails, we'll continue since we've created the payment record
+      // For split payments, only mark the transaction as completed when all parts are paid
+      if (!isSplitPayment) {
+        // Regular payment - update transaction status to completed
+        try {
+          await db.update(transactions)
+            .set({ 
+              paymentStatus: "completed" 
+            })
+            .where(eq(transactions.id, paymentData.transactionId));
+
+          PaymentDebugger.log('cash', 'transaction_updated', { transactionId: paymentData.transactionId });
+        } catch (updateError) {
+          PaymentDebugger.logError('cash', 'transaction_update', updateError);
+          // Even if the update fails, we'll continue since we've created the payment record
+        }
+      } else {
+        // For split payments, check if all splits have been paid
+        try {
+          // Count existing payments for this transaction
+          const existingPayments = await db.select()
+            .from(payments)
+            .where(eq(payments.transactionId, paymentData.transactionId))
+            .where(eq(payments.splitPayment, true))
+            .where(eq(payments.status, "completed"));
+
+          // If we have received all expected split payments, mark transaction as completed
+          if (existingPayments.length >= paymentData.splitTotal) {
+            await db.update(transactions)
+              .set({ 
+                paymentStatus: "completed" 
+              })
+              .where(eq(transactions.id, paymentData.transactionId));
+
+            PaymentDebugger.log('cash', 'transaction_updated_after_all_splits', { 
+              transactionId: paymentData.transactionId,
+              totalSplits: paymentData.splitTotal
+            });
+          }
+        } catch (checkError) {
+          PaymentDebugger.logError('cash', 'split_payment_check', checkError);
+        }
       }
 
       // Award loyalty points if userId is provided
       if (paymentData.userId) {
         try {
+          // For split payments, award proportional points
+          const pointsMultiplier = isSplitPayment ? (1 / paymentData.splitTotal) : 1;
           // Award points based on payment amount (1 point for every 10 KES)
-          const pointsToAward = Math.floor(paymentData.amount / 10);
-          
+          const pointsToAward = Math.floor((paymentData.amount * pointsMultiplier) / 10);
+
           if (pointsToAward > 0) {
             const newPoints = await storage.awardLoyaltyPoints(paymentData.userId, pointsToAward);
-            
+
             PaymentDebugger.log('cash', 'loyalty_points_awarded', {
               userId: paymentData.userId,
               pointsAwarded: pointsToAward,
-              newTotalPoints: newPoints
+              newTotalPoints: newPoints,
+              isSplitPayment
             });
           }
         } catch (pointsError) {
@@ -1017,13 +1056,15 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
       return res.json({
         success: true,
-        message: "Cash payment processed successfully",
+        message: isSplitPayment 
+          ? `Split payment ${paymentData.splitIndex + 1} of ${paymentData.splitTotal} processed successfully` 
+          : "Cash payment processed successfully",
         payment
       });
     } catch (error: any) {
       const { PaymentDebugger } = await import('./paymentDebugger');
       PaymentDebugger.logError('cash', 'payment_processing', error);
-      
+
       return res.status(500).json({
         success: false,
         error: error.message || "Failed to process cash payment"
@@ -1036,53 +1077,61 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
     try {
       const { PaymentDebugger } = await import('./paymentDebugger');
       PaymentDebugger.log('airtel', 'request', req.body);
-      
+
       const paymentData = airtelPaymentSchema.parse(req.body);
       PaymentDebugger.log('airtel', 'validated_data', paymentData);
+
+      // Check if this is a split payment
+      const isSplitPayment = paymentData.splitPayment || false;
 
       // Initiate Airtel Money payment
       const response = await airtelMoneyService.initiatePayment({
         phoneNumber: paymentData.phoneNumber,
         amount: paymentData.amount,
-        reference: paymentData.reference || `TXN-${paymentData.transactionId}`,
-        transactionDesc: paymentData.transactionDesc || "Payment for gaming services"
+        reference: paymentData.reference || `TXN-${paymentData.transactionId}${isSplitPayment ? `-${paymentData.splitIndex}` : ''}`,
+        transactionDesc: paymentData.transactionDesc || 
+          (isSplitPayment 
+            ? `Split payment ${paymentData.splitIndex + 1}/${paymentData.splitTotal} for gaming services` 
+            : "Payment for gaming services")
       });
 
       PaymentDebugger.log('airtel', 'service_response', response);
 
-      // Store the transaction reference for later verification 
-      try {
-        // Create update data object with only valid columns
-        const updateData: Record<string, any> = {
-          paymentStatus: "pending"
-        };
-        
-        // Check if airtelRef column exists in the schema
-        const transactionColumns = Object.keys(transactions);
-        if (transactionColumns.includes('airtelRef')) {
-          updateData.airtelRef = response.reference;
-        }
-        
-        PaymentDebugger.log('airtel', 'update_data', updateData);
-        await db.update(transactions)
-          .set(updateData)
-          .where(eq(transactions.id, paymentData.transactionId));
-          
-        PaymentDebugger.log('airtel', 'transaction_updated', { transactionId: paymentData.transactionId });
-      } catch (dbError) {
-        PaymentDebugger.logError('airtel', 'transaction_update', dbError);
-        
-        // If the update fails, try with just payment status as a fallback
+      // For regular payments, update the transaction status
+      if (!isSplitPayment) {
         try {
+          // Create update data object with only valid columns
+          const updateData: Record<string, any> = {
+            paymentStatus: "pending"
+          };
+
+          // Check if airtelRef column exists in the schema
+          const transactionColumns = Object.keys(transactions);
+          if (transactionColumns.includes('airtelRef')) {
+            updateData.airtelRef = response.reference;
+          }
+
+          PaymentDebugger.log('airtel', 'update_data', updateData);
           await db.update(transactions)
-            .set({ 
-              paymentStatus: "pending"
-            })
+            .set(updateData)
             .where(eq(transactions.id, paymentData.transactionId));
-            
-          PaymentDebugger.log('airtel', 'transaction_updated_fallback', { transactionId: paymentData.transactionId });
-        } catch (fallbackError) {
-          PaymentDebugger.logError('airtel', 'transaction_update_fallback', fallbackError);
+
+          PaymentDebugger.log('airtel', 'transaction_updated', { transactionId: paymentData.transactionId });
+        } catch (dbError) {
+          PaymentDebugger.logError('airtel', 'transaction_update', dbError);
+
+          // If the update fails, try with just payment status as a fallback
+          try {
+            await db.update(transactions)
+              .set({ 
+                paymentStatus: "pending"
+              })
+              .where(eq(transactions.id, paymentData.transactionId));
+
+            PaymentDebugger.log('airtel', 'transaction_updated_fallback', { transactionId: paymentData.transactionId });
+          } catch (fallbackError) {
+            PaymentDebugger.logError('airtel', 'transaction_update_fallback', fallbackError);
+          }
         }
       }
 
@@ -1095,26 +1144,33 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
           status: "pending",
           reference: response.reference,
           phoneNumber: paymentData.phoneNumber,
-          createdAt: new Date()
+          createdAt: new Date(),
+          // Add split payment details if applicable
+          splitPayment: isSplitPayment ? true : undefined,
+          splitIndex: isSplitPayment ? paymentData.splitIndex : undefined,
+          splitTotal: isSplitPayment ? paymentData.splitTotal : undefined
         };
-        
+
         PaymentDebugger.log('airtel', 'payment_record', paymentRecord);
         const [payment] = await db.insert(payments).values([paymentRecord as any]).returning();
         PaymentDebugger.log('airtel', 'payment_record_created', payment);
-        
+
         // If immediate success response, award loyalty points right away
         if (response.status === "SUCCESS" && paymentData.userId) {
           try {
+            // For split payments, award proportional points
+            const pointsMultiplier = isSplitPayment ? (1 / paymentData.splitTotal) : 1;
             // Award points based on payment amount (1 point for every 10 KES)
-            const pointsToAward = Math.floor(paymentData.amount / 10);
-            
+            const pointsToAward = Math.floor((paymentData.amount * pointsMultiplier) / 10);
+
             if (pointsToAward > 0) {
               const newPoints = await storage.awardLoyaltyPoints(paymentData.userId, pointsToAward);
-              
+
               PaymentDebugger.log('airtel', 'loyalty_points_awarded', {
                 userId: paymentData.userId,
                 pointsAwarded: pointsToAward,
-                newTotalPoints: newPoints
+                newTotalPoints: newPoints,
+                isSplitPayment
               });
             }
           } catch (pointsError) {
@@ -1125,19 +1181,23 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
         res.json({
           success: true,
-          message: "Airtel Money payment initiated. Please check your phone to complete payment.",
+          message: isSplitPayment 
+            ? `Split payment ${paymentData.splitIndex + 1} of ${paymentData.splitTotal} initiated. Please check your phone.` 
+            : "Airtel Money payment initiated. Please check your phone to complete payment.",
           reference: response.reference,
           transactionId: response.transactionId,
           payment
         });
       } catch (paymentDbError) {
         PaymentDebugger.logError('airtel', 'payment_record_creation', paymentDbError);
-        
+
         // Even if payment record creation fails, we still return success as the Airtel Money
         // payment was initiated successfully
         res.json({
           success: true,
-          message: "Airtel Money payment initiated. Please check your phone to complete payment.",
+          message: isSplitPayment 
+            ? `Split payment ${paymentData.splitIndex + 1} of ${paymentData.splitTotal} initiated. Please check your phone.` 
+            : "Airtel Money payment initiated. Please check your phone to complete payment.",
           reference: response.reference,
           transactionId: response.transactionId
         });
@@ -1145,7 +1205,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
     } catch (error: any) {
       const { PaymentDebugger } = await import('./paymentDebugger');
       PaymentDebugger.logError('airtel', 'payment_initiation', error);
-      
+
       res.status(500).json({
         success: false,
         error: error.message || "Failed to initiate Airtel Money payment"
@@ -1181,7 +1241,7 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
             .set({ paymentStatus: "completed" })
             .where(eq(transactions.id, payment[0].transactionId))
             .returning();
-          
+
           // Award loyalty points if the customer can be identified by phone number
           if (payment[0].phoneNumber) {
             try {
@@ -1190,12 +1250,12 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
                 .from(users)
                 .where(eq(users.phoneNumber, payment[0].phoneNumber))
                 .limit(1);
-              
+
               if (user[0]) {
                 // Award points based on payment amount (1 point for every 10 KES)
                 const amountNum = parseFloat(payment[0].amount);
                 const pointsToAward = Math.floor(amountNum / 10);
-                
+
                 if (pointsToAward > 0) {
                   await storage.awardLoyaltyPoints(user[0].id, pointsToAward);
                   console.log(`Awarded ${pointsToAward} points to user ${user[0].id} for Airtel Money transaction`);
@@ -1262,11 +1322,18 @@ const airtelPaymentSchema = z.object({
   transactionId: z.number(),
   userId: z.number().optional(), // Optional user ID for loyalty points
   reference: z.string().optional(), // Make reference optional since it might be generated server-side
-  transactionDesc: z.string().optional()
+  transactionDesc: z.string().optional(),
+  splitPayment: z.boolean().optional(),
+  splitIndex: z.number().optional(),
+  splitTotal: z.number().optional()
 });
 
 // Cash payment schema - no additional fields needed
-const cashPaymentSchema = basePaymentSchema;
+const cashPaymentSchema = basePaymentSchema.extend({
+  splitPayment: z.boolean().optional(),
+  splitIndex: z.number().optional(),
+  splitTotal: z.number().optional()
+});
 
 const updateStationSchema = z.object({
   currentCustomer: z.string().nullable(),
