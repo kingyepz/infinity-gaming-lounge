@@ -1343,7 +1343,7 @@ export default function AdminAnalytics() {
                           
                           return (
                             <div 
-                              key={idx}
+                              key={`heatmap-cell-${idx}`}
                               className="aspect-square rounded-sm flex items-center justify-center text-xs"
                               style={{ 
                                 backgroundColor: `hsla(var(--primary), ${intensity}%)`,
@@ -1396,7 +1396,7 @@ export default function AdminAnalytics() {
                           </TableHeader>
                           <TableBody>
                             {gamePerformance.map((game) => (
-                              <TableRow key={game.name}>
+                              <TableRow key={`game-perf-${game.name}`}>
                                 <TableCell className="font-medium">{game.name}</TableCell>
                                 <TableCell>{game.sessions}</TableCell>
                                 <TableCell>KES {game.revenue}</TableCell>
@@ -1436,7 +1436,7 @@ export default function AdminAnalytics() {
                           >
                             {revenueBreakdown?.categories?.map((entry, index) => (
                               <Cell 
-                                key={`cell-${index}`} 
+                                key={`revenue-cell-${index}`} 
                                 fill={index === 0 
                                   ? 'hsl(var(--primary))' 
                                   : index === 1 
@@ -1531,11 +1531,11 @@ export default function AdminAnalytics() {
                             nameKey="name"
                             label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                           >
-                            <Cell fill="hsl(var(--primary))" />
-                            <Cell fill="#10b981" />
-                            <Cell fill="#f59e0b" />
-                            <Cell fill="#6366f1" />
-                            <Cell fill="#ec4899" />
+                            <Cell key="payment-cell-0" fill="hsl(var(--primary))" />
+                            <Cell key="payment-cell-1" fill="#10b981" />
+                            <Cell key="payment-cell-2" fill="#f59e0b" />
+                            <Cell key="payment-cell-3" fill="#6366f1" />
+                            <Cell key="payment-cell-4" fill="#ec4899" />
                           </Pie>
                           <Tooltip 
                             contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} 
