@@ -130,6 +130,9 @@ export default function PaymentModal({
           console.log("Cash payment result:", result);
 
           if (result.success) {
+            // Reset the station status after cash payment
+            await resetStationStatus("Cash");
+            
             toast({
               title: "Payment Successful",
               description: "Cash payment processed successfully.",
@@ -529,7 +532,10 @@ export default function PaymentModal({
                             return { status: "ERROR", message: "Failed to check payment status" };
                           }
                         }}
-                        onComplete={() => {
+                        onComplete={async () => {
+                          // Reset the station status after QR MPesa payment
+                          await resetStationStatus("QR-MPesa");
+                          
                           toast({
                             title: "Payment Successful",
                             description: "QR payment processed successfully."
@@ -559,7 +565,10 @@ export default function PaymentModal({
                             return { status: "ERROR", message: "Failed to check payment status" };
                           }
                         }}
-                        onComplete={() => {
+                        onComplete={async () => {
+                          // Reset the station status after QR Airtel payment
+                          await resetStationStatus("QR-Airtel");
+                          
                           toast({
                             title: "Payment Successful",
                             description: "QR payment processed successfully."
