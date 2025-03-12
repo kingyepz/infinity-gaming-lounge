@@ -134,10 +134,25 @@ export default function PaymentModal({
             // Reset the station status after cash payment
             await resetStationStatus("Cash");
             
+            // Store reference to transaction details for receipt
+            const cashTransactionId = result.transactionId || transactionId;
+            
+            // Show receipt options
             toast({
               title: "Payment Successful",
               description: "Cash payment processed successfully.",
-              variant: "default"
+              variant: "default",
+              action: (
+                <div className="mt-2">
+                  <ReceiptGenerator
+                    transactionId={parseInt(cashTransactionId.toString())}
+                    customerName={station.currentCustomer || "Walk-in Customer"}
+                    amount={amount}
+                    paymentMethod="Cash"
+                    timestamp={new Date().toISOString()}
+                  />
+                </div>
+              )
             });
             onPaymentComplete();
             onClose();

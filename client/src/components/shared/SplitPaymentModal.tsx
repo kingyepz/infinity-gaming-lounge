@@ -10,6 +10,7 @@ import { Badge } from "../ui/badge";
 import { CustomerSelector } from "./CustomerSelector";
 import { CustomerRegistrationForm } from "./CustomerRegistrationForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReceiptGenerator from "./ReceiptGenerator";
 
 interface Customer {
   id: number;
