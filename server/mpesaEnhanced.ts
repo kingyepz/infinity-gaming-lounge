@@ -521,6 +521,86 @@ export class EnhancedMpesaService {
   public deleteTransaction(checkoutRequestId: string): boolean {
     return this.transactionRecords.delete(checkoutRequestId);
   }
+
+  /**
+   * Generate QR code for M-Pesa payment
+   * Uses the M-Pesa QR Code API to generate a QR code for payment
+   */
+  public async generateQRCode(requestData: QRCodeGenerateRequest): Promise<QRCodeGenerateResponse> {
+    try {
+      PaymentDebugger.log('MpesaEnhanced', 'generateQRCode:start', {
+        amount: requestData.amount,
+        transactionId: requestData.transactionId
+      });
+      
+      // Get access token
+      const accessToken = await this.getAccessToken();
+      
+      // Generate reference number if not provided
+      const referenceNumber = requestData.referenceNumber || `TX-${requestData.transactionId}`;
+      
+      // Transaction code (default to BG = Buy Goods)
+      const trxCode = requestData.trxCode || 'BG';
+      
+      // Build request payload
+      const payload = {
+        MerchantName: "Infinity Gaming Lounge",
+        RefNo: referenceNumber,
+        Amount: Math.round(requestData.amount),
+        TrxCode: trxCode,
+        CPI: this.config.shortCode, // Customer Payment Identifier (shortCode)
+        Size: "300" // QR code size
+      };
+      
+      // Make request to M-Pesa QR code API
+      const response = await axios({
+        method: 'post',
+        url: `${this.baseUrl}/mpesa/qrcode/v1/generate`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        data: payload
+      });
+      
+      PaymentDebugger.log('MpesaEnhanced', 'generateQRCode:success', {
+        responseCode: response.data.ResponseCode,
+        responseDesc: response.data.ResponseDescription,
+        requestId: response.data.RequestID || null
+      });
+      
+      // Store a reference to this QR code transaction for potential status check
+      const transactionRecord: MPesaTransaction = {
+        transactionId: requestData.transactionId,
+        merchantRequestId: response.data.RequestID || `QR-${requestData.transactionId}`, 
+        checkoutRequestId: `QR-${requestData.transactionId}`,
+        phoneNumber: "N/A", // QR code doesn't require a specific phone number
+        amount: requestData.amount,
+        status: 'pending',
+        accountReference: referenceNumber,
+        transactionDesc: `QR Payment for transaction ${requestData.transactionId}`,
+        createdAt: new Date()
+      };
+      
+      // Store transaction record for later reference
+      this.transactionRecords.set(`QR-${requestData.transactionId}`, transactionRecord);
+      
+      return {
+        ResponseCode: response.data.ResponseCode,
+        ResponseDescription: response.data.ResponseDescription,
+        QRCode: response.data.QRCode,
+        RequestID: response.data.RequestID
+      };
+    } catch (error) {
+      PaymentDebugger.logError('MpesaEnhanced', 'generateQRCode:error', error);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(`M-Pesa QR code generation failed: ${error.response.data?.errorMessage || error.message}`);
+      }
+      
+      throw new Error(`M-Pesa QR code generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
 
 // Create singleton instance
