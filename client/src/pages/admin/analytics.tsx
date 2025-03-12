@@ -89,6 +89,11 @@ export default function AdminAnalytics() {
   const [reportFormat, setReportFormat] = useState<string>('csv');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   
+  // Report time-based filtering
+  const [reportStartHour, setReportStartHour] = useState<number>(0);
+  const [reportEndHour, setReportEndHour] = useState<number>(23);
+  const [timePreset, setTimePreset] = useState<string>('all-day');
+  
   // Interactive dashboard filters
   const [dashboardPeriod, setDashboardPeriod] = useState<string>('month');
   const [customStartDate, setCustomStartDate] = useState<string>('');
@@ -2119,6 +2124,80 @@ export default function AdminAnalytics() {
                           onChange={(e) => setReportEndDate(e.target.value)}
                         />
                       </div>
+                      
+                      {/* Time of day filtering */}
+                      <div className="space-y-2">
+                        <Label>Start Hour</Label>
+                        <Select 
+                          value={reportStartHour?.toString() || "0"}
+                          onValueChange={(value) => setReportStartHour(parseInt(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select start hour" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-black/90">
+                            {Array.from({length: 24}, (_, i) => (
+                              <SelectItem key={`start-hour-${i}`} value={i.toString()}>
+                                {i.toString().padStart(2, '0')}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>End Hour</Label>
+                        <Select 
+                          value={reportEndHour?.toString() || "23"}
+                          onValueChange={(value) => setReportEndHour(parseInt(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select end hour" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-black/90">
+                            {Array.from({length: 24}, (_, i) => (
+                              <SelectItem key={`end-hour-${i}`} value={i.toString()}>
+                                {i.toString().padStart(2, '0')}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Time Preset</Label>
+                        <Select 
+                          value={timePreset || "all-day"}
+                          onValueChange={(value) => {
+                            setTimePreset(value);
+                            // Set hours based on preset
+                            if (value === "morning") {
+                              setReportStartHour(6);
+                              setReportEndHour(11);
+                            } else if (value === "afternoon") {
+                              setReportStartHour(12);
+                              setReportEndHour(17);
+                            } else if (value === "evening") {
+                              setReportStartHour(18);
+                              setReportEndHour(23);
+                            } else if (value === "all-day") {
+                              setReportStartHour(0);
+                              setReportEndHour(23);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select time preset" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-black/90">
+                            <SelectItem value="all-day">All Day (00:00-23:59)</SelectItem>
+                            <SelectItem value="morning">Morning (06:00-11:59)</SelectItem>
+                            <SelectItem value="afternoon">Afternoon (12:00-17:59)</SelectItem>
+                            <SelectItem value="evening">Evening (18:00-23:59)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <div className="space-y-2">
                         <Label>Report Type</Label>
                         <Select 
@@ -2135,6 +2214,13 @@ export default function AdminAnalytics() {
                             <SelectItem value="customers">Customer Activity</SelectItem>
                             <SelectItem value="inventory">Inventory Status</SelectItem>
                             <SelectItem value="financial">Financial Summary</SelectItem>
+                            {/* New advanced report types */}
+                            <SelectItem value="loyalty">Loyalty Program</SelectItem>
+                            <SelectItem value="hourly">Hourly Distribution</SelectItem>
+                            <SelectItem value="comparative">Comparative Analysis</SelectItem>
+                            <SelectItem value="predictive">Predictive Analytics</SelectItem>
+                            <SelectItem value="segmentation">Customer Segmentation</SelectItem>
+                            <SelectItem value="heatmap">Usage Heatmap</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -2151,6 +2237,7 @@ export default function AdminAnalytics() {
                             <SelectItem value="csv">CSV</SelectItem>
                             <SelectItem value="pdf">PDF</SelectItem>
                             <SelectItem value="excel">Excel</SelectItem>
+                            <SelectItem value="json">JSON</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
