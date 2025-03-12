@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon, Receipt, Loader2 } from "lucide-react";
+import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon, Loader2 } from "lucide-react";
 import QRCodePayment from "./QRCodePayment";
 import SplitPaymentModal from './SplitPaymentModal';
 import ReceiptGenerator from './ReceiptGenerator';
@@ -35,13 +35,10 @@ export default function PaymentModal({
   console.log("PaymentModal userId:", userId); // Log userId to verify it's being passed
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState("");
-  const [airtelPhoneNumber, setAirtelPhoneNumber] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [mpesaStatus, setMpesaStatus] = useState<PaymentStatus>("idle");
-  const [airtelStatus, setAirtelStatus] = useState<PaymentStatus>("idle");
   const [showSplitPayment, setShowSplitPayment] = useState(false); // State for split payment modal
   const [mpesaRef, setMpesaRef] = useState<string | null>(null); // Track M-Pesa transaction reference
-  const [airtelRef, setAirtelRef] = useState<string | null>(null); // Track Airtel Money transaction reference
   const [qrCodeData, setQrCodeData] = useState<string | null>(null); // QR Code data
   const [qrRequestId, setQrRequestId] = useState<string | null>(null); // QR request ID for status checking
   const { toast } = useToast();
@@ -214,49 +211,11 @@ export default function PaymentModal({
             variant: "destructive"
           });
         }
-      } else if (paymentMethod === "airtel") {
-        if (!airtelPhoneNumber) {
-          setIsProcessing(false);
-          toast({
-            title: "Phone Number Required",
-            description: "Please enter a phone number for Airtel Money payment.",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        setAirtelStatus("processing");
-
-        // Process Airtel Money payment
-        const { initiateAirtelPayment } = await import("@/lib/payment");
-        const airtelResponse = await initiateAirtelPayment(airtelPhoneNumber, amount, transactionId, userId);
-
-        if (airtelResponse.success && airtelResponse.reference) {
-          // Start polling for payment status
-          startPollingAirtelStatus(airtelResponse.reference);
-          
-          // Store reference for later use
-          setAirtelRef(airtelResponse.reference);
-          
-          toast({
-            title: "Airtel Money Request Sent",
-            description: "Please check your phone to complete the payment."
-          });
-        } else {
-          setAirtelStatus("failed");
-          setIsProcessing(false);
-          toast({
-            title: "Payment Failed",
-            description: airtelResponse.error || "Failed to initiate Airtel Money payment.",
-            variant: "destructive"
-          });
-        }
       }
     } catch (error: any) {
       console.error("Payment error:", error);
       setIsProcessing(false);
       setMpesaStatus("idle");
-      setAirtelStatus("idle");
       toast({
         title: "Payment Error",
         description: error.message || "An error occurred during payment processing.",
@@ -303,42 +262,7 @@ export default function PaymentModal({
     return () => clearInterval(pollInterval);
   };
 
-  const startPollingAirtelStatus = (referenceId: string) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const { checkAirtelPaymentStatus } = await import("@/lib/payment");
-        const response = await checkAirtelPaymentStatus(referenceId);
 
-        if (response.transactionStatus === "SUCCESS") {
-          clearInterval(pollInterval);
-          setAirtelStatus("completed");
-          
-          // Reset the station status after payment is complete
-          await resetStationStatus("Airtel");
-          
-          toast({
-            title: "Payment Successful",
-            description: "Airtel Money payment completed successfully."
-          });
-          onPaymentComplete();
-          onClose();
-        } else if (response.transactionStatus === "FAILED") {
-          clearInterval(pollInterval);
-          setAirtelStatus("failed");
-          setIsProcessing(false);
-          toast({
-            title: "Payment Failed",
-            description: response.message || "Airtel Money payment failed.",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error("Error checking Airtel status:", error);
-      }
-    }, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(pollInterval);
-  };
 
   const handleOpenSplitPayment = () => {
     setShowSplitPayment(true);
@@ -471,7 +395,7 @@ export default function PaymentModal({
             </p>
           </div>
           <Tabs defaultValue="cash" className="w-full" onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="cash">Cash</TabsTrigger>
               <TabsTrigger value="mpesa">M-Pesa</TabsTrigger>
               <TabsTrigger value="qrcode">QR Code</TabsTrigger>
@@ -558,72 +482,7 @@ export default function PaymentModal({
                 )}
               </div>
             </TabsContent>
-            <TabsContent value="airtel" className="mt-4">
-              {/* Airtel Money Payment UI */}
-              <div className="space-y-4">
-                {airtelStatus === "idle" && (
-                  <div className="rounded-md border p-4">
-                    <div className="flex items-center justify-center mb-4">
-                      <SmartphoneIcon className="h-12 w-12 text-orange-500" />
-                    </div>
-                    <p className="text-center mb-4">Enter customer's Airtel Money phone number to initiate payment of <strong>KSH {amount}</strong></p>
-                    <Input
-                      type="tel"
-                      placeholder="Phone Number (e.g. 0733123456)"
-                      value={airtelPhoneNumber}
-                      onChange={(e) => setAirtelPhoneNumber(e.target.value)}
-                      className="mb-4"
-                    />
-                    <Button 
-                      onClick={handlePayment}
-                      disabled={isProcessing}
-                      className="w-full"
-                    >
-                      {isProcessing ? "Processing..." : "Send Airtel Money Request"}
-                    </Button>
-                  </div>
-                )}
-                {airtelStatus === "processing" && (
-                  <div className="rounded-md border p-4 flex flex-col items-center">
-                    <div className="animate-pulse">
-                      <SmartphoneIcon className="h-12 w-12 text-orange-500" />
-                    </div>
-                    <p className="text-center my-4">Airtel Money payment is being processed...</p>
-                    <p className="text-center text-sm">Customer should receive a prompt on their phone. Please wait for confirmation.</p>
-                  </div>
-                )}
-                {airtelStatus === "completed" && (
-                  <div className="rounded-md border p-4 flex flex-col items-center">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                    <p className="font-semibold mb-2">Payment Successful</p>
-                    <p className="text-sm mb-4">The Airtel Money payment has been processed successfully.</p>
-                    {airtelRef && (
-                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center mb-4">
-                        Transaction Reference: <span className="font-mono">{airtelRef}</span>
-                      </p>
-                    )}
-                    <div className="w-full mt-2">
-                      <p className="text-sm font-medium mb-2 text-center">Receipt Options:</p>
-                      <ReceiptGenerator
-                        transactionId={parseInt(station.lastTransactionId || "0")}
-                        customerName={station.currentCustomer || "Walk-in Customer"}
-                        amount={amount}
-                        paymentMethod="Airtel Money"
-                        timestamp={new Date().toISOString()}
-                      />
-                    </div>
-                  </div>
-                )}
-                {airtelStatus === "failed" && (
-                  <div className="rounded-md border p-4 flex flex-col items-center">
-                    <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-                    <p className="font-semibold mb-2">Payment Failed</p>
-                    <p className="text-sm mb-4">The Airtel Money payment could not be processed.</p>
-                    <Button onClick={() => setAirtelStatus("idle")} variant="outline">Try Again</Button>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
+
 
             <TabsContent value="qrcode" className="mt-4">
               {/* QR Code Payment UI */}
