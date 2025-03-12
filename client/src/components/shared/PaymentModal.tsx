@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon } from "lucide-react";
+import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon, Receipt } from "lucide-react";
 import QRCodePayment from "./QRCodePayment";
-import SplitPaymentModal from './SplitPaymentModal'; // Import the new component
+import SplitPaymentModal from './SplitPaymentModal';
+import ReceiptGenerator from './ReceiptGenerator';
 
 type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode" | "qr-mpesa" | "qr-airtel";
 
@@ -410,10 +411,20 @@ export default function PaymentModal({
                     <p className="font-semibold mb-2">Payment Successful</p>
                     <p className="text-sm mb-4">The M-Pesa payment has been processed successfully.</p>
                     {mpesaRef && (
-                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center">
+                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center mb-4">
                         Transaction Reference: <span className="font-mono">{mpesaRef}</span>
                       </p>
                     )}
+                    <div className="w-full mt-2">
+                      <p className="text-sm font-medium mb-2 text-center">Receipt Options:</p>
+                      <ReceiptGenerator
+                        transactionId={parseInt(station.lastTransactionId || "0")}
+                        customerName={station.currentCustomer || "Walk-in Customer"}
+                        amount={amount}
+                        paymentMethod="M-Pesa"
+                        timestamp={new Date().toISOString()}
+                      />
+                    </div>
                   </div>
                 )}
                 {mpesaStatus === "failed" && (
@@ -466,10 +477,20 @@ export default function PaymentModal({
                     <p className="font-semibold mb-2">Payment Successful</p>
                     <p className="text-sm mb-4">The Airtel Money payment has been processed successfully.</p>
                     {airtelRef && (
-                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center">
+                      <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center mb-4">
                         Transaction Reference: <span className="font-mono">{airtelRef}</span>
                       </p>
                     )}
+                    <div className="w-full mt-2">
+                      <p className="text-sm font-medium mb-2 text-center">Receipt Options:</p>
+                      <ReceiptGenerator
+                        transactionId={parseInt(station.lastTransactionId || "0")}
+                        customerName={station.currentCustomer || "Walk-in Customer"}
+                        amount={amount}
+                        paymentMethod="Airtel Money"
+                        timestamp={new Date().toISOString()}
+                      />
+                    </div>
                   </div>
                 )}
                 {airtelStatus === "failed" && (
