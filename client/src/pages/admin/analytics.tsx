@@ -2504,9 +2504,28 @@ export default function AdminAnalytics() {
                 <TabsContent value="analytics">
                   <div className="space-y-4">
                     <Card className="bg-black/30 border-primary/20">
-                      <CardHeader>
-                        <CardTitle>Station Utilization</CardTitle>
-                        <CardDescription>Performance metrics for all gaming stations</CardDescription>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Station Utilization</CardTitle>
+                          <CardDescription>Performance metrics for all gaming stations</CardDescription>
+                        </div>
+                        <Select 
+                          value="name_asc" 
+                          onValueChange={(value) => {
+                            // This will be handled via the useMemo below
+                          }}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Sort by..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+                            <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+                            <SelectItem value="hours_desc">Total Hours (High-Low)</SelectItem>
+                            <SelectItem value="utilization_desc">Utilization (High-Low)</SelectItem>
+                            <SelectItem value="revenue_desc">Revenue (High-Low)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </CardHeader>
                       <CardContent>
                         <div className="w-full overflow-auto">
@@ -2517,38 +2536,49 @@ export default function AdminAnalytics() {
                                 <TableHead>Total Hours</TableHead>
                                 <TableHead>Utilization Rate</TableHead>
                                 <TableHead>Revenue</TableHead>
-                                <TableHead>Popular Games</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {stationUtilization?.map((station) => (
-                                <TableRow key={station.id}>
-                                  <TableCell className="font-medium">{station.name}</TableCell>
-                                  <TableCell>{station.totalHours.toFixed(1)} hrs</TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center space-x-2">
-                                      <Progress value={station.utilizationRate} className="w-[60px]" />
-                                      <span>{Math.round(station.utilizationRate)}%</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{formatCurrency(station.revenue)}</TableCell>
-                                  <TableCell>
-                                    {station.popularGames?.length > 0 ? 
-                                      station.popularGames.slice(0, 2).join(', ') : 
-                                      'N/A'}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleViewTransactionHistory(stations.find(s => s.id === station.id))}
-                                    >
-                                      View History
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
+                              {/* Sort stations alphabetically by name regardless of active status */}
+                              {stationUtilization
+                                ?.slice()
+                                .sort((a, b) => a.stationName.localeCompare(b.stationName))
+                                .map((station) => {
+                                  // Calculate utilization rate from hours used
+                                  const utilizationRate = Math.min(Math.round((station.totalHours / 24) * 100), 100);
+                                  
+                                  return (
+                                    <TableRow key={station.stationId}>
+                                      <TableCell className="font-medium">{station.stationName}</TableCell>
+                                      <TableCell>{station.totalHours.toFixed(1)} hrs</TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center space-x-2">
+                                          <Progress value={utilizationRate} className="w-[60px]" />
+                                          <span>{utilizationRate}%</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>{formatCurrency(station.revenue)}</TableCell>
+                                      <TableCell>
+                                        {station.currentlyActive ? (
+                                          <Badge className="bg-green-500">Active</Badge>
+                                        ) : (
+                                          <Badge variant="outline">Inactive</Badge>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleViewTransactionHistory(stations.find(s => s.id === station.stationId))}
+                                        >
+                                          View History
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
                             </TableBody>
                           </Table>
                         </div>
