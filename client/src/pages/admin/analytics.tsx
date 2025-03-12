@@ -86,6 +86,13 @@ export default function AdminAnalytics() {
   const [reportFormat, setReportFormat] = useState<string>('csv');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   
+  // Interactive dashboard filters
+  const [dashboardPeriod, setDashboardPeriod] = useState<string>('month');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [isApplyingFilter, setIsApplyingFilter] = useState(false);
+  const [filteredData, setFilteredData] = useState<any>(null);
+  
   // Add Station Dialog
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
   const [newStationName, setNewStationName] = useState("");
@@ -1150,7 +1157,7 @@ export default function AdminAnalytics() {
                     <h2 className="text-2xl font-bold">Advanced Analytics</h2>
                     <p className="text-muted-foreground">Comprehensive business intelligence dashboard</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -1175,6 +1182,99 @@ export default function AdminAnalytics() {
                         <SelectItem value="quarterly">Quarterly</SelectItem>
                       </SelectContent>
                     </Select>
+                    
+                    {/* Time Period Filter */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <CalendarIcon className="h-4 w-4" />
+                          Filter Period
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                          <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Date Range</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Select a predefined period or custom date range
+                            </p>
+                          </div>
+                          <div className="grid gap-2">
+                            <div className="grid grid-cols-3 gap-2">
+                              <Button 
+                                variant={dashboardPeriod === 'day' ? 'default' : 'outline'} 
+                                size="sm"
+                                onClick={() => setDashboardPeriod('day')}
+                              >
+                                Today
+                              </Button>
+                              <Button 
+                                variant={dashboardPeriod === 'week' ? 'default' : 'outline'} 
+                                size="sm"
+                                onClick={() => setDashboardPeriod('week')}
+                              >
+                                This Week
+                              </Button>
+                              <Button 
+                                variant={dashboardPeriod === 'month' ? 'default' : 'outline'} 
+                                size="sm"
+                                onClick={() => setDashboardPeriod('month')}
+                              >
+                                This Month
+                              </Button>
+                            </div>
+                            <Separator />
+                            <div className="grid gap-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label htmlFor="customStartDate">Start Date</Label>
+                                  <Input
+                                    id="customStartDate"
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label htmlFor="customEndDate">End Date</Label>
+                                  <Input
+                                    id="customEndDate"
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                              <Button 
+                                onClick={applyDateFilter} 
+                                disabled={isApplyingFilter}
+                                className="w-full mt-2"
+                              >
+                                Apply Filter
+                                {isApplyingFilter && <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    
+                    {/* Active Filter Indicator */}
+                    {filteredData && (
+                      <Badge variant="outline" className="gap-1 px-2 py-1">
+                        <CalendarIcon className="h-3 w-3" />
+                        <span>Filtered</span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-4 w-4 rounded-full p-0" 
+                          onClick={clearDateFilter}
+                        >
+                          <X className="h-3 w-3" />
+                          <span className="sr-only">Clear filter</span>
+                        </Button>
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
