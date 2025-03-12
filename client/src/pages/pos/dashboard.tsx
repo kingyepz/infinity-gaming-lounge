@@ -28,6 +28,9 @@ import {
     BarChart2Icon,
     DollarSignIcon,
     UsersIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    MenuIcon,
     DownloadIcon,
     PrinterIcon,
     LogOutIcon,
@@ -50,6 +53,7 @@ export default function POSDashboard() {
     const [selectedSessionType, setSelectedSessionType] = useState<"per_game" | "hourly" | null>(null);
     const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
     const [activeTab, setActiveTab] = useState("sessions");
+    const [sidebarExpanded, setSidebarExpanded] = useState(true);
     const { toast } = useToast();
     const [, setLocation] = useLocation();
     const queryClient = useQueryClient();
@@ -378,37 +382,50 @@ export default function POSDashboard() {
             </div>
 
             <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full relative">
-                <div className="w-full md:w-64 border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50">
+                <div className={`transition-all duration-300 ease-in-out border-b md:border-r border-primary/20 p-2 sm:p-4 space-y-2 backdrop-blur-sm bg-black/50 ${sidebarExpanded ? 'md:w-64' : 'md:w-16'}`}>
+                    <div className="flex justify-end mb-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+                            className="md:flex hidden hover:bg-primary/20"
+                        >
+                            {sidebarExpanded 
+                                ? <ChevronLeftIcon className="w-4 h-4" /> 
+                                : <ChevronRightIcon className="w-4 h-4" />
+                            }
+                        </Button>
+                    </div>
                     <TabsList className="flex flex-row md:flex-col w-full space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent md:overflow-x-visible">
                         <TabsTrigger value="overview" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <GamepadIcon className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Overview</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Overview</span>
                         </TabsTrigger>
                         <TabsTrigger value="sessions" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <CalendarIcon className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Sessions</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Sessions</span>
                         </TabsTrigger>
                         <TabsTrigger value="customers" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <UsersIcon className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Customers</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Customers</span>
                         </TabsTrigger>
                         <TabsTrigger value="analytics" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <BarChart2Icon className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Analytics</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Analytics</span>
                         </TabsTrigger>
                         <TabsTrigger value="reports" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <DownloadIcon className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Reports</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Reports</span>
                         </TabsTrigger>
                         <TabsTrigger value="payments" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <DollarSignIcon className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Payments</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Payments</span>
                         </TabsTrigger>
                         <TabsTrigger value="loyalty" className="flex-1 md:flex-none justify-start px-4 py-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary hover:bg-primary/10 transition-all duration-200">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
                                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                             </svg>
-                            <span className="hidden sm:inline">Loyalty</span>
+                            <span className={`${sidebarExpanded ? 'inline' : 'hidden'}`}>Loyalty</span>
                         </TabsTrigger>
                     </TabsList>
                 </div>
