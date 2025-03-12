@@ -97,9 +97,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/stations/:id", asyncHandler(async (req, res) => {
     try {
-      const stationData = updateStationSchema.parse(req.body);
-      const station = await db.update(gameStations).set(stationData).where(gameStations.id.equals(Number(req.params.id)));
-      res.json(station);
+      const stationData = req.body;
+      const updatedStation = await storage.updateGameStation(Number(req.params.id), stationData);
+      res.json(updatedStation);
     } catch (error) {
       //This will be caught by the global error handler
       throw error;
