@@ -2431,6 +2431,55 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
     }
   }));
 
+  // Export reports in different formats
+  app.get("/api/export/report/:type/:format", asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { type, format } = req.params;
+      const { startDate, endDate, stationId, gameId, userId } = req.query;
+      
+      // Validate report type and format
+      if (!['revenue', 'usage', 'games', 'customers', 'inventory', 'financial'].includes(type)) {
+        return res.status(400).json({ error: "Invalid report type" });
+      }
+      
+      if (!['csv', 'pdf', 'excel'].includes(format)) {
+        return res.status(400).json({ error: "Invalid export format" });
+      }
+      
+      // Parse dates if provided
+      const reportOptions: ReportOptions = {
+        type: type as ReportType,
+        format: format as ReportFormat,
+      };
+      
+      if (startDate) {
+        reportOptions.startDate = new Date(startDate as string);
+      }
+      
+      if (endDate) {
+        reportOptions.endDate = new Date(endDate as string);
+      }
+      
+      if (stationId) {
+        reportOptions.stationId = Number(stationId);
+      }
+      
+      if (gameId) {
+        reportOptions.gameId = Number(gameId);
+      }
+      
+      if (userId) {
+        reportOptions.userId = Number(userId);
+      }
+      
+      // Generate and send the report
+      await generateReport(reportOptions, res);
+    } catch (error) {
+      console.error(`Error exporting ${req.params.type} report as ${req.params.format}:`, error);
+      res.status(500).json({ error: "Failed to generate report" });
+    }
+  }));
+
   return server;
 }
 

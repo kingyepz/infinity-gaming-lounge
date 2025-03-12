@@ -150,11 +150,11 @@ async function getReportData(options: ReportOptions): Promise<any[]> {
           return {
             gameId: game.id,
             gameName: game.name,
-            category: game.category || 'N/A',
+            category: game.description || 'N/A',
             totalSessions: gameTransactions.length,
             averageSessionHours: avgDuration.toFixed(2),
             totalRevenue: totalRevenue.toFixed(2),
-            pricePerGame: game.pricePerGame || 'N/A'
+            pricePerGame: game.pricePerSession || 'N/A'
           };
         });
       }
