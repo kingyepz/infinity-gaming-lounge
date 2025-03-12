@@ -505,13 +505,15 @@ export default function AdminAnalytics() {
                       <CardTitle>Daily Revenue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <BarChart width={500} height={300} data={revenueChartData} className="mx-auto">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                        <XAxis dataKey="date" stroke="#888" />
-                        <YAxis stroke="#888" />
-                        <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
-                        <Bar dataKey="amount" fill="hsl(var(--primary))" />
-                      </BarChart>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={revenueChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                          <XAxis dataKey="date" stroke="#888" />
+                          <YAxis stroke="#888" />
+                          <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                          <Bar dataKey="amount" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </CardContent>
                   </Card>
                   
@@ -520,23 +522,25 @@ export default function AdminAnalytics() {
                       <CardTitle>Payment Methods</CardTitle>
                     </CardHeader>
                     <CardContent className="flex justify-center">
-                      <PieChart width={300} height={300}>
-                        <Pie
-                          data={paymentMethodChartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {paymentMethodChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
-                      </PieChart>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={paymentMethodChartData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {paymentMethodChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </CardContent>
                   </Card>
                 </div>
@@ -586,13 +590,15 @@ export default function AdminAnalytics() {
                     <CardTitle>Revenue Analysis</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <BarChart width={800} height={300} data={revenueChartData} className="mx-auto">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                      <XAxis dataKey="date" stroke="#888" />
-                      <YAxis stroke="#888" />
-                      <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
-                      <Bar dataKey="amount" fill="hsl(var(--primary))" />
-                    </BarChart>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={revenueChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis dataKey="date" stroke="#888" />
+                        <YAxis stroke="#888" />
+                        <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444' }} />
+                        <Bar dataKey="amount" fill="hsl(var(--primary))" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
@@ -1923,7 +1929,16 @@ export default function AdminAnalytics() {
                           <h4 className="font-medium">Notifications</h4>
                           <p className="text-sm text-muted-foreground">Enable system notifications</p>
                         </div>
-                        <Switch checked id="notifications" />
+                        <Switch 
+                          id="notifications"
+                          defaultChecked={true}
+                          onCheckedChange={(checked) => {
+                            toast({
+                              title: `Notifications ${checked ? 'enabled' : 'disabled'}`,
+                              description: `You will ${checked ? 'now' : 'no longer'} receive system notifications`,
+                            });
+                          }}
+                        />
                       </div>
                       
                       <div className="flex justify-between items-center">
@@ -1931,7 +1946,16 @@ export default function AdminAnalytics() {
                           <h4 className="font-medium">Sounds</h4>
                           <p className="text-sm text-muted-foreground">Enable system sounds</p>
                         </div>
-                        <Switch id="sounds" />
+                        <Switch 
+                          id="sounds"
+                          defaultChecked={false}
+                          onCheckedChange={(checked) => {
+                            toast({
+                              title: `Sound effects ${checked ? 'enabled' : 'disabled'}`,
+                              description: `System sound effects have been ${checked ? 'enabled' : 'disabled'}`,
+                            });
+                          }}
+                        />
                       </div>
                       
                       <div className="flex justify-between items-center">
@@ -1939,10 +1963,24 @@ export default function AdminAnalytics() {
                           <h4 className="font-medium">Automatic Updates</h4>
                           <p className="text-sm text-muted-foreground">Automatically update the system when available</p>
                         </div>
-                        <Switch checked id="auto-updates" />
+                        <Switch 
+                          id="auto-updates"
+                          defaultChecked={true}
+                          onCheckedChange={(checked) => {
+                            toast({
+                              title: `Automatic updates ${checked ? 'enabled' : 'disabled'}`,
+                              description: `System will ${checked ? 'now' : 'no longer'} update automatically`,
+                            });
+                          }}
+                        />
                       </div>
                     </div>
-                    <Button>Save Preferences</Button>
+                    <Button onClick={() => {
+                      toast({
+                        title: "Preferences Saved",
+                        description: "Your system preferences have been updated"
+                      });
+                    }}>Save Preferences</Button>
                   </CardContent>
                 </Card>
               </div>
