@@ -40,6 +40,7 @@ interface Payer {
   amount: number;
   paid: boolean;
   paymentMethod?: PaymentMethod;
+  transactionRef?: string; // Store transaction reference for mobile money payments
 }
 
 export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentComplete }: SplitPaymentModalProps) {
@@ -286,12 +287,20 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
             status: 'pending'
           };
           
+          // Store transaction reference if available
+          const transactionRef = result.merchantRequestId || result.checkoutRequestId;
+          
           // TODO: Implement payment status polling and UI feedback
           // For now, we'll mark it as paid immediately for demo purposes
           setPayers(prev => 
             prev.map(payer => 
               payer.index === index
-                ? { ...payer, paid: true, paymentMethod: method }
+                ? { 
+                    ...payer, 
+                    paid: true, 
+                    paymentMethod: method,
+                    transactionRef: transactionRef
+                  }
                 : payer
             )
           );
@@ -327,11 +336,19 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
             description: "Please check your phone and complete the payment",
           });
           
+          // Store transaction reference if available
+          const transactionRef = result.reference;
+          
           // For now, we'll mark it as paid immediately for demo purposes
           setPayers(prev => 
             prev.map(payer => 
               payer.index === index
-                ? { ...payer, paid: true, paymentMethod: method }
+                ? { 
+                    ...payer, 
+                    paid: true, 
+                    paymentMethod: method,
+                    transactionRef: transactionRef
+                  }
                 : payer
             )
           );
@@ -474,9 +491,16 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
                       </div>
                       
                       {payer.paid ? (
-                        <Badge variant="success" className="bg-green-500">
-                          Paid via {payer.paymentMethod}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant="success" className="bg-green-500">
+                            Paid via {payer.paymentMethod}
+                          </Badge>
+                          {payer.transactionRef && (payer.paymentMethod === 'mpesa' || payer.paymentMethod === 'airtel') && (
+                            <span className="text-xs text-muted-foreground">
+                              Ref: {payer.transactionRef.substring(0, 12)}{payer.transactionRef.length > 12 ? '...' : ''}
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <div className="flex space-x-2">
                           <Button 

@@ -150,6 +150,12 @@ export default function PaymentModal({
         if (mpesaResponse.success && mpesaResponse.checkoutRequestId) {
           // Start polling for payment status
           startPollingMpesaStatus(mpesaResponse.checkoutRequestId);
+          
+          // Store reference for later use
+          if (mpesaResponse.merchantRequestId) {
+            setMpesaRef(mpesaResponse.merchantRequestId);
+          }
+          
           toast({
             title: "M-Pesa Request Sent",
             description: "Please check your phone to complete the payment."
@@ -183,6 +189,10 @@ export default function PaymentModal({
         if (airtelResponse.success && airtelResponse.reference) {
           // Start polling for payment status
           startPollingAirtelStatus(airtelResponse.reference);
+          
+          // Store reference for later use
+          setAirtelRef(airtelResponse.reference);
+          
           toast({
             title: "Airtel Money Request Sent",
             description: "Please check your phone to complete the payment."
