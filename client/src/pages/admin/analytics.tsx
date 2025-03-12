@@ -273,11 +273,29 @@ export default function AdminAnalytics() {
     }
 
     try {
+      // First, get the current station data to preserve required fields
+      const currentStation = stations.find(station => station.id === editStationId);
+      
+      if (!currentStation) {
+        toast({
+          title: "Error",
+          description: "Station not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Only update the name but preserve all other fields
       await apiRequest({
         path: `/api/stations/${editStationId}`,
         method: "PATCH",
         data: {
-          name: editStationName
+          name: editStationName,
+          status: currentStation.status,
+          currentCustomer: currentStation.currentCustomer || null,
+          currentGame: currentStation.currentGame || null,
+          sessionType: currentStation.sessionType || null,
+          sessionStartTime: currentStation.sessionStartTime || null
         }
       });
 
@@ -292,6 +310,7 @@ export default function AdminAnalytics() {
       setEditStationId(null);
       setEditStationName("");
     } catch (error) {
+      console.error("Edit station error:", error);
       toast({
         title: "Error",
         description: "Failed to update station",
