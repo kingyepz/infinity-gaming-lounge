@@ -2622,21 +2622,37 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
   app.get("/api/export/report/:type/:format", asyncHandler(async (req: Request, res: Response) => {
     try {
       const { type, format } = req.params;
-      const { startDate, endDate, stationId, gameId, userId } = req.query;
+      const { 
+        startDate, 
+        endDate, 
+        stationId, 
+        gameId, 
+        userId,
+        startHour,
+        endHour,
+        comparePeriod,
+        segmentType
+      } = req.query;
       
       // Validate report type and format
-      if (!['revenue', 'usage', 'games', 'customers', 'inventory', 'financial'].includes(type)) {
-        return res.status(400).json({ error: "Invalid report type" });
+      const validReportTypes = [
+        'revenue', 'usage', 'games', 'customers', 'inventory', 'financial',
+        'loyalty', 'hourly', 'comparative', 'predictive', 'heatmap', 'segmentation'
+      ];
+      
+      if (!validReportTypes.includes(type)) {
+        return res.status(400).json({ error: "Invalid report type", validTypes: validReportTypes });
       }
       
-      if (!['csv', 'pdf', 'excel'].includes(format)) {
-        return res.status(400).json({ error: "Invalid export format" });
+      const validFormats = ['csv', 'pdf', 'excel', 'json'];
+      if (!validFormats.includes(format)) {
+        return res.status(400).json({ error: "Invalid export format", validFormats });
       }
       
       // Parse dates if provided
       const reportOptions: ReportOptions = {
-        type: type as ReportType,
-        format: format as ReportFormat,
+        type: type as any, // Using 'any' temporarily until ReportType is imported from reportGenerator 
+        format: format as any, // Using 'any' temporarily until ReportFormat is imported from reportGenerator
       };
       
       if (startDate) {
@@ -2657,6 +2673,25 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
       
       if (userId) {
         reportOptions.userId = Number(userId);
+      }
+      
+      // Handle time filtering parameters
+      if (startHour) {
+        reportOptions.startHour = Number(startHour);
+      }
+      
+      if (endHour) {
+        reportOptions.endHour = Number(endHour);
+      }
+      
+      // Handle comparison period for comparative reports
+      if (comparePeriod) {
+        reportOptions.comparePeriod = comparePeriod as any; // Using 'any' temporarily until we update type imports
+      }
+      
+      // Handle segmentation type for segmentation reports
+      if (segmentType) {
+        reportOptions.segmentType = segmentType as any; // Using 'any' temporarily until we update type imports
       }
       
       // Generate and send the report
