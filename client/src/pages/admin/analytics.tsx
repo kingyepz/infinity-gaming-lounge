@@ -273,7 +273,7 @@ export default function AdminAnalytics() {
     queryFn: () => apiRequest({ path: "/api/reports/predictive-analytics" })
   });
 
-  // Date filter functions
+  // Date and time filter functions
   const applyDateFilter = useCallback(async () => {
     setIsApplyingFilter(true);
     
@@ -305,8 +305,19 @@ export default function AdminAnalytics() {
         }
       }
       
+      // Validate time range (start hour should be before or equal to end hour)
+      if (startHour > endHour) {
+        toast({
+          title: "Invalid Time Range",
+          description: "Start hour must be before or equal to end hour",
+          variant: "destructive"
+        });
+        setIsApplyingFilter(false);
+        return;
+      }
+      
       // Build filter parameters based on selected period
-      let params = {};
+      let params: Record<string, string | number> = {};
       
       if (dashboardPeriod === 'day') {
         const today = new Date();
@@ -337,6 +348,10 @@ export default function AdminAnalytics() {
         };
       }
       
+      // Add time range parameters
+      params.startHour = startHour;
+      params.endHour = endHour;
+      
       // Make API request with filter parameters
       const filteredResponse = await apiRequest({
         path: `/api/reports/filtered`,
@@ -347,32 +362,42 @@ export default function AdminAnalytics() {
       // Update state with filtered data
       setFilteredData(filteredResponse);
       
+      // Determine what to show in toast message
+      let filterDescription = "Dashboard data has been filtered by the selected date range";
+      
+      if (timeOfDayFilter !== 'all') {
+        filterDescription += ` and time of day (${startHour}:00 - ${endHour}:00)`;
+      }
+      
       toast({
         title: "Filter Applied",
-        description: "Dashboard data has been filtered by the selected date range",
+        description: filterDescription,
       });
     } catch (error) {
       console.error("Error applying filter:", error);
       toast({
         title: "Filter Failed",
-        description: "There was a problem applying the date filter",
+        description: "There was a problem applying the filter",
         variant: "destructive"
       });
     } finally {
       setIsApplyingFilter(false);
     }
-  }, [dashboardPeriod, customStartDate, customEndDate, toast]);
+  }, [dashboardPeriod, customStartDate, customEndDate, startHour, endHour, timeOfDayFilter, toast]);
 
   // Clear applied filters
   const clearDateFilter = useCallback(() => {
     setDashboardPeriod('month');
     setCustomStartDate('');
     setCustomEndDate('');
+    setTimeOfDayFilter('all');
+    setStartHour(0);
+    setEndHour(23);
     setFilteredData(null);
     
     toast({
       title: "Filter Cleared",
-      description: "Showing all data without date filters"
+      description: "Showing all data without filters"
     });
     
     // Refresh data to ensure we have the complete dataset
