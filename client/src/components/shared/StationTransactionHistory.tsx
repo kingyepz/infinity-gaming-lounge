@@ -215,13 +215,13 @@ export default function StationTransactionHistory({ stationId, stationName }: St
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead className="w-[60px]">ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Game</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Date/Time</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Method</TableHead>
+                  <TableHead>Method/Ref</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
