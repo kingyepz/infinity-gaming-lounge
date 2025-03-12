@@ -4691,6 +4691,174 @@ export default function AdminAnalytics() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={showEditCategoryDialog} onOpenChange={setShowEditCategoryDialog}>
+        <DialogContent className="bg-black/80 border-primary/20">
+          <DialogHeader>
+            <DialogTitle>Edit Station Category</DialogTitle>
+            <DialogDescription>Update category details and pricing</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Name</label>
+              <Input
+                placeholder="Enter category name"
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Type</label>
+              <Select value={editCategoryType} onValueChange={(value) => setEditCategoryType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category type" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90">
+                  <SelectItem value="pc">PC Gaming</SelectItem>
+                  <SelectItem value="console">Console</SelectItem>
+                  <SelectItem value="vr">Virtual Reality</SelectItem>
+                  <SelectItem value="racing">Racing Setup</SelectItem>
+                  <SelectItem value="arcade">Arcade</SelectItem>
+                  <SelectItem value="mobile">Mobile Gaming</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Standard Rate (per hour)</label>
+                <Input
+                  type="number"
+                  placeholder="KES 300"
+                  value={editCategoryHourlyRate}
+                  onChange={(e) => setEditCategoryHourlyRate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Peak Hour Rate</label>
+                <Input
+                  type="number"
+                  placeholder="KES 450"
+                  value={editCategoryPeakHourRate}
+                  onChange={(e) => setEditCategoryPeakHourRate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Off-peak Rate</label>
+                <Input
+                  type="number"
+                  placeholder="KES 250"
+                  value={editCategoryOffPeakRate}
+                  onChange={(e) => setEditCategoryOffPeakRate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Weekend Rate</label>
+                <Input
+                  type="number"
+                  placeholder="KES 400"
+                  value={editCategoryWeekendRate}
+                  onChange={(e) => setEditCategoryWeekendRate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Color</label>
+              <div className="flex space-x-2">
+                <Input
+                  type="color"
+                  value={editCategoryColor}
+                  onChange={(e) => setEditCategoryColor(e.target.value)}
+                  className="w-12 h-10 p-1 cursor-pointer"
+                />
+                <Input
+                  placeholder="Color code"
+                  value={editCategoryColor}
+                  onChange={(e) => setEditCategoryColor(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Icon</label>
+              <Select value={editCategoryIcon} onValueChange={(value) => setEditCategoryIcon(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an icon" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90">
+                  <SelectItem value="gamepad">
+                    <div className="flex items-center">
+                      <GamepadIcon className="mr-2 h-4 w-4" />
+                      <span>Gamepad</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="monitor">
+                    <div className="flex items-center">
+                      <MonitorIcon className="mr-2 h-4 w-4" />
+                      <span>Monitor</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="mouse">
+                    <div className="flex items-center">
+                      <MousePointerIcon className="mr-2 h-4 w-4" />
+                      <span>Mouse</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="headset">
+                    <div className="flex items-center">
+                      <HeadphonesIcon className="mr-2 h-4 w-4" />
+                      <span>Headset</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="joystick">
+                    <div className="flex items-center">
+                      <GamepadIcon className="mr-2 h-4 w-4" />
+                      <span>Joystick</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="vr">
+                    <div className="flex items-center">
+                      <EyeIcon className="mr-2 h-4 w-4" />
+                      <span>VR Headset</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="racing">
+                    <div className="flex items-center">
+                      <CarIcon className="mr-2 h-4 w-4" />
+                      <span>Racing</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="console">
+                    <div className="flex items-center">
+                      <TvIcon className="mr-2 h-4 w-4" />
+                      <span>Console</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                placeholder="Enter category description"
+                value={editCategoryDescription}
+                onChange={(e) => setEditCategoryDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditCategoryDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateCategory}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
