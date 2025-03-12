@@ -169,9 +169,18 @@ export default function POSDashboard() {
             const diffMs = now.getTime() - startTime.getTime();
             diffMins = Math.floor(diffMs / 60000);
 
+            // Find the game to get its pricing
+            const currentGame = games.find((g: any) => 
+                g.name === station.currentGame
+            );
+            
+            // Default to old pricing if game not found
+            const gamePrice = currentGame?.pricePerSession || 40;
+            const hourlyPrice = currentGame?.pricePerHour || 200;
+            
             const cost = station.sessionType === "per_game"
-                ? 40 // Fixed rate per game
-                : Math.ceil(diffMins / 60) * 200; // 200 KES per hour
+                ? gamePrice // Game-specific per session rate
+                : Math.ceil(diffMins / 60) * hourlyPrice; // Game-specific hourly rate
 
             // Look up the customer in the customers list
             const currentCustomer = customers.find((c: any) => 
@@ -210,6 +219,13 @@ export default function POSDashboard() {
                 });
                 return;
             }
+            
+            // Find the selected game to get its pricing
+            const currentGame = games.find((g: any) => g.id.toString() === selectedGame);
+            
+            // Default to old pricing if game not found
+            const gamePrice = currentGame?.pricePerSession || 40;
+            const hourlyPrice = currentGame?.pricePerHour || 200;
 
             const response = await apiRequest({
                 path: "/api/sessions/start",
@@ -220,8 +236,8 @@ export default function POSDashboard() {
                     customerName: selectedCustomer.displayName,
                     gameId: selectedGame,
                     sessionType: selectedSessionType,
-                    baseRate: 40, // Fixed rate per game
-                    hourlyRate: 200 // Fixed hourly rate
+                    baseRate: gamePrice, // Game-specific per session rate
+                    hourlyRate: hourlyPrice // Game-specific hourly rate
                 }
             });
 
@@ -780,8 +796,27 @@ export default function POSDashboard() {
                                     <SelectValue placeholder="Select pricing model" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="per_game">Per Game (KES 40)</SelectItem>
-                                    <SelectItem value="hourly">Hourly (KES 200 / hour)</SelectItem>
+                                    {selectedGame ? (
+                                        <>
+                                            {/* Get the selected game's pricing */}
+                                            {(() => {
+                                                const game = games.find((g: any) => g.id.toString() === selectedGame);
+                                                const perSessionPrice = game?.pricePerSession || 40;
+                                                const hourlyPrice = game?.pricePerHour || 200;
+                                                return (
+                                                    <>
+                                                        <SelectItem value="per_game">Per Game (KES {perSessionPrice})</SelectItem>
+                                                        <SelectItem value="hourly">Hourly (KES {hourlyPrice} / hour)</SelectItem>
+                                                    </>
+                                                );
+                                            })()}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SelectItem value="per_game">Per Game (Select a game first)</SelectItem>
+                                            <SelectItem value="hourly">Hourly (Select a game first)</SelectItem>
+                                        </>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
