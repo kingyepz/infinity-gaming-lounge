@@ -14,11 +14,11 @@ export async function createTransaction(transactionData: {
   duration: number | null;
 }) {
   try {
-    const response = await apiRequest<any[]>(
-      'POST',
-      '/api/transactions',
-      transactionData
-    );
+    const response = await apiRequest<any[]>({
+      method: 'POST',
+      path: '/api/transactions',
+      data: transactionData
+    });
     return { 
       success: true, 
       transactionId: response[0]?.id 
@@ -37,15 +37,15 @@ export async function createTransaction(transactionData: {
  */
 export async function processCashPayment(transactionId: number, amount: number, userId?: number) {
   try {
-    const response = await apiRequest<{success: boolean; error?: string}>(
-      'POST',
-      '/api/payments/cash',
-      {
+    const response = await apiRequest<{success: boolean; error?: string}>({
+      method: 'POST',
+      path: '/api/payments/cash',
+      data: {
         transactionId,
         amount,
         userId // Include optional userId for loyalty points
       }
-    );
+    });
     return response;
   } catch (error) {
     console.error('Error processing cash payment:', error);
@@ -58,16 +58,16 @@ export async function processCashPayment(transactionId: number, amount: number, 
  */
 export async function initiateMpesaPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number) {
   try {
-    const response = await apiRequest<{success: boolean; checkoutRequestId?: string; error?: string}>(
-      'POST',
-      '/api/payments/mpesa',
-      {
+    const response = await apiRequest<{success: boolean; checkoutRequestId?: string; error?: string}>({
+      method: 'POST',
+      path: '/api/payments/mpesa',
+      data: {
         phoneNumber,
         amount,
         transactionId,
         userId // Include optional userId for loyalty points
       }
-    );
+    });
     return response;
   } catch (error) {
     console.error('Error initiating M-Pesa payment:', error);
@@ -80,16 +80,16 @@ export async function initiateMpesaPayment(phoneNumber: string, amount: number, 
  */
 export async function initiateAirtelPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number) {
   try {
-    const response = await apiRequest<{success: boolean; reference?: string; error?: string}>(
-      'POST',
-      '/api/payments/airtel',
-      {
+    const response = await apiRequest<{success: boolean; reference?: string; error?: string}>({
+      method: 'POST',
+      path: '/api/payments/airtel',
+      data: {
         phoneNumber,
         amount,
         transactionId,
         userId // Include optional userId for loyalty points
       }
-    );
+    });
     return response;
   } catch (error) {
     console.error('Error initiating Airtel Money payment:', error);
