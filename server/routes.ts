@@ -12,10 +12,14 @@ import { airtelMoneyService } from "./airtel";
 import { PaymentDebugger } from "./paymentDebugger";
 import mpesaRoutes from "./mpesaRoutes";
 import mpesaApiRoutes from "./mpesaApiRoutes";
+import { websocketService } from "./websocket";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
   const server = createServer(app);
+  
+  // Initialize WebSocket service with the HTTP server
+  websocketService.initialize(server);
 
   // Wrap route handlers with error catching
   const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {

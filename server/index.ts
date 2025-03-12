@@ -4,6 +4,7 @@ import { setupVite, serveStatic } from "./vite";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
 import { storage } from "./storage"; // Import storage module
+import { websocketService } from "./websocket"; // Import WebSocket service
 
 // Initialize express app
 const app = express();
@@ -57,6 +58,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 
     // Register API routes first
     await registerRoutes(app);
+    
+    // WebSocket service is initialized in routes.ts
 
     // Setup environment-specific middleware
     if (process.env.NODE_ENV !== "production") {
