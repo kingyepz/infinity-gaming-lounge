@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon, Receipt } from "lucide-react";
+import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon, Receipt, Loader2 } from "lucide-react";
 import QRCodePayment from "./QRCodePayment";
 import SplitPaymentModal from './SplitPaymentModal';
 import ReceiptGenerator from './ReceiptGenerator';
@@ -409,12 +409,13 @@ export default function PaymentModal({
   
   const handleCheckQRStatus = async () => {
     try {
-      if (!transactionId) {
+      const stationTransactionId = parseInt(station.lastTransactionId || "0");
+      if (!stationTransactionId) {
         return { status: "ERROR", message: "Transaction ID is missing" };
       }
       
       const { checkMpesaQRPaymentStatus } = await import("@/lib/payment");
-      const result = await checkMpesaQRPaymentStatus(transactionId);
+      const result = await checkMpesaQRPaymentStatus(stationTransactionId);
       return result;
     } catch (error) {
       console.error("Error checking QR payment status:", error);
@@ -636,15 +637,17 @@ export default function PaymentModal({
                     <QrCodeIcon className="h-12 w-12 text-primary mb-2" />
                   </div>
                   <p className="text-center mb-4">
-                    Select your preferred payment method and scan the QR code
+                    Select your preferred payment method and generate a QR code for payment
                   </p>
 
                   <div className="flex justify-center space-x-4 mb-4">
                     <Button
                       variant={paymentMethod === "qr-mpesa" ? "default" : "outline"}
                       onClick={() => {
-                        setMpesaStatus("idle");
                         setPaymentMethod("qr-mpesa" as PaymentMethod);
+                        // Reset QR code states
+                        setQrCodeData(null);
+                        setQrRequestId(null);
                       }}
                       className="flex-1"
                     >
@@ -653,77 +656,57 @@ export default function PaymentModal({
                     <Button
                       variant={paymentMethod === "qr-airtel" ? "default" : "outline"}
                       onClick={() => {
-                        setAirtelStatus("idle");
                         setPaymentMethod("qr-airtel" as PaymentMethod);
+                        // Reset QR code states
+                        setQrCodeData(null);
+                        setQrRequestId(null);
                       }}
                       className="flex-1"
                     >
                       Airtel Money
                     </Button>
                   </div>
+                  
+                  {!qrCodeData && (paymentMethod === "qr-mpesa" || paymentMethod === "qr-airtel") && (
+                    <div className="text-center p-4">
+                      <Button 
+                        onClick={() => handleGenerateQRCode(paymentMethod === "qr-mpesa" ? "mpesa" : "airtel")}
+                        disabled={isProcessing}
+                        className="w-full"
+                      >
+                        {isProcessing ? 
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Generating QR Code...</span>
+                          </div> : 
+                          "Generate QR Code"
+                        }
+                      </Button>
+                    </div>
+                  )}
 
-                  {paymentMethod === "qr-mpesa" && (
+                  {qrCodeData && paymentMethod === "qr-mpesa" && (
                     <div className="mt-4">
                       <QRCodePayment
                         amount={amount}
-                        transactionId={0} // Will be set after creating transaction
+                        transactionId={parseInt(station.lastTransactionId || "0")} 
                         paymentType="mpesa"
-                        onCheckStatus={async () => {
-                          try {
-                            // Mock implementation - in real app would check status from server
-                            return { status: "COMPLETED" };
-                          } catch (error) {
-                            console.error("Error checking payment status:", error);
-                            return { status: "ERROR", message: "Failed to check payment status" };
-                          }
-                        }}
-                        onComplete={async () => {
-                          // Reset the station status after QR MPesa payment
-                          await resetStationStatus("QR-MPesa");
-                          
-                          toast({
-                            title: "Payment Successful",
-                            description: "QR payment processed successfully."
-                          });
-                          onPaymentComplete();
-                          onClose();
-                        }}
-                        onRetry={() => {
-                          setMpesaStatus("idle");
-                        }}
+                        onCheckStatus={handleCheckQRStatus}
+                        onComplete={handleQRPaymentComplete}
+                        onRetry={handleQRRetry}
                       />
                     </div>
                   )}
 
-                  {paymentMethod === "qr-airtel" && (
+                  {qrCodeData && paymentMethod === "qr-airtel" && (
                     <div className="mt-4">
                       <QRCodePayment
                         amount={amount}
-                        transactionId={0} // Will be set after creating transaction
+                        transactionId={parseInt(station.lastTransactionId || "0")}
                         paymentType="airtel"
-                        onCheckStatus={async () => {
-                          try {
-                            // Mock implementation - in real app would check status from server
-                            return { status: "COMPLETED" };
-                          } catch (error) {
-                            console.error("Error checking payment status:", error);
-                            return { status: "ERROR", message: "Failed to check payment status" };
-                          }
-                        }}
-                        onComplete={async () => {
-                          // Reset the station status after QR Airtel payment
-                          await resetStationStatus("QR-Airtel");
-                          
-                          toast({
-                            title: "Payment Successful",
-                            description: "QR payment processed successfully."
-                          });
-                          onPaymentComplete();
-                          onClose();
-                        }}
-                        onRetry={() => {
-                          setAirtelStatus("idle");
-                        }}
+                        onCheckStatus={handleCheckQRStatus}
+                        onComplete={handleQRPaymentComplete}
+                        onRetry={handleQRRetry}
                       />
                     </div>
                   )}
