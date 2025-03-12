@@ -63,6 +63,20 @@ export interface STKPushResponse {
   CustomerMessage: string;
 }
 
+export interface QRCodeGenerateRequest {
+  amount: number;
+  transactionId: number;
+  referenceNumber?: string;
+  trxCode?: string;
+}
+
+export interface QRCodeGenerateResponse {
+  ResponseCode: string;
+  ResponseDescription: string;
+  QRCode: string;
+  RequestID?: string;
+}
+
 // Type for transaction status response
 export interface TransactionStatusResponse {
   ResponseCode: string;
