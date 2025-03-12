@@ -48,13 +48,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sessions/start", asyncHandler(async (req, res) => {
     try {
-      const { stationId, customerId, gameId, sessionType } = req.body;
+      const { stationId, customerId, customerName, gameId, sessionType, baseRate, hourlyRate } = req.body;
+      
+      console.log("Starting session with data:", req.body);
+
+      // Find the game to get its name
+      const game = await storage.getGameById(Number(gameId));
+      if (!game) {
+        throw new Error("Game not found");
+      }
 
       const station = await storage.updateGameStation(stationId, {
-        currentCustomer: customerId,
-        currentGame: gameId,
+        currentCustomer: customerName, // Use customer name (string) for the gameStations table
+        currentGame: game.name, // Use game name (string) instead of ID
         sessionType,
-        sessionStartTime: new Date()
+        sessionStartTime: new Date(),
+        baseRate: baseRate || 40,
+        hourlyRate: hourlyRate || 200
       });
 
       if (!station) {
