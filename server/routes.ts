@@ -1031,12 +1031,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * Get filtered data based on date range and time of day
    * This endpoint supports filtering dashboard data by date range and time hours
-   * GET /api/reports/filtered?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&startHour=0&endHour=23
+   * GET /api/reports/filtered?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&startHour=0&endHour=23&timePreset=morning|afternoon|evening|all
    */
   app.get("/api/reports/filtered", asyncHandler(async (req, res) => {
     try {
       // Get date range and time filters from query parameters
-      const { startDate, endDate, startHour, endHour } = req.query;
+      const { startDate, endDate, startHour, endHour, timePreset } = req.query;
       
       if (!startDate || !endDate) {
         return res.status(400).json({ 
@@ -1064,9 +1064,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Parse time range parameters (defaulting to all day if not provided)
-      const hourStart = startHour !== undefined ? parseInt(startHour as string) : 0;
-      const hourEnd = endHour !== undefined ? parseInt(endHour as string) : 23;
+      // Parse time range parameters based on time preset or explicit hours
+      let hourStart = 0;
+      let hourEnd = 23;
+      
+      // Apply time preset if specified (takes precedence over explicit hours)
+      if (timePreset) {
+        switch (timePreset) {
+          case 'morning':
+            hourStart = 6;
+            hourEnd = 11;
+            break;
+          case 'afternoon':
+            hourStart = 12;
+            hourEnd = 17;
+            break;
+          case 'evening':
+            hourStart = 18;
+            hourEnd = 23;
+            break;
+          case 'all':
+          default:
+            hourStart = 0;
+            hourEnd = 23;
+        }
+      } else {
+        // Use explicit hour parameters if provided
+        hourStart = startHour !== undefined ? parseInt(startHour as string) : 0;
+        hourEnd = endHour !== undefined ? parseInt(endHour as string) : 23;
+      }
       
       // Validate time range
       if (isNaN(hourStart) || isNaN(hourEnd) || hourStart < 0 || hourStart > 23 || hourEnd < 0 || hourEnd > 23) {

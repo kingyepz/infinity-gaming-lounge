@@ -678,9 +678,14 @@ export default function AdminAnalytics() {
         params.append('endDate', reportEndDate);
       }
       
-      // Time-of-day filtering
-      params.append('startHour', reportStartHour.toString());
-      params.append('endHour', reportEndHour.toString());
+      // Time-of-day filtering - use preset if available, otherwise use hours
+      if (timePreset && timePreset !== 'custom') {
+        params.append('timePreset', timePreset);
+      } else {
+        // Custom time range
+        params.append('startHour', reportStartHour.toString());
+        params.append('endHour', reportEndHour.toString());
+      }
       
       // Append parameters to URL if any were provided
       if (params.toString()) {
