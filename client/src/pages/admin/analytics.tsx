@@ -238,21 +238,28 @@ export default function AdminAnalytics() {
     }
   };
 
-  // Derived statistics
+  // Derived statistics for fallback data
   const activeStations = stations.filter((station) => station.currentCustomer).length;
-  const completedTransactions = transactions.filter((tx) => tx.status === "completed");
-  const pendingTransactions = transactions.filter((tx) => tx.status === "pending");
+  const completedTransactions = transactions.filter((tx) => tx.paymentStatus === "completed" || tx.status === "completed");
+  const pendingTransactions = transactions.filter((tx) => tx.paymentStatus === "pending" || tx.status === "pending");
   
-  const todayRevenue = completedTransactions
+  // Client-side calculated stats (used only as fallback when API data is not available)
+  const clientTodayRevenue = completedTransactions
     .filter((tx) => new Date(tx.createdAt).toDateString() === new Date().toDateString())
     .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
   const pendingAmount = pendingTransactions.reduce((acc, tx) => acc + Number(tx.amount), 0);
-  const totalRevenue = completedTransactions.reduce((acc, tx) => acc + Number(tx.amount), 0);
+  const clientTotalRevenue = completedTransactions.reduce((acc, tx) => acc + Number(tx.amount), 0);
   
-  const newCustomers = customers.filter(
+  const clientNewCustomers = customers.filter(
     (c) => new Date(c.createdAt).toDateString() === new Date().toDateString()
   ).length;
+  
+  // Use API data where available
+  const todayRevenue = dailyStats?.totalRevenue || clientTodayRevenue;
+  const totalRevenue = customerActivity?.totalRevenue || clientTotalRevenue;
+  const newCustomers = customerActivity?.newCustomers || clientNewCustomers;
+  const totalSessions = customerActivity?.totalSessions || completedTransactions.length;
 
   // Chart data
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -871,10 +878,10 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-lg sm:text-2xl font-bold">
-                        KES {dailyStats ? dailyStats.totalRevenue : todayRevenue}
+                        KES {dailyStats?.totalRevenue || 0}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {dailyStats ? dailyStats.completedSessions : completedTransactions.filter(tx => new Date(tx.createdAt).toDateString() === new Date().toDateString()).length} transactions
+                        {dailyStats?.completedSessions || 0} transactions
                       </p>
                     </CardContent>
                   </Card>
@@ -884,10 +891,10 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-lg sm:text-2xl font-bold">
-                        {customerActivity ? customerActivity.newCustomers : newCustomers}
+                        {customerActivity?.newCustomers || clientNewCustomers}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {customerActivity ? (customerActivity.totalCustomers - customerActivity.newCustomers) : 0} returning customers
+                        {customerActivity?.returningCustomers || (customerActivity?.totalCustomers ? customerActivity.totalCustomers - customerActivity.newCustomers : 0)} returning customers
                       </p>
                     </CardContent>
                   </Card>
@@ -1017,7 +1024,7 @@ export default function AdminAnalytics() {
                       <CardTitle>Total Revenue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-3xl font-bold">KES {totalRevenue}</p>
+                      <p className="text-3xl font-bold">KES {customerActivity?.totalRevenue || totalRevenue}</p>
                       <p className="text-sm text-muted-foreground">Lifetime earnings</p>
                     </CardContent>
                   </Card>
@@ -1028,7 +1035,7 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-3xl font-bold">
-                        {completedTransactions.length}
+                        {customerActivity?.totalSessions || completedTransactions.length}
                       </p>
                       <p className="text-sm text-muted-foreground">Total completed sessions</p>
                     </CardContent>
@@ -1040,7 +1047,7 @@ export default function AdminAnalytics() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-3xl font-bold">
-                        {customers.length}
+                        {customerActivity?.totalCustomers || customers.length}
                       </p>
                       <p className="text-sm text-muted-foreground">Registered customers</p>
                     </CardContent>
