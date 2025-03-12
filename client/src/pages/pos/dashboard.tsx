@@ -413,8 +413,8 @@ export default function POSDashboard() {
                     </TabsList>
                 </div>
 
-                <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
-                    <TabsContent value="overview">
+                <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-auto">
+                    <TabsContent value="overview" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                         <div className="space-y-4 sm:space-y-6">
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                                 <Card className="bg-black/30 border-primary/20">

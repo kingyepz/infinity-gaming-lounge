@@ -1419,24 +1419,26 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
+        <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="hidden">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
-              <TabsTrigger value="stations">Stations</TabsTrigger>
-              <TabsTrigger value="reservations">Reservations</TabsTrigger>
-              <TabsTrigger value="games">Games</TabsTrigger>
-              <TabsTrigger value="customers">Customers</TabsTrigger>
-              <TabsTrigger value="inventory">Inventory</TabsTrigger>
-              <TabsTrigger value="payments">Payments</TabsTrigger>
-              <TabsTrigger value="financial">Financial</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="staff">Staff</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
+            <div className="mb-4 border-b border-gray-800">
+              <TabsList className="w-full flex overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="reports">Reports</TabsTrigger>
+                <TabsTrigger value="stations">Stations</TabsTrigger>
+                <TabsTrigger value="reservations">Reservations</TabsTrigger>
+                <TabsTrigger value="games">Games</TabsTrigger>
+                <TabsTrigger value="customers">Customers</TabsTrigger>
+                <TabsTrigger value="inventory">Inventory</TabsTrigger>
+                <TabsTrigger value="payments">Payments</TabsTrigger>
+                <TabsTrigger value="financial">Financial</TabsTrigger>
+                <TabsTrigger value="events">Events</TabsTrigger>
+                <TabsTrigger value="staff">Staff</TabsTrigger>
+                <TabsTrigger value="security">Security</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+            </div>
             
             {/* Global Refresh Button */}
             <div className="flex justify-end mb-4">
@@ -1452,7 +1454,7 @@ export default function AdminAnalytics() {
             </div>
             
             {/* Overview Tab */}
-            <TabsContent value="overview">
+            <TabsContent value="overview" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                   <Card className="bg-black/30 border-primary/20">
@@ -1601,7 +1603,7 @@ export default function AdminAnalytics() {
             </TabsContent>
 
             {/* Analytics Tab */}
-            <TabsContent value="analytics">
+            <TabsContent value="analytics" className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
               <div className="space-y-6">
                 {/* Analytics Header with Tabs */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
