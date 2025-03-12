@@ -2867,13 +2867,16 @@ export default function AdminAnalytics() {
                         </div>
                         <Button 
                           onClick={() => {
-                            setEditCategoryId(null);
-                            setEditCategoryName("");
-                            setEditCategoryType("pc");
-                            setEditCategoryDescription("");
-                            setEditCategoryColor("#6366F1");
-                            setEditCategoryIcon("gamepad");
-                            setShowEditCategoryDialog(true);
+                            setNewCategoryName("");
+                            setNewCategoryType("pc");
+                            setNewCategoryHourlyRate("");
+                            setNewCategoryPeakHourRate("");
+                            setNewCategoryOffPeakRate("");
+                            setNewCategoryWeekendRate("");
+                            setNewCategoryDescription("");
+                            setNewCategoryColor("#6366F1");
+                            setNewCategoryIcon("gamepad");
+                            setShowAddCategoryDialog(true);
                           }} 
                           className="ml-auto"
                         >
@@ -4859,6 +4862,168 @@ export default function AdminAnalytics() {
             </Button>
             <Button onClick={handleUpdateCategory}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Category Dialog */}
+      <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
+        <DialogContent className="bg-black/80 border-primary/20">
+          <DialogHeader>
+            <DialogTitle>Add Station Category</DialogTitle>
+            <DialogDescription>Create a new station category</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Name</label>
+              <Input
+                placeholder="Enter category name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Type</label>
+              <Select value={newCategoryType} onValueChange={(value) => setNewCategoryType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category type" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90">
+                  <SelectItem value="pc">PC Gaming</SelectItem>
+                  <SelectItem value="console">Console</SelectItem>
+                  <SelectItem value="vr">Virtual Reality</SelectItem>
+                  <SelectItem value="racing">Racing Setup</SelectItem>
+                  <SelectItem value="arcade">Arcade</SelectItem>
+                  <SelectItem value="mobile">Mobile Gaming</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Standard Rate (per hour)</label>
+                <Input
+                  type="number"
+                  placeholder="KES 300"
+                  value={newCategoryHourlyRate}
+                  onChange={(e) => setNewCategoryHourlyRate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Peak Hour Rate</label>
+                <Input
+                  type="number"
+                  placeholder="KES 450"
+                  value={newCategoryPeakHourRate}
+                  onChange={(e) => setNewCategoryPeakHourRate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Off-peak Rate</label>
+                <Input
+                  type="number"
+                  placeholder="KES 250"
+                  value={newCategoryOffPeakRate}
+                  onChange={(e) => setNewCategoryOffPeakRate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Weekend Rate</label>
+                <Input
+                  type="number"
+                  placeholder="KES 400"
+                  value={newCategoryWeekendRate}
+                  onChange={(e) => setNewCategoryWeekendRate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Color</label>
+              <div className="flex space-x-2">
+                <Input
+                  type="color"
+                  value={newCategoryColor}
+                  onChange={(e) => setNewCategoryColor(e.target.value)}
+                  className="w-12 h-10 p-1 cursor-pointer"
+                />
+                <Input
+                  placeholder="Color code"
+                  value={newCategoryColor}
+                  onChange={(e) => setNewCategoryColor(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category Icon</label>
+              <Select value={newCategoryIcon} onValueChange={(value) => setNewCategoryIcon(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an icon" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90">
+                  <SelectItem value="gamepad">
+                    <div className="flex items-center">
+                      <GamepadIcon className="mr-2 h-4 w-4" />
+                      <span>Gamepad</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="monitor">
+                    <div className="flex items-center">
+                      <MonitorIcon className="mr-2 h-4 w-4" />
+                      <span>Monitor</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="headset">
+                    <div className="flex items-center">
+                      <HeadphonesIcon className="mr-2 h-4 w-4" />
+                      <span>Headset</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="vr">
+                    <div className="flex items-center">
+                      <EyeIcon className="mr-2 h-4 w-4" />
+                      <span>VR</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="racing">
+                    <div className="flex items-center">
+                      <CarIcon className="mr-2 h-4 w-4" />
+                      <span>Racing</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="arcade">
+                    <div className="flex items-center">
+                      <GamepadIcon className="mr-2 h-4 w-4" />
+                      <span>Arcade</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="mobile">
+                    <div className="flex items-center">
+                      <SmartphoneIcon className="mr-2 h-4 w-4" />
+                      <span>Mobile</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                placeholder="Enter category description"
+                value={newCategoryDescription}
+                onChange={(e) => setNewCategoryDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCategoryDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddCategory}>
+              Add Category
             </Button>
           </DialogFooter>
         </DialogContent>
