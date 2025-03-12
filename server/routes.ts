@@ -433,6 +433,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Get a specific transaction by ID - used for receipt generation
+  app.get("/api/transactions/:id", asyncHandler(async (req, res) => {
+    try {
+      const transactionId = Number(req.params.id);
+      if (isNaN(transactionId)) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Invalid transaction ID" 
+        });
+      }
+
+      const transaction = await db.select()
+        .from(transactions)
+        .where(eq(transactions.id, transactionId))
+        .limit(1);
+
+      if (!transaction || transaction.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          error: "Transaction not found" 
+        });
+      }
+
+      return res.json({ 
+        success: true,
+        transaction: transaction[0] 
+      });
+    } catch (error) {
+      console.error("Error fetching transaction:", error);
+      return res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch transaction details" 
+      });
+    }
+  }));
+
+  // Get payment details for a specific transaction - used for receipt generation
+  app.get("/api/payments/transaction/:transactionId", asyncHandler(async (req, res) => {
+    try {
+      const transactionId = Number(req.params.transactionId);
+      if (isNaN(transactionId)) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Invalid transaction ID" 
+        });
+      }
+
+      const payment = await db.select()
+        .from(payments)
+        .where(eq(payments.transactionId, transactionId))
+        .limit(1);
+
+      if (!payment || payment.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          error: "Payment not found for this transaction" 
+        });
+      }
+
+      return res.json({
+        success: true,
+        payment: payment[0]
+      });
+    } catch (error) {
+      console.error("Error fetching payment details:", error);
+      return res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch payment details" 
+      });
+    }
+  }));
+
   app.get("/api/transactions/station/:stationId", asyncHandler(async (req, res) => {
     try {
       const stationId = Number(req.params.stationId);

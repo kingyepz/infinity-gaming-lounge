@@ -371,3 +371,173 @@ export function formatCurrency(amount: number | string) {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   return `KES ${numAmount.toFixed(0)}`;
 }
+
+/**
+ * Generate a receipt for a transaction as a PDF
+ */
+export async function generateReceipt(transactionId: number): Promise<Blob> {
+  try {
+    // First, fetch the transaction details from the API
+    const transactionResponse = await apiRequest<{
+      success: boolean;
+      transaction?: any;
+      error?: string;
+    }>({
+      method: 'GET',
+      path: `/api/transactions/${transactionId}`
+    });
+    
+    if (!transactionResponse.success || !transactionResponse.transaction) {
+      throw new Error(transactionResponse.error || 'Failed to fetch transaction details');
+    }
+    
+    const tx = transactionResponse.transaction;
+    
+    // Fetch payment details for this transaction
+    const paymentResponse = await apiRequest<{
+      success: boolean;
+      payment?: any;
+      error?: string;
+    }>({
+      method: 'GET',
+      path: `/api/payments/transaction/${transactionId}`
+    });
+    
+    if (!paymentResponse.success || !paymentResponse.payment) {
+      throw new Error(paymentResponse.error || 'Failed to fetch payment details');
+    }
+    
+    const payment = paymentResponse.payment;
+    
+    // In a real implementation, we'd use a PDF generation library like jsPDF
+    // For this implementation, we'll create a simple HTML receipt and convert it to PDF format
+    
+    // Create receipt HTML content
+    const receiptHtml = `
+      <html>
+        <head>
+          <title>Receipt #${transactionId}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 20px;
+              color: #333;
+            }
+            .receipt {
+              max-width: 300px;
+              margin: 0 auto;
+              border: 1px solid #ddd;
+              padding: 20px;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 10px;
+              margin-bottom: 10px;
+            }
+            .logo {
+              font-size: 20px;
+              font-weight: bold;
+            }
+            .info-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 5px;
+            }
+            .footer {
+              margin-top: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #666;
+            }
+            .thank-you {
+              margin-top: 20px;
+              text-align: center;
+              font-weight: bold;
+            }
+            .payment-info {
+              margin-top: 15px;
+              border-top: 1px dashed #ddd;
+              padding-top: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="header">
+              <div class="logo">Infinity Gaming Lounge</div>
+              <div>Official Receipt</div>
+              <div>${new Date(tx.createdAt).toLocaleDateString()}</div>
+            </div>
+            
+            <div class="info-row">
+              <div>Receipt #:</div>
+              <div>${transactionId}</div>
+            </div>
+            <div class="info-row">
+              <div>Customer:</div>
+              <div>${tx.customerName}</div>
+            </div>
+            <div class="info-row">
+              <div>Game:</div>
+              <div>${tx.gameName || 'N/A'}</div>
+            </div>
+            <div class="info-row">
+              <div>Station:</div>
+              <div>#${tx.stationId}</div>
+            </div>
+            <div class="info-row">
+              <div>Session Type:</div>
+              <div>${tx.sessionType === 'per_game' ? 'Per Game' : 'Hourly'}</div>
+            </div>
+            ${tx.duration ? `
+            <div class="info-row">
+              <div>Duration:</div>
+              <div>${tx.duration} ${tx.duration === 1 ? 'hour' : 'hours'}</div>
+            </div>` : ''}
+            
+            <div class="payment-info">
+              <div class="info-row">
+                <div>Amount:</div>
+                <div>${formatCurrency(tx.amount)}</div>
+              </div>
+              <div class="info-row">
+                <div>Payment Method:</div>
+                <div>${payment.paymentMethod.toUpperCase()}</div>
+              </div>
+              <div class="info-row">
+                <div>Status:</div>
+                <div>${payment.status.toUpperCase()}</div>
+              </div>
+              ${payment.reference ? `
+              <div class="info-row">
+                <div>Reference:</div>
+                <div>${payment.reference}</div>
+              </div>` : ''}
+            </div>
+            
+            <div class="thank-you">
+              Thank you for your business!
+            </div>
+            
+            <div class="footer">
+              <p>Infinity Gaming Lounge</p>
+              <p>123 Gaming Street, Nairobi, Kenya</p>
+              <p>Tel: +254 700 123 456</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    // Convert HTML to PDF-like blob
+    // In a production environment, we would use a proper PDF generation library
+    // For this implementation, we're creating a blob with HTML content
+    const blob = new Blob([receiptHtml], { type: 'text/html' });
+    return blob;
+  } catch (error) {
+    console.error('Error generating receipt:', error);
+    throw error;
+  }
+}

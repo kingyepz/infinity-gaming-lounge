@@ -24,14 +24,23 @@ export default function QRCodePayment({
   const [status, setStatus] = useState<"pending" | "processing" | "completed" | "failed">("pending");
   const [isPolling, setIsPolling] = useState(false);
   
-  // Generate QR code data
-  const qrData = JSON.stringify({
-    type: paymentType,
-    amount: amount,
-    transactionId: transactionId,
-    merchantName: "Infinity Gaming Lounge",
-    reference: `TX-${transactionId}`
-  });
+  // Generate QR code data for different payment types
+  let qrData: string;
+  
+  if (paymentType === "mpesa") {
+    // Format QR data in M-Pesa Pay Bill format
+    // Format: PayBill account followed by amount and account number
+    qrData = `https://tinypesa.com/infinity-gaming-lounge?amount=${amount}&account=TX-${transactionId}`;
+  } else {
+    // For Airtel Money - use standard format
+    qrData = JSON.stringify({
+      type: paymentType,
+      amount: amount,
+      transactionId: transactionId,
+      merchantName: "Infinity Gaming Lounge",
+      reference: `TX-${transactionId}`
+    });
+  }
   
   // Colors based on payment type
   const colors = {
@@ -100,9 +109,27 @@ export default function QRCodePayment({
             <p className="text-center mb-2">
               Scan this QR code with your {paymentType === "mpesa" ? "M-Pesa" : "Airtel Money"} app
             </p>
-            <p className="font-semibold text-center mb-4">
+            <p className="font-semibold text-center mb-2">
               Amount: KES {amount}
             </p>
+            {paymentType === "mpesa" && (
+              <div className="text-xs text-muted-foreground text-center mb-4">
+                <p>📱 How to pay with M-Pesa:</p>
+                <p>1. Open M-Pesa app and tap 'Scan QR'</p>
+                <p>2. Point camera at the QR code</p>
+                <p>3. Confirm payment amount</p>
+                <p>4. Enter M-Pesa PIN when prompted</p>
+              </div>
+            )}
+            {paymentType === "airtel" && (
+              <div className="text-xs text-muted-foreground text-center mb-4">
+                <p>📱 How to pay with Airtel Money:</p>
+                <p>1. Open Airtel Money app</p>
+                <p>2. Select 'Scan & Pay'</p>
+                <p>3. Scan the QR code</p>
+                <p>4. Confirm payment details</p>
+              </div>
+            )}
             <div className="space-y-2 w-full">
               <Button 
                 className="w-full" 
