@@ -229,10 +229,33 @@ export default function PaymentModal({
         if (response.status === "COMPLETED") {
           clearInterval(pollInterval);
           setMpesaStatus("completed");
+          
+          // Reset the station status after payment is complete
+          try {
+            console.log("Resetting station after M-Pesa payment:", station.id);
+            const { apiRequest } = await import("@/lib/queryClient");
+            
+            // Call API to update station status
+            await apiRequest({
+              method: "PATCH",
+              path: `/api/stations/${station.id}`,
+              data: {
+                currentCustomer: null,
+                currentGame: null,
+                sessionType: null,
+                sessionStartTime: null,
+                status: "available"
+              }
+            });
+          } catch (resetError) {
+            console.error("Error resetting station after M-Pesa payment:", resetError);
+          }
+          
           toast({
             title: "Payment Successful",
             description: "M-Pesa payment completed successfully."
           });
+          
           onPaymentComplete();
           onClose();
         } else if (response.status === "FAILED") {
@@ -262,6 +285,28 @@ export default function PaymentModal({
         if (response.transactionStatus === "SUCCESS") {
           clearInterval(pollInterval);
           setAirtelStatus("completed");
+          
+          // Reset the station status after payment is complete
+          try {
+            console.log("Resetting station after Airtel payment:", station.id);
+            const { apiRequest } = await import("@/lib/queryClient");
+            
+            // Call API to update station status
+            await apiRequest({
+              method: "PATCH",
+              path: `/api/stations/${station.id}`,
+              data: {
+                currentCustomer: null,
+                currentGame: null,
+                sessionType: null,
+                sessionStartTime: null,
+                status: "available"
+              }
+            });
+          } catch (resetError) {
+            console.error("Error resetting station after Airtel payment:", resetError);
+          }
+          
           toast({
             title: "Payment Successful",
             description: "Airtel Money payment completed successfully."
