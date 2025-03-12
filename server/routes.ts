@@ -132,6 +132,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const stations = await db.select().from(gameStations);
     res.json(stations);
   }));
+  
+  app.post("/api/stations", asyncHandler(async (req, res) => {
+    try {
+      const { name, status } = req.body;
+      
+      // Validate required fields
+      if (!name) {
+        return res.status(400).json({ 
+          error: "Station name is required" 
+        });
+      }
+      
+      // Insert new station into database
+      const [newStation] = await db.insert(gameStations)
+        .values({
+          name,
+          status: status || "available",
+          currentCustomer: null,
+          currentGame: null,
+          sessionType: null,
+          baseRate: 0,
+          hourlyRate: 200,
+          sessionStartTime: null
+        })
+        .returning();
+      
+      // Broadcast station updates via WebSocket
+      await websocketService.sendStationUpdates();
+      console.log(`New station created: ${name}. Broadcasting updates via WebSocket.`);
+      
+      res.status(201).json(newStation);
+    } catch (error) {
+      console.error("Error creating station:", error);
+      res.status(500).json({ 
+        error: "Failed to add station",
+        details: error.message 
+      });
+    }
+  }));
 
   app.patch("/api/stations/:id", asyncHandler(async (req, res) => {
     try {
