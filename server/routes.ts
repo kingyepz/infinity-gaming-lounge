@@ -11,6 +11,7 @@ import { mpesaService } from "./mpesa";
 import { airtelMoneyService } from "./airtel";
 import { PaymentDebugger } from "./paymentDebugger";
 import mpesaRoutes from "./mpesaRoutes";
+import mpesaApiRoutes from "./mpesaApiRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -1534,6 +1535,9 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
 
   // Register enhanced M-Pesa routes
   app.use('/api/mpesa', mpesaRoutes);
+  
+  // Register official M-Pesa API routes
+  app.use('/api/mpesa-api', mpesaApiRoutes);
 
       // Error handling middleware
   app.use((err: any, _req: any, res: any, _next: any) => {
