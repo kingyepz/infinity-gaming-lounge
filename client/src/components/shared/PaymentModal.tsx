@@ -14,7 +14,7 @@ import { Banknote, SmartphoneIcon, CheckCircle, XCircle, QrCodeIcon } from "luci
 import QRCodePayment from "./QRCodePayment";
 import { SplitPaymentModal } from './SplitPaymentModal'; // Import the new component
 
-type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode";
+type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode" | "qr-mpesa" | "qr-airtel";
 
 type PaymentStatus = "idle" | "processing" | "completed" | "failed";
 
@@ -68,16 +68,26 @@ export default function PaymentModal({
         duration: station.sessionType === "hourly" ? duration : null
       };
 
-      console.log("Sending transaction data:", transactionData);
       console.log("Creating transaction with data:", transactionData);
       const txResult = await createTransaction(transactionData);
       console.log("Transaction creation result:", txResult);
 
-      if (!txResult.success || !txResult.transactionId) {
+      // Enhanced error handling for transaction creation failures
+      if (!txResult.success) {
         setIsProcessing(false);
         toast({
-          title: "Payment Error",
+          title: "Transaction Error",
           description: txResult.error || "Failed to create transaction record. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!txResult.transactionId) {
+        setIsProcessing(false);
+        toast({
+          title: "System Error",
+          description: "Transaction was created but no ID was returned. Please try again.",
           variant: "destructive"
         });
         return;
@@ -97,7 +107,7 @@ export default function PaymentModal({
             toast({
               title: "Payment Successful",
               description: "Cash payment processed successfully.",
-              variant: "success"
+              variant: "default"
             });
             onPaymentComplete();
             onClose();
@@ -531,7 +541,13 @@ export default function PaymentModal({
     <SplitPaymentModal
         isOpen={showSplitPayment}
         onClose={handleSplitPaymentClose}
-        station={station}
+        transaction={station && {
+          id: 0, // This will be set by the transaction creation process
+          amount: amount,
+          customerName: station.currentCustomer || "Walk-in Customer",
+          gameName: station.currentGame || "Unknown Game",
+          stationId: station.id
+        }}
         onPaymentComplete={onPaymentComplete}
       />
     </>
