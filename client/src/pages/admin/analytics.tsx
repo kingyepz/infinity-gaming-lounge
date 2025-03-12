@@ -270,6 +270,112 @@ export default function AdminAnalytics() {
     queryFn: () => apiRequest({ path: "/api/reports/predictive-analytics" })
   });
 
+  // Date filter functions
+  const applyDateFilter = useCallback(async () => {
+    setIsApplyingFilter(true);
+    
+    try {
+      // Validate date inputs when "Custom" period is selected
+      if (dashboardPeriod === 'custom') {
+        if (!customStartDate || !customEndDate) {
+          toast({
+            title: "Date Selection Required",
+            description: "Please select both start and end dates for a custom range",
+            variant: "destructive"
+          });
+          setIsApplyingFilter(false);
+          return;
+        }
+        
+        // Validate date range (start date should be before end date)
+        const startDate = new Date(customStartDate);
+        const endDate = new Date(customEndDate);
+        
+        if (startDate > endDate) {
+          toast({
+            title: "Invalid Date Range",
+            description: "Start date must be before end date",
+            variant: "destructive"
+          });
+          setIsApplyingFilter(false);
+          return;
+        }
+      }
+      
+      // Build filter parameters based on selected period
+      let params = {};
+      
+      if (dashboardPeriod === 'day') {
+        const today = new Date();
+        params = { 
+          startDate: today.toISOString().split('T')[0],
+          endDate: today.toISOString().split('T')[0] 
+        };
+      } else if (dashboardPeriod === 'week') {
+        const today = new Date();
+        const weekAgo = new Date();
+        weekAgo.setDate(today.getDate() - 7);
+        params = { 
+          startDate: weekAgo.toISOString().split('T')[0],
+          endDate: today.toISOString().split('T')[0] 
+        };
+      } else if (dashboardPeriod === 'month') {
+        const today = new Date();
+        const monthAgo = new Date();
+        monthAgo.setMonth(today.getMonth() - 1);
+        params = { 
+          startDate: monthAgo.toISOString().split('T')[0],
+          endDate: today.toISOString().split('T')[0] 
+        };
+      } else if (dashboardPeriod === 'custom') {
+        params = { 
+          startDate: customStartDate,
+          endDate: customEndDate 
+        };
+      }
+      
+      // Make API request with filter parameters
+      const filteredResponse = await apiRequest({
+        path: `/api/reports/filtered`,
+        method: 'GET',
+        params
+      });
+      
+      // Update state with filtered data
+      setFilteredData(filteredResponse);
+      
+      toast({
+        title: "Filter Applied",
+        description: "Dashboard data has been filtered by the selected date range",
+      });
+    } catch (error) {
+      console.error("Error applying filter:", error);
+      toast({
+        title: "Filter Failed",
+        description: "There was a problem applying the date filter",
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplyingFilter(false);
+    }
+  }, [dashboardPeriod, customStartDate, customEndDate, toast]);
+
+  // Clear applied filters
+  const clearDateFilter = useCallback(() => {
+    setDashboardPeriod('month');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setFilteredData(null);
+    
+    toast({
+      title: "Filter Cleared",
+      description: "Showing all data without date filters"
+    });
+    
+    // Refresh data to ensure we have the complete dataset
+    refreshAllData();
+  }, [toast]);
+
   // Refresh functionality
   const refreshAllData = async () => {
     setIsRefreshing(true);

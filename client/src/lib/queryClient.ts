@@ -12,6 +12,7 @@ export async function apiRequest<T = any>(
     path: string;
     method?: string;
     data?: unknown;
+    params?: Record<string, string | number | boolean | undefined>;
   } | string,
   url?: string,
   data?: unknown,
@@ -20,17 +21,33 @@ export async function apiRequest<T = any>(
   let method: string;
   let path: string;
   let bodyData: unknown | undefined;
+  let queryParams: Record<string, string | number | boolean | undefined> | undefined;
 
   if (typeof options === 'object') {
     // New style with object parameter
     method = options.method || 'GET';
     path = options.path;
     bodyData = options.data;
+    queryParams = options.params;
   } else {
     // Old style with positional parameters
     method = options; // first param was method
     path = url!; // second param was url
     bodyData = data; // third param was data
+  }
+
+  // Append query parameters to the URL if they exist
+  if (queryParams && Object.keys(queryParams).length > 0) {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value !== undefined) {
+        searchParams.append(key, String(value));
+      }
+    }
+    const queryString = searchParams.toString();
+    if (queryString) {
+      path += (path.includes('?') ? '&' : '?') + queryString;
+    }
   }
 
   const res = await fetch(path, {

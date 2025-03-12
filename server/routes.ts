@@ -1028,6 +1028,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  /**
+   * Get filtered data based on date range
+   * This endpoint supports filtering dashboard data by date range
+   * GET /api/reports/filtered?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+   */
+  app.get("/api/reports/filtered", asyncHandler(async (req, res) => {
+    try {
+      // Get date range from query parameters
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ 
+          error: "Missing required parameters", 
+          message: "Both startDate and endDate are required query parameters"
+        });
+      }
+      
+      // Parse dates and validate
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      end.setHours(23, 59, 59, 999); // Set to end of day
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ 
+          error: "Invalid date format", 
+          message: "Dates must be in YYYY-MM-DD format"
+        });
+      }
+      
+      if (start > end) {
+        return res.status(400).json({ 
+          error: "Invalid date range", 
+          message: "Start date must be before or equal to end date"
+        });
+      }
+      
+      // Get transactions within the date range
+      const allTransactions = await storage.getTransactions();
+      const filteredTransactions = allTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt || new Date());
+        return txDate >= start && txDate <= end;
+      });
+        
+      // Get completed transactions
+      const completedTransactions = filteredTransactions.filter(
+        tx => tx.paymentStatus === "completed"
+      );
+      
+      // Calculate key metrics
+      const totalRevenue = completedTransactions.reduce((sum, tx) => {
+        const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : Number(tx.amount);
+        return sum + (amount || 0);
+      }, 0);
+      
+      // Group transactions by date for revenue chart
+      const revenueByDay: Record<string, number> = {};
+      
+      completedTransactions.forEach(transaction => {
+        const date = new Date(transaction.createdAt || new Date()).toISOString().split('T')[0];
+        const amount = typeof transaction.amount === 'string' 
+          ? parseFloat(transaction.amount) 
+          : Number(transaction.amount);
+          
+        if (!revenueByDay[date]) {
+          revenueByDay[date] = 0;
+        }
+        revenueByDay[date] += amount;
+      });
+      
+      // Convert to array format for chart
+      const revenueData = Object.entries(revenueByDay).map(([date, amount]) => ({
+        date,
+        amount
+      }));
+      
+      // Count payment methods
+      const paymentMethods: Record<string, number> = {
+        cash: 0,
+        mpesa: 0,
+        airtel: 0,
+        card: 0,
+        qr: 0
+      };
+      
+      completedTransactions.forEach(tx => {
+        if (tx.paymentMethod === 'cash' || (!tx.mpesaRef && !tx.paymentMethod)) {
+          paymentMethods.cash++;
+        } else if (tx.paymentMethod === 'mpesa' || (tx.mpesaRef && !tx.mpesaRef.startsWith('QR-') && !tx.mpesaRef.startsWith('SIM-AIRTEL-'))) {
+          paymentMethods.mpesa++;
+        } else if (tx.paymentMethod === 'airtel' || (tx.mpesaRef && (tx.mpesaRef.startsWith('SIM-AIRTEL-') || tx.mpesaRef.startsWith('AR-')))) {
+          paymentMethods.airtel++;
+        } else if (tx.paymentMethod === 'card') {
+          paymentMethods.card++;
+        } else if (tx.paymentMethod === 'qr' || tx.paymentMethod === 'qr-mpesa' || (tx.mpesaRef && tx.mpesaRef.startsWith('QR-'))) {
+          paymentMethods.qr++;
+        }
+      });
+      
+      // Convert to array format for chart
+      const paymentMethodsData = Object.entries(paymentMethods)
+        .map(([method, count]) => ({ method, count }))
+        .filter(item => item.count > 0);
+      
+      // Count game popularity
+      const gameCount: Record<string, number> = {};
+      const gameRevenue: Record<string, number> = {};
+      
+      completedTransactions.forEach(tx => {
+        if (!tx.gameName) return;
+        
+        if (!gameCount[tx.gameName]) {
+          gameCount[tx.gameName] = 0;
+          gameRevenue[tx.gameName] = 0;
+        }
+        
+        gameCount[tx.gameName]++;
+        
+        const amount = typeof tx.amount === 'string' 
+          ? parseFloat(tx.amount) 
+          : Number(tx.amount);
+          
+        gameRevenue[tx.gameName] += amount;
+      });
+      
+      // Convert to array and sort by count
+      const popularGames = Object.entries(gameCount)
+        .map(([name, sessions]) => ({ 
+          name, 
+          sessions, 
+          revenue: gameRevenue[name] || 0 
+        }))
+        .sort((a, b) => b.sessions - a.sessions)
+        .slice(0, 5);
+      
+      // Return the filtered dashboard data
+      res.json({
+        dateRange: {
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0]
+        },
+        overviewStats: {
+          totalRevenue,
+          totalTransactions: filteredTransactions.length,
+          completedTransactions: completedTransactions.length,
+          averageTransactionValue: completedTransactions.length > 0 
+            ? totalRevenue / completedTransactions.length 
+            : 0
+        },
+        revenueData,
+        paymentMethods: paymentMethodsData,
+        popularGames
+      });
+    } catch (error) {
+      console.error("Error generating filtered report:", error);
+      res.status(500).json({ 
+        error: "Server error", 
+        message: "Failed to generate filtered report"
+      });
+    }
+  }));
+
   // Predictive Analytics endpoint
   app.get("/api/reports/predictive-analytics", asyncHandler(async (_req, res) => {
     try {
