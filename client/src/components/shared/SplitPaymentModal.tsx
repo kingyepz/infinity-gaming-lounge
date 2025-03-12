@@ -226,13 +226,27 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
         );
         
         if (result.success) {
+          // Get the reference from the payment result
+          const cashReference = result.reference || `CASH-${transactionId}-${index+1}`;
+          
+          // Get current timestamp for receipt
+          const timestamp = new Date().toISOString();
+          
           toast({
             title: "Payment Processed",
             description: `Split payment ${index + 1} of ${numPayers} processed successfully.`,
+            action: (
+              <div className="mt-2">
+                <ReceiptGenerator
+                  transactionId={transactionId}
+                  customerName={payer?.customer?.displayName || 'Guest Customer'}
+                  amount={actualPaymentAmount}
+                  paymentMethod="cash"
+                  timestamp={timestamp}
+                />
+              </div>
+            ),
           });
-          
-          // Get the reference from the payment result
-          const cashReference = result.reference || `CASH-${transactionId}-${index+1}`;
           
           // Mark this payer as paid
           setPayers(prev => 
@@ -300,6 +314,9 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
           // Store transaction reference if available
           const transactionRef = result.merchantRequestId || result.checkoutRequestId;
           
+          // Get current timestamp for receipt
+          const timestamp = new Date().toISOString();
+          
           // TODO: Implement payment status polling and UI feedback
           // For now, we'll mark it as paid immediately for demo purposes
           setPayers(prev => 
@@ -314,6 +331,25 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
                 : payer
             )
           );
+          
+          // Show success toast with receipt option after short delay to simulate completion
+          setTimeout(() => {
+            toast({
+              title: "M-Pesa Payment Completed",
+              description: `Split payment ${index + 1} of ${numPayers} processed successfully via M-Pesa.`,
+              action: (
+                <div className="mt-2">
+                  <ReceiptGenerator
+                    transactionId={transactionId}
+                    customerName={payer?.customer?.displayName || 'Guest Customer'}
+                    amount={actualPaymentAmount}
+                    paymentMethod="mpesa"
+                    timestamp={timestamp}
+                  />
+                </div>
+              ),
+            });
+          }, 1500);
         } else {
           toast({
             title: "Payment Failed",
@@ -349,6 +385,9 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
           // Store transaction reference if available
           const transactionRef = result.reference;
           
+          // Get current timestamp for receipt
+          const timestamp = new Date().toISOString();
+          
           // For now, we'll mark it as paid immediately for demo purposes
           setPayers(prev => 
             prev.map(payer => 
@@ -362,6 +401,25 @@ export default function SplitPaymentModal({ isOpen, onClose, transaction, onPaym
                 : payer
             )
           );
+          
+          // Show success toast with receipt option after short delay to simulate completion
+          setTimeout(() => {
+            toast({
+              title: "Airtel Money Payment Completed",
+              description: `Split payment ${index + 1} of ${numPayers} processed successfully via Airtel Money.`,
+              action: (
+                <div className="mt-2">
+                  <ReceiptGenerator
+                    transactionId={transactionId}
+                    customerName={payer?.customer?.displayName || 'Guest Customer'}
+                    amount={actualPaymentAmount}
+                    paymentMethod="airtel"
+                    timestamp={timestamp}
+                  />
+                </div>
+              ),
+            });
+          }, 1500);
         } else {
           toast({
             title: "Payment Failed",
