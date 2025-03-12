@@ -50,7 +50,9 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                 return {
                   ...tx,
                   // Adding paymentMethodInfo as a transient property
-                  paymentMethodInfo: paymentData.paymentMethod
+                  paymentMethodInfo: paymentData.paymentMethod,
+                  // Add payment reference if available (for all payment methods)
+                  paymentReference: paymentData.reference || tx.mpesaRef
                 };
               }
             } catch (e) {
@@ -269,18 +271,26 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                                "Cash"}
                             </span>
                             
-                            {/* Show reference for mobile money payments */}
+                            {/* Show reference for all payment methods */}
                             {/* @ts-ignore */}
-                            {(tx.paymentMethodInfo === 'mpesa' || tx.paymentMethodInfo === 'airtel') && tx.mpesaRef && (
-                              <div className="flex flex-col">
-                                <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.mpesaRef}>
-                                  Ref: {tx.mpesaRef.substring(0, 14)}{tx.mpesaRef.length > 14 ? '...' : ''}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
-                                </span>
-                              </div>
-                            )}
+                            {(() => {
+                              // Get the appropriate reference
+                              const reference = 
+                                // @ts-ignore - paymentReference is a dynamic property we added
+                                tx.paymentReference || tx.mpesaRef;
+                                
+                              // Show reference if we have one
+                              return reference ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-400 truncate max-w-[120px]" title={reference}>
+                                    Ref: {reference.substring(0, 14)}{reference.length > 14 ? '...' : ''}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
                         ) : (
                           // Fallback to original logic
@@ -309,7 +319,22 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                                      </span>
                                    </div>
                                  </div>) 
-                              : <span className="text-green-500 font-medium">Cash</span>}
+                              : <div>
+                                  <span className="text-green-500 font-medium">Cash</span>
+                                  
+                                  {/* Check for cash reference in the transaction object */}
+                                  {tx.reference && (
+                                    <div className="flex flex-col">
+                                      <span className="text-xs text-gray-400 truncate max-w-[120px]" title={tx.reference}>
+                                        Ref: {tx.reference.substring(0, 14)}{tx.reference.length > 14 ? '...' : ''}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {tx.createdAt && new Date(tx.createdAt).toLocaleTimeString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              }
                           </div>
                         )
                       ) : (
