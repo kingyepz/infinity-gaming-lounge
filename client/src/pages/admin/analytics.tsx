@@ -80,6 +80,11 @@ export default function AdminAnalytics() {
   
   // Initialize state variables
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [reportStartDate, setReportStartDate] = useState<string>('');
+  const [reportEndDate, setReportEndDate] = useState<string>('');
+  const [reportType, setReportType] = useState<string>('revenue');
+  const [reportFormat, setReportFormat] = useState<string>('csv');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   
   // Add Station Dialog
   const [showAddStationDialog, setShowAddStationDialog] = useState(false);
