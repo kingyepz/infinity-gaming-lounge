@@ -100,22 +100,24 @@ export default function ReceiptGenerator({
   };
   
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1">
       <Button 
         size="sm" 
         variant="outline" 
         onClick={handleGenerate} 
         disabled={isGenerating}
+        className="h-8 px-2 text-xs"
       >
-        Download Receipt
+        Download
       </Button>
       <Button 
         size="sm" 
         variant="outline" 
         onClick={handlePrint} 
         disabled={isGenerating}
+        className="h-8 px-2 text-xs"
       >
-        Print Receipt
+        Print
       </Button>
     </div>
   );

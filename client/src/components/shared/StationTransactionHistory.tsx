@@ -385,17 +385,15 @@ export default function StationTransactionHistory({ stationId, stationName }: St
                         <span className="text-gray-500">Pending</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right w-[100px]">
                       {tx.paymentStatus === 'completed' && (
-                        <div className="flex justify-end space-x-2">
-                          <ReceiptGenerator
-                            transactionId={tx.id}
-                            customerName={tx.customerName}
-                            amount={Number(tx.amount)}
-                            paymentMethod={tx.paymentMethodInfo || (tx.mpesaRef ? 'mpesa' : 'cash')}
-                            timestamp={tx.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString()}
-                          />
-                        </div>
+                        <ReceiptGenerator
+                          transactionId={tx.id}
+                          customerName={tx.customerName}
+                          amount={Number(tx.amount)}
+                          paymentMethod={tx.paymentMethodInfo || (tx.mpesaRef ? 'mpesa' : 'cash')}
+                          timestamp={tx.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString()}
+                        />
                       )}
                     </TableCell>
                   </TableRow>
