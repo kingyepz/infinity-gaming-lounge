@@ -77,6 +77,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!station) {
         throw new Error("Failed to start session");
       }
+      
+      // Broadcast station updates via WebSocket
+      await websocketService.sendStationUpdates();
+      console.log(`Session started on station ${stationId}. Broadcasting updates via WebSocket.`);
+      
+      // Notify about customer check-in
+      websocketService.notifyCustomerCheckIn({
+        customerId,
+        customerName,
+        stationId,
+        stationName: station.name,
+        gameName: game.name
+      });
 
       res.json(station);
     } catch (error) {
@@ -116,6 +129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stationData = req.body;
       const updatedStation = await storage.updateGameStation(Number(req.params.id), stationData);
+      
+      // Broadcast station updates to all connected clients via WebSocket
+      await websocketService.sendStationUpdates();
+      
+      // Log station update
+      console.log(`Station ${req.params.id} updated. Broadcasting updates via WebSocket.`);
+      
       res.json(updatedStation);
     } catch (error) {
       //This will be caught by the global error handler

@@ -61,10 +61,28 @@ export default function POSDashboard() {
     let diffMins = 0;
 
     // Main queries for data
-    const { data: stations = [], isLoading: stationsLoading, refetch: refetchStations } = useQuery({
+    // Get WebSocket context for real-time updates
+    const { gameStations: wsStations, connected: wsConnected, registerRole, requestStationUpdates } = useWebSocket();
+    
+    // Regular API query as fallback and initial data load
+    const { data: apiStations = [], isLoading: stationsLoading, refetch: refetchStations } = useQuery({
         queryKey: ["/api/stations"],
         queryFn: () => apiRequest({ path: "/api/stations" })
     });
+    
+    // Use WebSocket data if available, otherwise use API data
+    const stations = wsConnected && wsStations.length > 0 ? wsStations : apiStations;
+    
+    // Initialize WebSocket connection and register as staff
+    useEffect(() => {
+        if (wsConnected) {
+            console.log("WebSocket connected, registering as staff and requesting updates");
+            // Register as staff role
+            registerRole("staff");
+            // Request initial data
+            requestStationUpdates();
+        }
+    }, [wsConnected, registerRole, requestStationUpdates]);
 
     const { data: games = [], isLoading: gamesLoading } = useQuery({
         queryKey: ["/api/games"],
