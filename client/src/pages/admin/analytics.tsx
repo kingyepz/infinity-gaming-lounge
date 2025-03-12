@@ -495,23 +495,38 @@ export default function AdminAnalytics() {
         </div>
 
         <div className="flex-1 p-2 sm:p-4 md:p-6 backdrop-blur-sm bg-black/50 overflow-x-hidden">
-          {/* Overview Tab */}
-          <TabsContent value="overview">
-            <div className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-                <Card className="bg-black/30 border-primary/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-lg sm:text-2xl font-bold">
-                      {activeStations}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {stations.length} total stations
-                    </p>
-                  </CardContent>
-                </Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="hidden">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="stations">Stations</TabsTrigger>
+              <TabsTrigger value="customers">Customers</TabsTrigger>
+              <TabsTrigger value="games">Games</TabsTrigger>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+              <TabsTrigger value="inventory">Inventory</TabsTrigger>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="staff">Staff</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            
+            {/* Overview Tab */}
+            <TabsContent value="overview">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                  <Card className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-lg sm:text-2xl font-bold">
+                        {activeStations}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {stations.length} total stations
+                      </p>
+                    </CardContent>
+                  </Card>
                 <Card className="bg-black/30 border-primary/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
@@ -1718,6 +1733,7 @@ export default function AdminAnalytics() {
               </Card>
             </div>
           </TabsContent>
+          </Tabs>
         </div>
       </div>
 
