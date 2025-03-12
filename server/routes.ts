@@ -5,8 +5,8 @@ import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
-import { games, transactions, gameStations, users, payments, rewards } from "../shared/schema";
-import { desc, eq } from "drizzle-orm";
+import { games, transactions, gameStations, users, payments, rewards, events, bookings, friends } from "../shared/schema";
+import { desc, eq, sql, inArray } from "drizzle-orm";
 import { mpesaService } from "./mpesa";
 import { airtelMoneyService } from "./airtel";
 
@@ -1388,6 +1388,92 @@ app.get("/api/payments/mpesa/status/:checkoutRequestId", asyncHandler(async (req
     const message = err.message || "Internal Server Error";
     res.status(status).json({ error: message });
   });
+
+  // Create event endpoint
+  app.post("/api/events", asyncHandler(async (req, res) => {
+    try {
+      const eventData = z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        date: z.string(),
+        time: z.string(),
+        prize: z.string().optional(),
+        maxParticipants: z.number().optional()
+      }).parse(req.body);
+      
+      const [event] = await db.insert(events)
+        .values({
+          title: eventData.title,
+          description: eventData.description || null,
+          date: eventData.date,
+          time: eventData.time,
+          prize: eventData.prize || null,
+          maxParticipants: eventData.maxParticipants || null,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      res.json(event);
+    } catch (error) {
+      console.error("Error creating event:", error);
+      res.status(500).json({ error: "Failed to create event" });
+    }
+  }));
+  
+  // Book an event slot
+  app.post("/api/events/:eventId/book", asyncHandler(async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Check if event exists
+      const event = await db.select()
+        .from(events)
+        .where(eq(events.id, Number(eventId)))
+        .limit(1);
+      
+      if (!event || event.length === 0) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      
+      // Check if user has already booked this event
+      const existingBooking = await db.select()
+        .from(bookings)
+        .where(eq(bookings.userId, Number(userId)))
+        .where(eq(bookings.eventId, Number(eventId)))
+        .limit(1);
+        
+      if (existingBooking && existingBooking.length > 0) {
+        return res.status(400).json({ 
+          error: "You have already booked this event",
+          booking: existingBooking[0]
+        });
+      }
+      
+      // Create a booking record
+      const [booking] = await db.insert(bookings)
+        .values({
+          userId: Number(userId),
+          eventId: Number(eventId),
+          status: "confirmed",
+          createdAt: new Date()
+        })
+        .returning();
+      
+      res.json({ 
+        success: true,
+        booking,
+        message: "You have successfully booked a slot for this event!" 
+      });
+    } catch (error) {
+      console.error("Error booking event:", error);
+      res.status(500).json({ error: "Failed to book event" });
+    }
+  }));
 
   return server;
 }
