@@ -277,11 +277,18 @@ export default function AdminAnalytics() {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="flex-1 flex flex-col md:flex-row">
         <div className="w-full md:w-64 bg-black/50 p-6 backdrop-blur-md">
-          <div className="flex items-center mb-6">
-            <InfinityLogo compact={true} />
-            <div className="ml-2">
-              <h1 className="text-xl font-bold">Admin Portal</h1>
-              <p className="text-xs text-muted-foreground">Infinity Gaming Lounge</p>
+          <div className="flex flex-col items-center mb-6">
+            <InfinityLogo />
+            <div className="flex items-center justify-between w-full mt-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-primary">INFINITY GAMING LOUNGE</h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation('/')}
+                className="hover:bg-primary/20 mt-2"
+              >
+                <LogOutIcon className="w-4 h-4" />
+              </Button>
             </div>
           </div>
           
