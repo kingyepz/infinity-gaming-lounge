@@ -45,6 +45,11 @@ function Router() {
             <POSDashboard />
           </ProtectedRoute>
         </Route>
+        <Route path="/pos/dashboard">
+          <ProtectedRoute role="staff">
+            <POSDashboard />
+          </ProtectedRoute>
+        </Route>
         <Route path="/portal">
           <ProtectedRoute role="customer">
             <CustomerPortal />

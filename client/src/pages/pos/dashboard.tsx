@@ -167,7 +167,7 @@ export default function POSDashboard() {
             const startTime = new Date(station.sessionStartTime);
             const now = new Date();
             const diffMs = now.getTime() - startTime.getTime();
-            diffMins = Math.floor(diffMs / 60000);
+            const diffMins = Math.floor(diffMs / 60000);
 
             // Find the game to get its pricing
             const currentGame = games.find((g: any) => 
