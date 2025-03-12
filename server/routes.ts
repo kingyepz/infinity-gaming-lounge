@@ -1,4 +1,4 @@
-import { type Express } from "express";
+import { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTransactionSchema } from "@shared/schema";
@@ -13,6 +13,7 @@ import { PaymentDebugger } from "./paymentDebugger";
 import mpesaRoutes from "./mpesaRoutes";
 import mpesaApiRoutes from "./mpesaApiRoutes";
 import { websocketService } from "./websocket";
+import { generateReport, ReportOptions } from "./reportGenerator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
