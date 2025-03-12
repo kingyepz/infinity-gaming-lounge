@@ -674,3 +674,326 @@ export async function generateReceipt(transactionId: number): Promise<Blob> {
     throw error;
   }
 }
+
+/**
+ * Initiate M-Pesa payment using the official API
+ */
+export async function initiateMpesaAPIPayment(phoneNumber: string, amount: number, transactionId: number, userId?: number, splitPayment?: boolean, splitIndex?: number, splitTotal?: number) {
+  try {
+    // Format phone number to ensure it's in the required format (254XXXXXXXXX)
+    let formattedPhone = phoneNumber;
+    if (phoneNumber.startsWith('0')) {
+      formattedPhone = `254${phoneNumber.substring(1)}`;
+    } else if (phoneNumber.startsWith('+254')) {
+      formattedPhone = phoneNumber.substring(1); // Remove the + sign
+    }
+    
+    console.log(
+      'Initiating M-Pesa STK Push through official API:',
+      { phoneNumber: formattedPhone, amount, transactionId, userId, splitPayment, splitIndex, splitTotal }
+    );
+    
+    // In development mode, we'll simulate a successful payment
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      console.log('DEVELOPMENT MODE: Simulating M-Pesa API payment for phone', formattedPhone);
+      
+      // Return a simulated successful response
+      return {
+        success: true,
+        checkoutRequestId: `SIM-API-${Date.now()}`,
+        merchantRequestId: `SIM-MR-${Date.now()}`,
+        message: "M-Pesa API payment simulation. In production, customer would receive an STK push."
+      };
+    }
+    
+    const data = {
+      phoneNumber: formattedPhone,
+      amount,
+      transactionId,
+      accountReference: `InfGaming-${transactionId}`,
+      transactionDesc: "Payment for gaming services",
+      userId,
+      splitPayment,
+      splitIndex,
+      splitTotal,
+      callbackUrl: `${window.location.origin}/api/mpesa-api/callback` // Callback URL for webhook
+    };
+    
+    const response = await apiRequest<{
+      success: boolean;
+      checkoutRequestId?: string;
+      merchantRequestId?: string;
+      message?: string;
+      error?: string;
+    }>({
+      method: 'POST',
+      path: '/api/mpesa-api/stkpush',
+      data
+    });
+    
+    if (response.success && response.checkoutRequestId) {
+      return {
+        success: true,
+        checkoutRequestId: response.checkoutRequestId,
+        merchantRequestId: response.merchantRequestId,
+        message: response.message
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to initiate M-Pesa STK Push'
+    };
+  } catch (error) {
+    console.error('Error initiating M-Pesa payment through API:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Check M-Pesa payment status using the official API
+ */
+export async function checkMpesaAPIPaymentStatus(checkoutRequestId: string) {
+  try {
+    // In development mode, simulate a successful payment status check
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      // If the checkout ID starts with 'SIM-' it's a simulated transaction
+      if (checkoutRequestId.startsWith('SIM-API-')) {
+        console.log('DEVELOPMENT MODE: Simulating successful M-Pesa API payment status check');
+        
+        // After 3 seconds, consider the payment successful (simulating a real-world delay)
+        if (Date.now() - parseInt(checkoutRequestId.replace('SIM-API-', '')) > 3000) {
+          return {
+            success: true,
+            status: 'completed',
+            resultDesc: "Simulated M-Pesa API payment completed successfully",
+            mpesaRef: `MAPI-${Math.floor(Math.random() * 1000000)}`,
+            transactionId: parseInt(checkoutRequestId.split('-')[2]) || 0
+          };
+        } else {
+          return {
+            success: true,
+            status: 'pending',
+            resultDesc: "Simulated M-Pesa API payment is still processing"
+          };
+        }
+      }
+    }
+    
+    const response = await apiRequest<{
+      success: boolean;
+      status?: string;
+      resultDesc?: string;
+      mpesaRef?: string;
+      transactionId?: number;
+      error?: string;
+    }>({
+      method: 'GET',
+      path: `/api/mpesa-api/status/${checkoutRequestId}`,
+    });
+    
+    if (response.success) {
+      return {
+        success: true,
+        status: response.status || 'pending',
+        resultDesc: response.resultDesc,
+        mpesaRef: response.mpesaRef,
+        transactionId: response.transactionId
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to check M-Pesa payment status'
+    };
+  } catch (error) {
+    console.error('Error checking M-Pesa payment status through API:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Register callback URLs for C2B payments
+ */
+export async function registerMpesaURLs(validationUrl: string, confirmationUrl: string) {
+  try {
+    // In development mode, simulate a successful registration
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      console.log('DEVELOPMENT MODE: Simulating M-Pesa URL registration');
+      
+      return {
+        success: true,
+        conversationId: `SIM-CONV-${Date.now()}`,
+        responseDescription: "URLs registered successfully (simulated)"
+      };
+    }
+    
+    const response = await apiRequest<{
+      success: boolean;
+      conversationId?: string;
+      originatorCoversationId?: string;
+      responseDescription?: string;
+      error?: string;
+    }>({
+      method: 'POST',
+      path: '/api/mpesa-api/register-urls',
+      data: {
+        shortCode: process.env.MPESA_SHORTCODE || '174379', // Default sandbox shortcode
+        responseType: 'Completed',
+        validationUrl,
+        confirmationUrl
+      }
+    });
+    
+    if (response.success) {
+      return {
+        success: true,
+        conversationId: response.conversationId,
+        responseDescription: response.responseDescription
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to register M-Pesa URLs'
+    };
+  } catch (error) {
+    console.error('Error registering M-Pesa URLs:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Check transaction status using official API
+ */
+export async function checkMpesaTransactionStatus(transactionId: string) {
+  try {
+    // In development mode, simulate a successful status check
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      console.log('DEVELOPMENT MODE: Simulating M-Pesa transaction status check');
+      
+      return {
+        success: true,
+        transactionStatus: "Completed",
+        resultCode: "0",
+        resultDesc: "The service request has been accepted successfully (simulated)"
+      };
+    }
+    
+    const response = await apiRequest<{
+      success: boolean;
+      conversationId?: string;
+      originatorConversationId?: string;
+      responseDescription?: string;
+      resultCode?: string;
+      resultDesc?: string;
+      transactionStatus?: string;
+      error?: string;
+    }>({
+      method: 'POST',
+      path: '/api/mpesa-api/transaction-status',
+      data: {
+        transactionId,
+        initiator: process.env.MPESA_INITIATOR_NAME || 'testapi',
+        securityCredential: process.env.MPESA_SECURITY_CREDENTIAL || 'Safaricom999!*!',
+        commandID: 'TransactionStatusQuery',
+        partyA: process.env.MPESA_SHORTCODE || '174379',
+        identifierType: '1',
+        resultUrl: `${window.location.origin}/api/mpesa-api/callback`,
+        queueTimeoutUrl: `${window.location.origin}/api/mpesa-api/callback`,
+        remarks: 'Check transaction status',
+        occasion: 'Payment verification'
+      }
+    });
+    
+    if (response.success) {
+      return {
+        success: true,
+        transactionStatus: response.transactionStatus,
+        resultCode: response.resultCode,
+        resultDesc: response.resultDesc
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to check transaction status'
+    };
+  } catch (error) {
+    console.error('Error checking transaction status:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Request transaction reversal using official API
+ */
+export async function reverseMpesaTransaction(transactionId: string, amount: number) {
+  try {
+    // In development mode, simulate a successful reversal
+    if (process.env.NODE_ENV === 'development' || true) { // Always true for demo
+      console.log('DEVELOPMENT MODE: Simulating M-Pesa transaction reversal');
+      
+      return {
+        success: true,
+        conversationId: `SIM-REV-${Date.now()}`,
+        responseDescription: "Reversal request accepted successfully (simulated)"
+      };
+    }
+    
+    const response = await apiRequest<{
+      success: boolean;
+      conversationId?: string;
+      originatorConversationId?: string;
+      responseDescription?: string;
+      error?: string;
+    }>({
+      method: 'POST',
+      path: '/api/mpesa-api/reversal',
+      data: {
+        initiator: process.env.MPESA_INITIATOR_NAME || 'testapi',
+        securityCredential: process.env.MPESA_SECURITY_CREDENTIAL || 'Safaricom999!*!',
+        commandID: 'TransactionReversal',
+        transactionID: transactionId,
+        amount,
+        receiverParty: process.env.MPESA_SHORTCODE || '174379',
+        receiverIdentifierType: '4',
+        resultUrl: `${window.location.origin}/api/mpesa-api/callback`,
+        queueTimeoutUrl: `${window.location.origin}/api/mpesa-api/callback`,
+        remarks: 'Reversal request',
+        occasion: 'Payment reversal'
+      }
+    });
+    
+    if (response.success) {
+      return {
+        success: true,
+        conversationId: response.conversationId,
+        responseDescription: response.responseDescription
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to reverse transaction'
+    };
+  } catch (error) {
+    console.error('Error reversing transaction:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

@@ -544,6 +544,23 @@ export class StorageService {
       return null;
     }
   }
+  
+  /**
+   * Get payment by checkout request ID (for M-Pesa API)
+   */
+  async getPaymentByCheckoutRequestId(checkoutRequestId: string): Promise<Payment | null> {
+    try {
+      // Since we store the checkoutRequestId in the reference field for M-Pesa payments
+      const [payment] = await db.select()
+        .from(payments)
+        .where(eq(payments.reference, checkoutRequestId));
+      
+      return payment || null;
+    } catch (error) {
+      console.error('Error getting payment by checkout request ID:', error);
+      return null;
+    }
+  }
 
   // Add these new methods to handle transactions with payments
   async createTransactionWithPayment(transactionData: InsertTransaction, paymentMethod: string): Promise<{ transaction: Transaction; payment: Payment }> {
