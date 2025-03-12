@@ -77,6 +77,8 @@ import {
   LayoutDashboardIcon,
   MonitorIcon,
   Loader2Icon,
+  MousePointer as MousePointerIcon,
+  Tv as TvIcon,
   X
 } from "lucide-react";
 import { useLocation } from "wouter";
