@@ -432,6 +432,86 @@ export class StorageService {
       return { newCustomers: 0, returningCustomers: 0, returnRate: 0, avgSessionDuration: 0 };
     }
   }
+  
+  /**
+   * Get payment method statistics
+   * @returns Object with counts for different payment methods
+   */
+  async getPaymentMethods(): Promise<{ cash: number; mpesa: number; airtel: number; card: number; qr: number }> {
+    try {
+      const allTransactions = await db.select().from(transactions);
+      
+      // Only count completed transactions
+      const completedTransactions = allTransactions.filter(tx => tx.paymentStatus === 'completed');
+      
+      const paymentMethodCounts = completedTransactions.reduce((counts, tx) => {
+        // First check for the paymentMethod field
+        if (tx.paymentMethod) {
+          const method = tx.paymentMethod.toLowerCase();
+          if (method === 'mpesa') {
+            counts.mpesa += 1;
+          } else if (method === 'airtel') {
+            counts.airtel += 1;
+          } else if (method === 'card') {
+            counts.card += 1;
+          } else if (method === 'qr' || method === 'qr-mpesa') {
+            counts.qr += 1;
+          } else {
+            counts.cash += 1;
+          }
+        } else {
+          // Fall back to mpesaRef field logic
+          if (tx.mpesaRef) {
+            if (String(tx.mpesaRef).startsWith('SIM-AIRTEL-') || String(tx.mpesaRef).startsWith('AR-')) {
+              counts.airtel += 1;
+            } else if (String(tx.mpesaRef).startsWith('QR-')) {
+              counts.qr += 1;
+            } else {
+              counts.mpesa += 1;
+            }
+          } else {
+            counts.cash += 1;
+          }
+        }
+        return counts;
+      }, { cash: 0, mpesa: 0, airtel: 0, card: 0, qr: 0 });
+      
+      return paymentMethodCounts;
+    } catch (error) {
+      console.error("Error getting payment methods:", error);
+      return { cash: 0, mpesa: 0, airtel: 0, card: 0, qr: 0 };
+    }
+  }
+  
+  /**
+   * Get hourly distribution of transactions
+   * @returns Array of hourly transaction counts
+   */
+  async getHourlyDistribution(): Promise<{ hour: number; count: number; revenue: number; }[]> {
+    try {
+      const allTransactions = await db.select().from(transactions);
+      const completedTransactions = allTransactions.filter(tx => tx.paymentStatus === 'completed');
+      
+      // Initialize hourly distribution (0-23 hours)
+      const hourlyDistribution = Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        count: 0,
+        revenue: 0
+      }));
+      
+      // Count transactions by hour
+      completedTransactions.forEach(tx => {
+        const hour = new Date(tx.createdAt).getHours();
+        hourlyDistribution[hour].count += 1;
+        hourlyDistribution[hour].revenue += tx.amount;
+      });
+      
+      return hourlyDistribution;
+    } catch (error) {
+      console.error("Error getting hourly distribution:", error);
+      return Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0, revenue: 0 }));
+    }
+  }
 
   async initializeMockData() {
     try {
