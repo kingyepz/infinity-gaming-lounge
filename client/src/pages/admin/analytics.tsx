@@ -353,9 +353,14 @@ export default function AdminAnalytics() {
         };
       }
       
-      // Add time range parameters
-      params.startHour = startHour;
-      params.endHour = endHour;
+      // Add time range parameters - use preset if available, otherwise use hours
+      if (timeOfDayFilter && timeOfDayFilter !== 'custom') {
+        params.timePreset = timeOfDayFilter;
+      } else {
+        // Custom time range
+        params.startHour = startHour;
+        params.endHour = endHour;
+      }
       
       // Make API request with filter parameters
       const filteredResponse = await apiRequest({
