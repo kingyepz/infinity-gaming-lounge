@@ -55,10 +55,20 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
   const [showRegistrationForm, setShowRegistrationForm] = useState<boolean>(false);
 
   // Calculate the split amount based on number of payers
-  const splitAmount = transaction ? Math.ceil(Number(transaction.amount) / numPayers) : 0;
-  const totalSplitAmount = splitAmount * numPayers;
+  const baseAmount = transaction ? Math.floor(Number(transaction.amount) / numPayers) : 0;
+  const remainder = transaction ? Number(transaction.amount) % numPayers : 0;
+  // Function to get split amount for a payer index (first payer gets any remainder)
+  const getSplitAmount = (index: number): number => {
+    return index === 0 ? baseAmount + remainder : baseAmount;
+  };
+  // Use this for the default display 
+  const splitAmount = baseAmount;
+  const totalSplitAmount = baseAmount * numPayers + remainder;
   const difference = transaction ? totalSplitAmount - Number(transaction.amount) : 0;
 
+  // State to store actual transaction ID after it's created
+  const [actualTransactionId, setActualTransactionId] = useState<number>(0);
+  
   // Reset state when modal closes or changes transaction
   React.useEffect(() => {
     if (!isOpen) {
@@ -71,6 +81,7 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
       setShowCustomerSelectionModal(false);
       setShowRegistrationForm(false);
       setProcessing(false);
+      setActualTransactionId(0);
     } else if (transaction) {
       // Initialize payers with the calculated split amount
       setPayers(Array.from({ length: numPayers }).map((_, index) => ({
@@ -79,8 +90,13 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
         amount: splitAmount,
         paid: false
       })));
+      
+      // If transaction already has an ID (not 0), use it
+      if (transaction.id > 0) {
+        setActualTransactionId(transaction.id);
+      }
     }
-  }, [isOpen, transaction, splitAmount]);
+  }, [isOpen, transaction, splitAmount, numPayers]);
 
   // Update payers when numPayers changes
   React.useEffect(() => {
@@ -155,8 +171,46 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
       const payer = payers.find(p => p.index === index);
       
       // Create a payment record for this split
+      // First create transaction if needed (when id is 0)
+      let transactionId = actualTransactionId > 0 ? actualTransactionId : transaction.id;
+      
+      if (transactionId === 0) {
+        try {
+          // Create the transaction first
+          const txResponse = await apiRequest({
+            path: '/api/transactions',
+            method: 'POST',
+            data: {
+              stationId: transaction.stationId,
+              customerName: payer?.customer?.displayName || transaction.customerName,
+              gameName: transaction.gameName,
+              amount: transaction.amount,
+              sessionType: 'per_game',
+              paymentStatus: 'pending'
+            }
+          });
+          
+          if (txResponse.success && txResponse.data) {
+            transactionId = txResponse.data.id;
+            // Save this transaction ID for future split payments
+            setActualTransactionId(transactionId);
+          } else {
+            throw new Error(txResponse.error || "Failed to create transaction");
+          }
+        } catch (err) {
+          console.error("Failed to create transaction:", err);
+          toast({
+            title: "Transaction Error",
+            description: "Could not create transaction for split payment",
+            variant: "destructive"
+          });
+          setProcessing(false);
+          return;
+        }
+      }
+      
       const paymentData = {
-        transactionId: transaction.id,
+        transactionId: transactionId,
         amount: splitAmount,
         paymentMethod: method,
         splitPayment: true,
