@@ -29,6 +29,13 @@ import {
   UsersIcon,
   DownloadIcon,
   LogOutIcon,
+  HeadphonesIcon,
+  EyeIcon,
+  CarIcon,
+  SmartphoneIcon,
+  PlusIcon,
+  Pencil,
+  Trash,
   SettingsIcon,
   PlusCircleIcon,
   RefreshCwIcon,
@@ -2833,6 +2840,96 @@ export default function AdminAnalytics() {
                                 })}
                             </TableBody>
                           </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Station Categories Tab */}
+                <TabsContent value="categories">
+                  <div className="space-y-4">
+                    <Card className="bg-black/30 border-primary/20">
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Station Categories</CardTitle>
+                          <CardDescription>Manage gaming station categories and types</CardDescription>
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            setEditCategoryId(null);
+                            setEditCategoryName("");
+                            setEditCategoryType("pc");
+                            setEditCategoryDescription("");
+                            setEditCategoryColor("#6366F1");
+                            setEditCategoryIcon("gamepad");
+                            setShowEditCategoryDialog(true);
+                          }} 
+                          className="ml-auto"
+                        >
+                          <PlusIcon className="mr-2 h-4 w-4" />
+                          Add Category
+                        </Button>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {stationCategories.length === 0 ? (
+                            <Card className="col-span-full bg-black/30 border-primary/20 p-6">
+                              <div className="text-center text-gray-400">
+                                <p>No categories defined. Create your first category.</p>
+                              </div>
+                            </Card>
+                          ) : (
+                            stationCategories.map((category) => (
+                              <Card key={category.id} className="overflow-hidden border border-primary/20">
+                                <CardHeader className="p-4" style={{ backgroundColor: category.color || '#6366F1', color: 'white' }}>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                      {category.icon === 'gamepad' && <GamepadIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'monitor' && <MonitorIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'headset' && <HeadphonesIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'vr' && <EyeIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'racing' && <CarIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'arcade' && <GameControllerIcon className="h-5 w-5 mr-2" />}
+                                      {category.icon === 'mobile' && <SmartphoneIcon className="h-5 w-5 mr-2" />}
+                                      <h3 className="font-bold text-white">{category.name}</h3>
+                                    </div>
+                                    <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
+                                      {category.type}
+                                    </Badge>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="p-4">
+                                  <p className="text-sm text-gray-500 mb-3">
+                                    {category.description || 'No description provided'}
+                                  </p>
+                                  <div className="flex items-center justify-between mt-2">
+                                    <div>
+                                      <Badge variant="secondary" className="mr-2">
+                                        {stations.filter(s => s.categoryId === category.id).length} stations
+                                      </Badge>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditCategoryClick(category)}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDeleteCategoryClick(category.id)}
+                                      >
+                                        <Trash className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))
+                          )}
                         </div>
                       </CardContent>
                     </Card>
