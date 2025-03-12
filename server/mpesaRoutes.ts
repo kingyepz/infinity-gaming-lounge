@@ -5,7 +5,7 @@
 
 import express, { Request, Response } from 'express';
 import { z } from 'zod';
-import { enhancedMpesaService, stkPushRequestSchema } from './mpesaEnhanced';
+import { enhancedMpesaService, stkPushRequestSchema, MPesaTransaction } from './mpesaEnhanced';
 import { storage } from './storage';
 import { PaymentDebugger } from './paymentDebugger';
 
