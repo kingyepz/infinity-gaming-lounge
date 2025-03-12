@@ -173,7 +173,7 @@ export default function AdminAnalytics() {
     queryFn: () => apiRequest({ path: "/api/reports/daily" })
   });
   
-  const { data: revenueByTimeFrame = { totalRevenue: 0, completedSessions: 0, averageRevenue: 0 } } = useQuery({
+  const { data: revenueByTimeFrame = [] } = useQuery({
     queryKey: ["/api/reports/revenue/weekly"],
     queryFn: () => apiRequest({ path: "/api/reports/revenue/weekly" })
   });
@@ -258,7 +258,7 @@ export default function AdminAnalytics() {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
   // Use API data if available, otherwise calculate from transactions
-  const revenueChartData = revenueByTimeFrame ? 
+  const revenueChartData = Array.isArray(revenueByTimeFrame) && revenueByTimeFrame.length > 0 ? 
     // Use the API data directly
     revenueByTimeFrame.map(item => ({
       date: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
