@@ -15,7 +15,7 @@ import QRCodePayment from "./QRCodePayment";
 import SplitPaymentModal from './SplitPaymentModal';
 import ReceiptGenerator from './ReceiptGenerator';
 
-type PaymentMethod = "cash" | "mpesa" | "airtel" | "qrcode" | "qr-mpesa" | "qr-airtel";
+type PaymentMethod = "cash" | "mpesa" | "qrcode" | "qr-mpesa";
 
 type PaymentStatus = "idle" | "processing" | "completed" | "failed";
 
@@ -350,7 +350,7 @@ export default function PaymentModal({
   };
   
   // QR Code payment methods
-  const handleGenerateQRCode = async (type: "mpesa" | "airtel") => {
+  const handleGenerateQRCode = async (type: "mpesa") => {
     try {
       setIsProcessing(true);
       
@@ -429,8 +429,7 @@ export default function PaymentModal({
   const handleQRPaymentComplete = async () => {
     try {
       // Reset the station status after QR payment
-      const paymentType = paymentMethod === "qr-mpesa" ? "QR-MPesa" : "QR-Airtel";
-      await resetStationStatus(paymentType);
+      await resetStationStatus("QR-MPesa");
       
       toast({
         title: "Payment Successful",
@@ -452,8 +451,6 @@ export default function PaymentModal({
     // Start over with new QR code generation
     if (paymentMethod === "qr-mpesa") {
       handleGenerateQRCode("mpesa");
-    } else if (paymentMethod === "qr-airtel") {
-      handleGenerateQRCode("airtel");
     }
   };
 
@@ -685,18 +682,7 @@ export default function PaymentModal({
                     </div>
                   )}
 
-                  {qrCodeData && paymentMethod === "qr-airtel" && (
-                    <div className="mt-4">
-                      <QRCodePayment
-                        amount={amount}
-                        transactionId={parseInt(station.lastTransactionId || "0")}
-                        paymentType="airtel"
-                        onCheckStatus={handleCheckQRStatus}
-                        onComplete={handleQRPaymentComplete}
-                        onRetry={handleQRRetry}
-                      />
-                    </div>
-                  )}
+                  {/* Airtel QR payment option removed */}
                 </div>
               </div>
             </TabsContent>
