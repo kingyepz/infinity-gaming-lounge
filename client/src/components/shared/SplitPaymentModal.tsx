@@ -58,9 +58,9 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
   const baseAmount = transaction ? Math.floor(Number(transaction.amount) / numPayers) : 0;
   const remainder = transaction ? Number(transaction.amount) % numPayers : 0;
   // Function to get split amount for a payer index (first payer gets any remainder)
-  const getSplitAmount = (index: number): number => {
+  const getSplitAmount = React.useCallback((index: number): number => {
     return index === 0 ? baseAmount + remainder : baseAmount;
-  };
+  }, [baseAmount, remainder]);
   // Use this for the default display 
   const splitAmount = baseAmount;
   const totalSplitAmount = baseAmount * numPayers + remainder;
@@ -87,7 +87,7 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
       setPayers(Array.from({ length: numPayers }).map((_, index) => ({
         index,
         customer: null,
-        amount: splitAmount,
+        amount: getSplitAmount(index),
         paid: false
       })));
       
@@ -96,24 +96,25 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
         setActualTransactionId(transaction.id);
       }
     }
-  }, [isOpen, transaction, splitAmount, numPayers]);
+  }, [isOpen, transaction, numPayers, getSplitAmount]);
 
   // Update payers when numPayers changes
   React.useEffect(() => {
     if (transaction) {
       setPayers(prev => {
         // Keep existing payer data for payers that still exist
-        const updatedPayers = prev.slice(0, numPayers).map(payer => ({
+        const updatedPayers = prev.slice(0, numPayers).map((payer, index) => ({
           ...payer,
-          amount: splitAmount
+          amount: getSplitAmount(index)
         }));
         
         // Add new payers if needed
         while (updatedPayers.length < numPayers) {
+          const index = updatedPayers.length;
           updatedPayers.push({
-            index: updatedPayers.length,
+            index,
             customer: null,
-            amount: splitAmount,
+            amount: getSplitAmount(index),
             paid: false
           });
         }
@@ -121,7 +122,7 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
         return updatedPayers;
       });
     }
-  }, [numPayers, splitAmount, transaction]);
+  }, [numPayers, transaction, getSplitAmount]);
 
   const handleSelectCustomer = (index: number) => {
     setSelectedPayerIndex(index);
@@ -209,9 +210,12 @@ export function SplitPaymentModal({ isOpen, onClose, transaction, onPaymentCompl
         }
       }
       
+      // Get the exact amount for this payer (first payer gets any remainder)
+      const actualPaymentAmount = getSplitAmount(index);
+      
       const paymentData = {
         transactionId: transactionId,
-        amount: splitAmount,
+        amount: actualPaymentAmount,
         paymentMethod: method,
         splitPayment: true,
         splitIndex: index,
