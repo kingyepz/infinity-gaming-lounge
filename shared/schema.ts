@@ -97,7 +97,7 @@ export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
   transactionId: integer("transaction_id").notNull(),
   amount: text("amount").notNull(),
-  paymentMethod: text("payment_method", { enum: ["cash", "mpesa", "airtel"] }).notNull(),
+  paymentMethod: text("payment_method", { enum: ["cash", "mpesa", "qr-mpesa"] }).notNull(),
   status: text("status", { enum: ["pending", "completed", "failed"] }).notNull(),
   reference: text("reference"), // Generic reference for any payment method
   phoneNumber: text("phone_number"), // Phone number for mobile money payments

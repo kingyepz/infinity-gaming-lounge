@@ -36,7 +36,7 @@ router.post('/stkpush', async (req: Request, res: Response) => {
         amount: String(validationResult.data.amount),
         phoneNumber: validationResult.data.phoneNumber,
         paymentMethod: 'mpesa',
-        paymentStatus: 'pending',
+        status: 'pending',
         merchantRequestId: response.MerchantRequestID,
         checkoutRequestId: response.CheckoutRequestID,
         splitPayment: validationResult.data.splitPayment || false,
