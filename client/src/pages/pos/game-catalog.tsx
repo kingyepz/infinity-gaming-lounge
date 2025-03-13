@@ -85,7 +85,10 @@ interface Game {
 const gameFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
-  category: z.string().default("other"),
+  category: z.enum([
+    "action", "adventure", "rpg", "strategy", "simulation", 
+    "sports", "racing", "puzzle", "fighting", "shooter", "mmo", "other"
+  ]).default("other"),
   pricePerSession: z.coerce.number().min(0, "Price must be positive"),
   pricePerHour: z.coerce.number().min(0, "Price must be positive"),
   isActive: z.boolean().default(true),

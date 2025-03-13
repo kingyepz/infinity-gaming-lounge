@@ -310,6 +310,13 @@ export default function GameCatalogSection({
                 </div>
               )}
               
+              {selectedGame.category && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-400 mb-1">Category</h4>
+                  <Badge variant="secondary" className="capitalize">{selectedGame.category}</Badge>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-400">Pricing Options</h4>
                 <div className="bg-black/30 rounded-lg p-3 grid grid-cols-2 gap-4">
