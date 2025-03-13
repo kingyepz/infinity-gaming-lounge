@@ -2323,7 +2323,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">KES {dailyStats?.totalRevenue || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.revenue > 0 ? (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge className="bg-green-500 text-white flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.revenue || 0}%
                             </Badge>
@@ -2351,7 +2351,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">{dailyStats?.completedSessions || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.sessions > 0 ? (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge className="bg-green-500 text-white flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.sessions || 0}%
                             </Badge>
@@ -2379,7 +2379,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">{customerActivity?.returningCustomers || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.customerRetention > 0 ? (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge className="bg-green-500 text-white flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.customerRetention || 0}%
                             </Badge>
@@ -2407,7 +2407,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">KES {dailyStats?.averageRevenue || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.averageRevenue > 0 ? (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge className="bg-green-500 text-white flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.averageRevenue || 0}%
                             </Badge>
