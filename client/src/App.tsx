@@ -7,6 +7,7 @@ import WelcomePage from "@/pages/welcome";
 import Login from "@/pages/auth/login";
 import StaffLogin from "@/pages/staff/login";
 import POSDashboard from "@/pages/pos/dashboard";
+import GameCatalog from "@/pages/pos/game-catalog";
 import CustomerPortal from "@/pages/customer/portal";
 import AdminAnalytics from "@/pages/admin/analytics";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -49,6 +50,11 @@ function Router() {
         <Route path="/pos/dashboard">
           <ProtectedRoute role="staff">
             <POSDashboard />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/pos/games">
+          <ProtectedRoute role="staff">
+            <GameCatalog />
           </ProtectedRoute>
         </Route>
         <Route path="/portal">
