@@ -26,6 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import InfinityLogo from "@/components/animations/InfinityLogo";
+import ReservationCalendar from "@/components/admin/ReservationCalendar";
 import { 
   GamepadIcon,
   BarChart2Icon,
@@ -3464,32 +3465,6 @@ export default function AdminAnalytics() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                   <h2 className="text-2xl font-bold">Reservations Management</h2>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Select
-                      value={reservationDateFilter}
-                      onValueChange={setReservationDateFilter}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by date" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="today">Today</SelectItem>
-                        <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                        <SelectItem value="next7days">Next 7 Days</SelectItem>
-                        <SelectItem value="custom">Custom Date</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    {reservationDateFilter === "custom" && (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="date"
-                          value={reservationFilterDate}
-                          onChange={(e) => setReservationFilterDate(e.target.value)}
-                          className="w-[180px]"
-                        />
-                      </div>
-                    )}
-                    
                     <Button onClick={() => setShowAddReservationDialog(true)}>
                       <PlusIcon className="h-4 w-4 mr-2" />
                       New Reservation
@@ -3497,206 +3472,258 @@ export default function AdminAnalytics() {
                   </div>
                 </div>
                 
-                <Card className="bg-black/30 border-primary/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle>
-                      {reservationDateFilter === "today" && "Today's Reservations"}
-                      {reservationDateFilter === "tomorrow" && "Tomorrow's Reservations"}
-                      {reservationDateFilter === "next7days" && "Next 7 Days Reservations"}
-                      {reservationDateFilter === "custom" && `Reservations for ${new Date(reservationFilterDate).toLocaleDateString()}`}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      {filteredReservations.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Customer</TableHead>
-                              <TableHead>Station</TableHead>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Time</TableHead>
-                              <TableHead>Duration</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Notes</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {filteredReservations.map((booking: Booking) => {
-                              // Find customer and station names
-                              const customer = customers.find(c => c.id === booking.userId);
-                              const station = stations.find(s => s.id === booking.stationId);
-                              
-                              return (
-                                <TableRow key={booking.id}>
-                                  <TableCell>{customer?.displayName || `Customer #${booking.userId}`}</TableCell>
-                                  <TableCell>{station?.name || `Station #${booking.stationId}`}</TableCell>
-                                  <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
-                                  <TableCell>{booking.time}</TableCell>
-                                  <TableCell>{booking.duration} {booking.duration === 1 ? 'hour' : 'hours'}</TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline" className={
-                                      booking.status === "pending" ? "bg-yellow-500/20 text-yellow-500" :
-                                      booking.status === "confirmed" ? "bg-blue-500/20 text-blue-500" :
-                                      booking.status === "completed" ? "bg-green-500/20 text-green-500" :
-                                      "bg-red-500/20 text-red-500"
-                                    }>
-                                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="max-w-[200px] truncate">
-                                    {booking.note || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex space-x-2">
-                                      {booking.status === "pending" && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                          onClick={() => handleCheckInReservation(booking.id)}
-                                        >
-                                          Check In
-                                        </Button>
-                                      )}
-                                      {(booking.status === "pending" || booking.status === "confirmed") && (
-                                        <Button 
-                                          variant="destructive" 
-                                          size="sm"
-                                          onClick={() => handleCancelReservation(booking.id)}
-                                        >
-                                          Cancel
-                                        </Button>
-                                      )}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditReservationClick(booking)}
-                                      >
-                                        <PencilIcon className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleDeleteReservationClick(booking.id)}
-                                      >
-                                        <TrashIcon className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <div className="text-center py-10">
-                          <p className="text-muted-foreground mb-4">No reservations found for the selected date.</p>
-                          <Button onClick={() => setShowAddReservationDialog(true)}>
-                            <PlusIcon className="h-4 w-4 mr-2" />
-                            Create New Reservation
-                          </Button>
+                <Tabs defaultValue="list">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="list">List View</TabsTrigger>
+                    <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="list">
+                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                      <Select
+                        value={reservationDateFilter}
+                        onValueChange={setReservationDateFilter}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filter by date" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                          <SelectItem value="next7days">Next 7 Days</SelectItem>
+                          <SelectItem value="custom">Custom Date</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {reservationDateFilter === "custom" && (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="date"
+                            value={reservationFilterDate}
+                            onChange={(e) => setReservationFilterDate(e.target.value)}
+                            className="w-[180px]"
+                          />
                         </div>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                    
+                    <Card className="bg-black/30 border-primary/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle>
+                          {reservationDateFilter === "today" && "Today's Reservations"}
+                          {reservationDateFilter === "tomorrow" && "Tomorrow's Reservations"}
+                          {reservationDateFilter === "next7days" && "Next 7 Days Reservations"}
+                          {reservationDateFilter === "custom" && `Reservations for ${new Date(reservationFilterDate).toLocaleDateString()}`}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          {filteredReservations.length > 0 ? (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Customer</TableHead>
+                                  <TableHead>Station</TableHead>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Time</TableHead>
+                                  <TableHead>Duration</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Notes</TableHead>
+                                  <TableHead>Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {filteredReservations.map((booking: Booking) => {
+                                  // Find customer and station names
+                                  const customer = customers.find(c => c.id === booking.userId);
+                                  const station = stations.find(s => s.id === booking.stationId);
+                                  
+                                  return (
+                                    <TableRow key={booking.id}>
+                                      <TableCell>{customer?.displayName || `Customer #${booking.userId}`}</TableCell>
+                                      <TableCell>{station?.name || `Station #${booking.stationId}`}</TableCell>
+                                      <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                      <TableCell>{booking.time}</TableCell>
+                                      <TableCell>{booking.duration} {booking.duration === 1 ? 'hour' : 'hours'}</TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline" className={
+                                          booking.status === "pending" ? "bg-yellow-500/20 text-yellow-500" :
+                                          booking.status === "confirmed" ? "bg-blue-500/20 text-blue-500" :
+                                          booking.status === "completed" ? "bg-green-500/20 text-green-500" :
+                                          "bg-red-500/20 text-red-500"
+                                        }>
+                                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="max-w-[200px] truncate">
+                                        {booking.note || "-"}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex space-x-2">
+                                          {booking.status === "pending" && (
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm"
+                                              onClick={() => handleCheckInReservation(booking.id)}
+                                            >
+                                              Check In
+                                            </Button>
+                                          )}
+                                          {(booking.status === "pending" || booking.status === "confirmed") && (
+                                            <Button 
+                                              variant="destructive" 
+                                              size="sm"
+                                              onClick={() => handleCancelReservation(booking.id)}
+                                            >
+                                              Cancel
+                                            </Button>
+                                          )}
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleEditReservationClick(booking)}
+                                          >
+                                            <PencilIcon className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleDeleteReservationClick(booking.id)}
+                                          >
+                                            <TrashIcon className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          ) : (
+                            <div className="text-center py-10">
+                              <p className="text-muted-foreground mb-4">No reservations found for the selected date.</p>
+                              <Button onClick={() => setShowAddReservationDialog(true)}>
+                                <PlusIcon className="h-4 w-4 mr-2" />
+                                Create New Reservation
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Reservation stats card */}
+                    <Card className="bg-black/30 border-primary/20">
+                      <CardHeader>
+                        <CardTitle>Reservation Statistics</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="bg-black/50 p-4 rounded-lg">
+                            <p className="text-sm text-muted-foreground">Total Reservations</p>
+                            <h3 className="text-2xl font-bold">{bookings.length}</h3>
+                          </div>
+                          <div className="bg-black/50 p-4 rounded-lg">
+                            <p className="text-sm text-muted-foreground">Upcoming</p>
+                            <h3 className="text-2xl font-bold">
+                              {bookings.filter(b => b.status === "pending" || b.status === "confirmed").length}
+                            </h3>
+                          </div>
+                          <div className="bg-black/50 p-4 rounded-lg">
+                            <p className="text-sm text-muted-foreground">Completed</p>
+                            <h3 className="text-2xl font-bold">
+                              {bookings.filter(b => b.status === "completed").length}
+                            </h3>
+                          </div>
+                          <div className="bg-black/50 p-4 rounded-lg">
+                            <p className="text-sm text-muted-foreground">Cancelled</p>
+                            <h3 className="text-2xl font-bold">
+                              {bookings.filter(b => b.status === "cancelled").length}
+                            </h3>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="calendar">
+                    <ReservationCalendar 
+                      bookings={bookings}
+                      stations={stations}
+                      onEditBooking={handleEditReservationClick}
+                      onCancelBooking={(booking) => {
+                        setEditReservationId(booking.id);
+                        handleCancelReservation(booking.id);
+                      }}
+                      onCheckInBooking={(booking) => {
+                        handleCheckInReservation(booking.id);
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
                 
-                {/* Reservation stats card */}
-                <Card className="bg-black/30 border-primary/20">
-                  <CardHeader>
-                    <CardTitle>Reservation Statistics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="bg-black/50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Total Reservations</p>
-                        <h3 className="text-2xl font-bold">{bookings.length}</h3>
-                      </div>
-                      <div className="bg-black/50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Upcoming</p>
-                        <h3 className="text-2xl font-bold">
-                          {bookings.filter(b => b.status === "pending" || b.status === "confirmed").length}
-                        </h3>
-                      </div>
-                      <div className="bg-black/50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Completed</p>
-                        <h3 className="text-2xl font-bold">
-                          {bookings.filter(b => b.status === "completed").length}
-                        </h3>
-                      </div>
-                      <div className="bg-black/50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Cancelled</p>
-                        <h3 className="text-2xl font-bold">
-                          {bookings.filter(b => b.status === "cancelled").length}
-                        </h3>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Add Reservation Dialog */}
-              <Dialog open={showAddReservationDialog} onOpenChange={setShowAddReservationDialog}>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add New Reservation</DialogTitle>
-                    <DialogDescription>
-                      Create a new reservation for a customer.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <ReservationForm 
-                    onSubmit={handleAddReservation}
-                    onCancel={() => setShowAddReservationDialog(false)}
-                    customers={customers}
-                    stations={stations}
-                  />
-                </DialogContent>
-              </Dialog>
-              
-              {/* Edit Reservation Dialog */}
-              <Dialog open={showEditReservationDialog} onOpenChange={setShowEditReservationDialog}>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Edit Reservation</DialogTitle>
-                    <DialogDescription>
-                      Update the reservation details.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  {editReservationId && (
+                {/* Add Reservation Dialog */}
+                <Dialog open={showAddReservationDialog} onOpenChange={setShowAddReservationDialog}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add New Reservation</DialogTitle>
+                      <DialogDescription>
+                        Create a new reservation for a customer.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
                     <ReservationForm 
-                      onSubmit={handleEditReservation}
-                      onCancel={() => setShowEditReservationDialog(false)}
+                      onSubmit={handleAddReservation}
+                      onCancel={() => setShowAddReservationDialog(false)}
                       customers={customers}
                       stations={stations}
-                      initialData={bookings.find(b => b.id === editReservationId)}
-                      isEditing={true}
                     />
-                  )}
-                </DialogContent>
-              </Dialog>
-              
-              {/* Confirm Delete Dialog */}
-              <Dialog open={confirmDeleteReservationDialog} onOpenChange={setConfirmDeleteReservationDialog}>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Confirm Deletion</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to delete this reservation? This action cannot be undone.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setConfirmDeleteReservationDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleDeleteReservation}>
-                      Delete
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Edit Reservation Dialog */}
+                <Dialog open={showEditReservationDialog} onOpenChange={setShowEditReservationDialog}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Edit Reservation</DialogTitle>
+                      <DialogDescription>
+                        Update the reservation details.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    {editReservationId && (
+                      <ReservationForm 
+                        onSubmit={handleEditReservation}
+                        onCancel={() => setShowEditReservationDialog(false)}
+                        customers={customers}
+                        stations={stations}
+                        initialData={bookings.find(b => b.id === editReservationId)}
+                        isEditing={true}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Confirm Delete Dialog */}
+                <Dialog open={confirmDeleteReservationDialog} onOpenChange={setConfirmDeleteReservationDialog}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Confirm Deletion</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete this reservation? This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setConfirmDeleteReservationDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button variant="destructive" onClick={handleDeleteReservation}>
+                        Delete
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </TabsContent>
 
             {/* Games Tab */}
