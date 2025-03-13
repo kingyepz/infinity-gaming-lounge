@@ -79,7 +79,6 @@ interface Game {
   pricePerHour: number;
   popularity: number;
   isActive: boolean;
-  imageUrl?: string;
 }
 
 // Form validation schema for game
@@ -93,7 +92,6 @@ const gameFormSchema = z.object({
   pricePerSession: z.coerce.number().min(0, "Price must be positive"),
   pricePerHour: z.coerce.number().min(0, "Price must be positive"),
   isActive: z.boolean().default(true),
-  imageUrl: z.string().url("Please enter a valid URL").optional(),
 });
 
 type GameFormValues = z.infer<typeof gameFormSchema>;
@@ -233,7 +231,6 @@ export default function GameCatalog() {
       pricePerSession: game.pricePerSession,
       pricePerHour: game.pricePerHour,
       isActive: game.isActive,
-      imageUrl: game.imageUrl || "",
     });
     setShowAddGameDialog(true);
   };
@@ -248,7 +245,6 @@ export default function GameCatalog() {
       pricePerSession: 0,
       pricePerHour: 0,
       isActive: true,
-      imageUrl: "",
     });
     setShowAddGameDialog(true);
   };
@@ -450,28 +446,6 @@ export default function GameCatalog() {
 
               <FormField
                 control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cover Image URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://example.com/game-cover.jpg"
-                        type="url"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Enter a URL to the game's cover image
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="isActive"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
@@ -574,56 +548,35 @@ function GameManagementTab({ onEditGame }: { onEditGame: (game: Game) => void })
           key={game.id}
           className={`bg-black/10 ${!game.isActive && "border-red-900/40 bg-red-900/5"}`}
         >
-          <div className="p-4 sm:p-6 flex items-start justify-between flex-wrap gap-4">
-            <div className="flex gap-4">
-              {game.imageUrl ? (
-                <div className="relative w-20 h-20 md:w-24 md:h-24 overflow-hidden rounded-md flex-shrink-0">
-                  <img 
-                    src={game.imageUrl} 
-                    alt={`${game.name} cover`}
-                    className="w-full h-full object-cover" 
-                    onError={(e) => {
-                      // If image fails to load, replace with game icon
-                      (e.target as HTMLImageElement).src = '';
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex items-center justify-center w-full h-full bg-black/20"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gamepad-2"><line x1="6" x2="10" y1="11" y2="11"></line><line x1="8" x2="8" y1="9" y2="13"></line><line x1="15" x2="15.01" y1="12" y2="12"></line><line x1="18" x2="18.01" y1="10" y2="10"></line><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"></path></svg></div>';
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-black/20 rounded-md flex-shrink-0">
-                  <Gamepad2 className="h-10 w-10 text-primary/50" />
-                </div>
-              )}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-lg">{game.name}</h3>
-                  {!game.isActive && (
-                    <Badge variant="outline" className="text-xs bg-red-900/20 border-red-900/30">
-                      Inactive
-                    </Badge>
-                  )}
-                </div>
-                {game.description && (
-                  <p className="text-sm text-gray-400 line-clamp-2 max-w-md">
-                    {game.description}
-                  </p>
+          <div className="p-4 sm:p-6 flex items-center justify-between flex-wrap gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium text-lg">{game.name}</h3>
+                {!game.isActive && (
+                  <Badge variant="outline" className="text-xs bg-red-900/20 border-red-900/30">
+                    Inactive
+                  </Badge>
                 )}
-                <div className="flex items-center gap-4 mt-1">
-                  <div className="text-sm flex items-center">
-                    <span className="text-gray-400 mr-1">Category:</span>
-                    <Badge variant="secondary" className="capitalize">{game.category || "Other"}</Badge>
-                  </div>
+              </div>
+              {game.description && (
+                <p className="text-sm text-gray-400 line-clamp-1 max-w-md">
+                  {game.description}
+                </p>
+              )}
+              <div className="flex items-center gap-4 mt-1">
+                <div className="text-sm flex items-center">
+                  <span className="text-gray-400 mr-1">Category:</span>
+                  <Badge variant="secondary" className="capitalize">{game.category || "Other"}</Badge>
                 </div>
-                <div className="flex items-center gap-4 mt-1">
-                  <div className="text-sm flex items-center">
-                    <span className="text-gray-400 mr-1">Per Game:</span>
-                    <span className="font-medium">KES {game.pricePerSession.toLocaleString()}</span>
-                  </div>
-                  <div className="text-sm flex items-center">
-                    <span className="text-gray-400 mr-1">Per Hour:</span>
-                    <span className="font-medium">KES {game.pricePerHour.toLocaleString()}</span>
-                  </div>
+              </div>
+              <div className="flex items-center gap-4 mt-1">
+                <div className="text-sm flex items-center">
+                  <span className="text-gray-400 mr-1">Per Game:</span>
+                  <span className="font-medium">KES {game.pricePerSession.toLocaleString()}</span>
+                </div>
+                <div className="text-sm flex items-center">
+                  <span className="text-gray-400 mr-1">Per Hour:</span>
+                  <span className="font-medium">KES {game.pricePerHour.toLocaleString()}</span>
                 </div>
               </div>
             </div>

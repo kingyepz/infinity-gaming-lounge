@@ -54,7 +54,6 @@ interface Game {
   pricePerHour: number;
   popularity: number;
   isActive: boolean;
-  imageUrl?: string;
 }
 
 // Parent component will provide these props
@@ -90,23 +89,11 @@ export default function GameCatalogSection({
     },
   });
 
-  // State for category filter
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  
-  // Filter games based on search query and category
-  const filteredGames = games.filter(game => {
-    // Text search filter
-    const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (game.description && game.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Category filter
-    const matchesCategory = !categoryFilter || game.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  });
-  
-  // Get unique categories from games
-  const categories = Array.from(new Set(games.map(game => game.category).filter(Boolean))) as string[];
+  // Filter games based on search query
+  const filteredGames = games.filter(game => 
+    game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (game.description && game.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   // Get game details and show dialog
   const handleViewGameDetails = (game: Game) => {
@@ -201,39 +188,14 @@ export default function GameCatalogSection({
       )}
 
       {!showTitle && (
-        <div className="mb-4 space-y-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="Search games catalog..."
-              className="pl-9 bg-black/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          {categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Badge
-                variant={categoryFilter === null ? "default" : "outline"}
-                className="cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => setCategoryFilter(null)}
-              >
-                All Categories
-              </Badge>
-              
-              {categories.map(category => (
-                <Badge
-                  key={category}
-                  variant={categoryFilter === category ? "default" : "outline"}
-                  className="cursor-pointer capitalize hover:opacity-80 transition-opacity"
-                  onClick={() => setCategoryFilter(category)}
-                >
-                  {category}
-                </Badge>
-              ))}
-            </div>
-          )}
+        <div className="relative mb-4">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search games catalog..."
+            className="pl-9 bg-black/20"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       )}
 
@@ -248,111 +210,77 @@ export default function GameCatalogSection({
         <ScrollArea className={compact ? "h-[400px]" : "h-auto max-h-[70vh]"}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-4">
             {filteredGames.map((game) => (
-              <Card key={game.id} className="bg-black/20 border-primary/20 hover:bg-black/30 transition-colors overflow-hidden">
-                <div className="flex flex-col h-full">
-                  {game.imageUrl ? (
-                    <div className="relative w-full h-36 overflow-hidden">
-                      <img 
-                        src={game.imageUrl} 
-                        alt={`${game.name} cover`}
-                        className="w-full h-full object-cover" 
-                        onError={(e) => {
-                          // If image fails to load, replace with game icon
-                          (e.target as HTMLImageElement).src = '';
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex items-center justify-center w-full h-full bg-black/20"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gamepad-2 text-primary/50"><line x1="6" x2="10" y1="11" y2="11"></line><line x1="8" x2="8" y1="9" y2="13"></line><line x1="15" x2="15.01" y1="12" y2="12"></line><line x1="18" x2="18.01" y1="10" y2="10"></line><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"></path></svg></div>';
-                        }}
-                      />
-                      {game.category && (
-                        <Badge 
-                          variant="secondary" 
-                          className="absolute bottom-2 right-2 capitalize opacity-90"
-                        >
-                          {game.category}
-                        </Badge>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-36 bg-black/20">
-                      <Gamepad2 className="h-12 w-12 text-primary/50" />
-                      {game.category && (
-                        <Badge 
-                          variant="secondary" 
-                          className="absolute bottom-2 right-2 capitalize opacity-90"
-                        >
-                          {game.category}
-                        </Badge>
-                      )}
+              <Card key={game.id} className="bg-black/20 border-primary/20 hover:bg-black/30 transition-colors">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-base flex-grow">{game.name}</CardTitle>
+                    {renderPopularity(game.popularity)}
+                  </div>
+                  {game.category && (
+                    <div className="mt-1">
+                      <Badge variant="outline" className="capitalize text-xs">
+                        {game.category}
+                      </Badge>
                     </div>
                   )}
-                  
-                  <CardHeader className="pb-2 pt-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-base flex-grow">{game.name}</CardTitle>
-                      {renderPopularity(game.popularity)}
-                    </div>
-                    
-                    {game.description && !compact && (
-                      <CardDescription className="line-clamp-2 mt-1">
-                        {game.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  
-                  <CardContent className="pb-2">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center text-sm text-gray-400">
-                          <GamepadIcon className="h-3.5 w-3.5 mr-1 text-primary/70" />
-                          <span>Per Game:</span>
-                        </div>
-                        <Badge variant="outline" className="font-mono">
-                          KES {game.pricePerSession.toLocaleString()}
-                        </Badge>
+                  {game.description && !compact && (
+                    <CardDescription className="line-clamp-2 mt-1">
+                      {game.description}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center text-sm text-gray-400">
+                        <GamepadIcon className="h-3.5 w-3.5 mr-1 text-primary/70" />
+                        <span>Per Game:</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center text-sm text-gray-400">
-                          <Clock className="h-3.5 w-3.5 mr-1 text-primary/70" />
-                          <span>Per Hour:</span>
-                        </div>
-                        <Badge variant="outline" className="font-mono">
-                          KES {game.pricePerHour.toLocaleString()}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="font-mono">
+                        KES {game.pricePerSession.toLocaleString()}
+                      </Badge>
                     </div>
-                  </CardContent>
-                  
-                  <CardFooter className="pt-0 flex justify-between mt-auto">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center text-sm text-gray-400">
+                        <Clock className="h-3.5 w-3.5 mr-1 text-primary/70" />
+                        <span>Per Hour:</span>
+                      </div>
+                      <Badge variant="outline" className="font-mono">
+                        KES {game.pricePerHour.toLocaleString()}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0 flex justify-between">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewGameDetails(game)}
+                    className="text-xs"
+                  >
+                    Details
+                  </Button>
+                  <div className="flex space-x-2">
                     <Button 
-                      variant="outline" 
+                      variant="default" 
                       size="sm"
-                      onClick={() => handleViewGameDetails(game)}
                       className="text-xs"
+                      onClick={() => onSelectGame(game, "perGame")}
                     >
-                      Details
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Per Game
                     </Button>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => onSelectGame(game, "perGame")}
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1" />
-                        Per Game
-                      </Button>
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => onSelectGame(game, "hourly")}
-                      >
-                        <Clock className="h-3.5 w-3.5 mr-1" />
-                        Hourly
-                      </Button>
-                    </div>
-                  </CardFooter>
-                </div>
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => onSelectGame(game, "hourly")}
+                    >
+                      <Clock className="h-3.5 w-3.5 mr-1" />
+                      Hourly
+                    </Button>
+                  </div>
+                </CardFooter>
               </Card>
             ))}
           </div>
@@ -375,27 +303,6 @@ export default function GameCatalogSection({
             </DialogHeader>
             
             <div className="py-4 space-y-4">
-              {/* Game Cover Image */}
-              {selectedGame.imageUrl ? (
-                <div className="relative w-full h-48 overflow-hidden rounded-md">
-                  <img 
-                    src={selectedGame.imageUrl} 
-                    alt={`${selectedGame.name} cover`}
-                    className="w-full h-full object-cover" 
-                    onError={(e) => {
-                      // If image fails to load, replace with game icon
-                      (e.target as HTMLImageElement).src = '';
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex items-center justify-center w-full h-full bg-black/20"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gamepad-2 text-primary/50"><line x1="6" x2="10" y1="11" y2="11"></line><line x1="8" x2="8" y1="9" y2="13"></line><line x1="15" x2="15.01" y1="12" y2="12"></line><line x1="18" x2="18.01" y1="10" y2="10"></line><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"></path></svg></div>';
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center w-full h-48 bg-black/20 rounded-md">
-                  <Gamepad2 className="h-16 w-16 text-primary/50" />
-                </div>
-              )}
-            
               {selectedGame.description && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-400 mb-1">Description</h4>

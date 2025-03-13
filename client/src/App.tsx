@@ -57,11 +57,6 @@ function Router() {
             <GameCatalog />
           </ProtectedRoute>
         </Route>
-        <Route path="/pos/game-catalog">
-          <ProtectedRoute role="staff">
-            <GameCatalog />
-          </ProtectedRoute>
-        </Route>
         <Route path="/portal">
           <ProtectedRoute role="customer">
             <CustomerPortal />

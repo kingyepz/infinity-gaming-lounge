@@ -84,8 +84,7 @@ import {
   Loader2Icon,
   MousePointer as MousePointerIcon,
   Tv as TvIcon,
-  X,
-  Gamepad2
+  X
 } from "lucide-react";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -402,8 +401,6 @@ export default function AdminAnalytics() {
   const [showAddGameDialog, setShowAddGameDialog] = useState(false);
   const [newGameName, setNewGameName] = useState("");
   const [newGameDescription, setNewGameDescription] = useState("");
-  const [newGameImageUrl, setNewGameImageUrl] = useState<string | null>(null);
-  const [newGameCategory, setNewGameCategory] = useState<string | null>(null);
   
   // Edit Game Dialog
   const [showEditGameDialog, setShowEditGameDialog] = useState(false);
@@ -412,8 +409,6 @@ export default function AdminAnalytics() {
   const [editGameDescription, setEditGameDescription] = useState("");
   const [editGamePricePerSession, setEditGamePricePerSession] = useState("");
   const [editGamePricePerHour, setEditGamePricePerHour] = useState("");
-  const [editGameImageUrl, setEditGameImageUrl] = useState<string | null>(null);
-  const [editGameCategory, setEditGameCategory] = useState<string | null>(null);
   
   // Fetch data on component mount
   useEffect(() => {
@@ -1514,9 +1509,7 @@ export default function AdminAnalytics() {
           name: newGameName,
           description: newGameDescription,
           pricePerHour: 200,
-          pricePerSession: 40,
-          imageUrl: newGameImageUrl,
-          category: newGameCategory
+          pricePerSession: 40
         }
       });
 
@@ -1530,8 +1523,6 @@ export default function AdminAnalytics() {
       setShowAddGameDialog(false);
       setNewGameName("");
       setNewGameDescription("");
-      setNewGameImageUrl(null);
-      setNewGameCategory(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -1548,8 +1539,6 @@ export default function AdminAnalytics() {
     setEditGameDescription(game.description || "");
     setEditGamePricePerSession(String(game.pricePerSession));
     setEditGamePricePerHour(String(game.pricePerHour));
-    setEditGameImageUrl(game.imageUrl || null);
-    setEditGameCategory(game.category || null);
     setShowEditGameDialog(true);
   };
 
@@ -1572,9 +1561,7 @@ export default function AdminAnalytics() {
           name: editGameName,
           description: editGameDescription,
           pricePerSession: Number(editGamePricePerSession),
-          pricePerHour: Number(editGamePricePerHour),
-          imageUrl: editGameImageUrl,
-          category: editGameCategory
+          pricePerHour: Number(editGamePricePerHour)
         }
       });
 
@@ -1591,8 +1578,6 @@ export default function AdminAnalytics() {
       setEditGameDescription("");
       setEditGamePricePerSession("");
       setEditGamePricePerHour("");
-      setEditGameImageUrl(null);
-      setEditGameCategory(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -1712,7 +1697,7 @@ export default function AdminAnalytics() {
   };
 
   // Function to get transaction details
-  const getTransactionDetails = (transactionId: number) => {
+  const getTransactionDetails = (transactionId) => {
     return transactions.find((tx) => tx.id === transactionId);
   };
 
@@ -2323,7 +2308,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">KES {dailyStats?.totalRevenue || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.revenue > 0 ? (
-                            <Badge className="bg-green-500 text-white flex items-center gap-1">
+                            <Badge variant="success" className="flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.revenue || 0}%
                             </Badge>
@@ -2351,7 +2336,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">{dailyStats?.completedSessions || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.sessions > 0 ? (
-                            <Badge className="bg-green-500 text-white flex items-center gap-1">
+                            <Badge variant="success" className="flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.sessions || 0}%
                             </Badge>
@@ -2379,7 +2364,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">{customerActivity?.returningCustomers || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.customerRetention > 0 ? (
-                            <Badge className="bg-green-500 text-white flex items-center gap-1">
+                            <Badge variant="success" className="flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.customerRetention || 0}%
                             </Badge>
@@ -2407,7 +2392,7 @@ export default function AdminAnalytics() {
                         <p className="text-3xl font-bold">KES {dailyStats?.averageRevenue || 0}</p>
                         <div className="flex items-center gap-2 text-sm">
                           {comparativeAnalysis?.changes?.averageRevenue > 0 ? (
-                            <Badge className="bg-green-500 text-white flex items-center gap-1">
+                            <Badge variant="success" className="flex items-center gap-1">
                               <ActivityIcon className="h-3 w-3" />
                               +{comparativeAnalysis?.changes?.averageRevenue || 0}%
                             </Badge>
@@ -3108,7 +3093,7 @@ export default function AdminAnalytics() {
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-center">
                               <CardTitle className="text-base">{station.name}</CardTitle>
-                              <Badge className="bg-green-500 text-white">Active</Badge>
+                              <Badge variant="success">Active</Badge>
                             </div>
                           </CardHeader>
                           <CardContent>
@@ -3288,7 +3273,7 @@ export default function AdminAnalytics() {
                                       <TableCell>{formatCurrency(station.revenue)}</TableCell>
                                       <TableCell>
                                         {station.currentlyActive ? (
-                                          <Badge className="bg-green-500 text-white">Active</Badge>
+                                          <Badge className="bg-green-500">Active</Badge>
                                         ) : (
                                           <Badge variant="outline">Inactive</Badge>
                                         )}
@@ -3752,75 +3737,36 @@ export default function AdminAnalytics() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {games.map((game) => (
-                  <Card key={game.id} className="bg-black/30 border-primary/20 overflow-hidden">
-                    <div className="flex flex-col h-full">
-                      {/* Game Cover Image */}
-                      {game.imageUrl ? (
-                        <div className="relative w-full h-40 overflow-hidden">
-                          <img 
-                            src={game.imageUrl} 
-                            alt={`${game.name} cover`}
-                            className="w-full h-full object-cover" 
-                            onError={(e) => {
-                              // If image fails to load, replace with game icon
-                              (e.target as HTMLImageElement).src = '';
-                              (e.target as HTMLImageElement).style.display = 'none';
-                              (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex items-center justify-center w-full h-full bg-black/20"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gamepad-2 text-primary/50"><line x1="6" x2="10" y1="11" y2="11"></line><line x1="8" x2="8" y1="9" y2="13"></line><line x1="15" x2="15.01" y1="12" y2="12"></line><line x1="18" x2="18.01" y1="10" y2="10"></line><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"></path></svg></div>';
-                            }}
-                          />
-                          {game.category && (
-                            <Badge 
-                              variant="secondary" 
-                              className="absolute bottom-2 right-2 capitalize opacity-90"
-                            >
-                              {game.category}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full h-40 bg-black/20">
-                          <Gamepad2 className="h-12 w-12 text-primary/50" />
-                          {game.category && (
-                            <Badge 
-                              variant="secondary" 
-                              className="absolute bottom-2 right-2 capitalize opacity-90"
-                            >
-                              {game.category}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">{game.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-400 mb-2">{game.description || "No description available"}</p>
-                        <div className="flex justify-between text-sm">
-                          <Badge variant="outline">Per Game: KES {game.pricePerSession}</Badge>
-                          <Badge variant="outline">Per Hour: KES {game.pricePerHour}</Badge>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-0 flex justify-end space-x-2 mt-auto">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditGameClick(game)}
-                        >
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => {
-                            setGameToDelete(game.id);
-                            setConfirmDeleteGameDialog(true);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </CardFooter>
-                    </div>
+                  <Card key={game.id} className="bg-black/30 border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">{game.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-400 mb-2">{game.description || "No description available"}</p>
+                      <div className="flex justify-between text-sm">
+                        <Badge variant="outline">Per Game: KES {game.pricePerSession}</Badge>
+                        <Badge variant="outline">Per Hour: KES {game.pricePerHour}</Badge>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-0 flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditGameClick(game)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => {
+                          setGameToDelete(game.id);
+                          setConfirmDeleteGameDialog(true);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>
@@ -3850,15 +3796,6 @@ export default function AdminAnalytics() {
                         onChange={(e) => setEditGameDescription(e.target.value)}
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="gameImageUrl">Cover Image URL</Label>
-                      <Input
-                        id="gameImageUrl"
-                        placeholder="Enter image URL (https://...)"
-                        value={editGameImageUrl || ""}
-                        onChange={(e) => setEditGameImageUrl(e.target.value)}
-                      />
-                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="pricePerSession">Price Per Game (KES)</Label>
@@ -3880,31 +3817,6 @@ export default function AdminAnalytics() {
                           onChange={(e) => setEditGamePricePerHour(e.target.value)}
                         />
                       </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="gameCategory">Category</Label>
-                      <Select 
-                        value={editGameCategory || "other"} 
-                        onValueChange={setEditGameCategory}
-                      >
-                        <SelectTrigger id="gameCategory">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="action">Action</SelectItem>
-                          <SelectItem value="adventure">Adventure</SelectItem>
-                          <SelectItem value="rpg">RPG</SelectItem>
-                          <SelectItem value="strategy">Strategy</SelectItem>
-                          <SelectItem value="simulation">Simulation</SelectItem>
-                          <SelectItem value="sports">Sports</SelectItem>
-                          <SelectItem value="racing">Racing</SelectItem>
-                          <SelectItem value="puzzle">Puzzle</SelectItem>
-                          <SelectItem value="fighting">Fighting</SelectItem>
-                          <SelectItem value="shooter">Shooter</SelectItem>
-                          <SelectItem value="mmo">MMO</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                   <DialogFooter>
@@ -5198,38 +5110,6 @@ export default function AdminAnalytics() {
                 value={newGameDescription}
                 onChange={(e) => setNewGameDescription(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Image URL</label>
-              <Input
-                placeholder="Enter image URL"
-                value={newGameImageUrl || ''}
-                onChange={(e) => setNewGameImageUrl(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
-              <Select 
-                onValueChange={(value) => setNewGameCategory(value)}
-                value={newGameCategory || undefined}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="action">Action</SelectItem>
-                  <SelectItem value="adventure">Adventure</SelectItem>
-                  <SelectItem value="rpg">RPG</SelectItem>
-                  <SelectItem value="simulation">Simulation</SelectItem>
-                  <SelectItem value="strategy">Strategy</SelectItem>
-                  <SelectItem value="sports">Sports</SelectItem>
-                  <SelectItem value="racing">Racing</SelectItem>
-                  <SelectItem value="fighting">Fighting</SelectItem>
-                  <SelectItem value="shooter">Shooter</SelectItem>
-                  <SelectItem value="party">Party</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <DialogFooter>
