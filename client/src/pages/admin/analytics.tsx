@@ -1712,7 +1712,7 @@ export default function AdminAnalytics() {
   };
 
   // Function to get transaction details
-  const getTransactionDetails = (transactionId) => {
+  const getTransactionDetails = (transactionId: number) => {
     return transactions.find((tx) => tx.id === transactionId);
   };
 
@@ -3108,7 +3108,7 @@ export default function AdminAnalytics() {
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-center">
                               <CardTitle className="text-base">{station.name}</CardTitle>
-                              <Badge variant="success">Active</Badge>
+                              <Badge className="bg-green-500 text-white">Active</Badge>
                             </div>
                           </CardHeader>
                           <CardContent>
@@ -3288,7 +3288,7 @@ export default function AdminAnalytics() {
                                       <TableCell>{formatCurrency(station.revenue)}</TableCell>
                                       <TableCell>
                                         {station.currentlyActive ? (
-                                          <Badge className="bg-green-500">Active</Badge>
+                                          <Badge variant="success">Active</Badge>
                                         ) : (
                                           <Badge variant="outline">Inactive</Badge>
                                         )}
