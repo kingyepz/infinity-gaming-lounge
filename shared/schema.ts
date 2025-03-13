@@ -64,6 +64,10 @@ export const stationCategoryTypes = pgEnum('station_category_type', [
   'console', 'pc', 'vr', 'racing', 'arcade', 'mobile', 'other'
 ]);
 
+export const gameCategories = pgEnum('game_category', [
+  'action', 'adventure', 'rpg', 'strategy', 'simulation', 'sports', 'racing', 'puzzle', 'fighting', 'shooter', 'mmo', 'other'
+]);
+
 export const stationCategories = pgTable("station_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -100,6 +104,7 @@ export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // FC25, GTA 5, etc.
   description: text("description"),
+  category: gameCategories("category").default("other"),
   pricePerSession: integer("price_per_session").default(40), // 40 KES per game session
   pricePerHour: integer("price_per_hour").default(200), // 200 KES per hour
   popularity: integer("popularity").default(0), // tracks game popularity
