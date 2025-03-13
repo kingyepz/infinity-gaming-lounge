@@ -1,7 +1,7 @@
 import { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTransactionSchema } from "@shared/schema";
+import { insertTransactionSchema, insertBookingSchema } from "@shared/schema";
 import { z } from "zod";
 import { log } from "./vite";
 import { db } from "./db";
@@ -282,6 +282,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error deleting station category:", error);
+      throw error;
+    }
+  }));
+
+  // Booking/Reservation API Routes
+  
+  // Get all bookings
+  app.get("/api/bookings", asyncHandler(async (_req, res) => {
+    try {
+      const allBookings = await storage.getBookings();
+      res.json(allBookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      throw error;
+    }
+  }));
+  
+  // Get booking by ID
+  app.get("/api/bookings/:id", asyncHandler(async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+      
+      const booking = await storage.getBookingById(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      res.json(booking);
+    } catch (error) {
+      console.error("Error fetching booking:", error);
+      throw error;
+    }
+  }));
+  
+  // Get bookings by user ID
+  app.get("/api/users/:userId/bookings", asyncHandler(async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const userBookings = await storage.getBookingsByUserId(userId);
+      res.json(userBookings);
+    } catch (error) {
+      console.error("Error fetching user bookings:", error);
+      throw error;
+    }
+  }));
+  
+  // Get bookings by station ID
+  app.get("/api/stations/:stationId/bookings", asyncHandler(async (req, res) => {
+    try {
+      const stationId = Number(req.params.stationId);
+      if (isNaN(stationId)) {
+        return res.status(400).json({ message: "Invalid station ID" });
+      }
+      
+      const stationBookings = await storage.getBookingsByStationId(stationId);
+      res.json(stationBookings);
+    } catch (error) {
+      console.error("Error fetching station bookings:", error);
+      throw error;
+    }
+  }));
+  
+  // Get bookings by date
+  app.get("/api/bookings/date/:date", asyncHandler(async (req, res) => {
+    try {
+      const date = req.params.date;
+      // Validate date format (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD" });
+      }
+      
+      const dateBookings = await storage.getBookingsByDate(date);
+      res.json(dateBookings);
+    } catch (error) {
+      console.error("Error fetching bookings by date:", error);
+      throw error;
+    }
+  }));
+  
+  // Create a new booking
+  app.post("/api/bookings", asyncHandler(async (req, res) => {
+    try {
+      // Validate request body
+      const validatedData = insertBookingSchema.parse(req.body);
+      
+      // Check station availability first
+      const isAvailable = await storage.checkStationAvailability(
+        validatedData.stationId, 
+        validatedData.date, 
+        validatedData.time, 
+        validatedData.duration
+      );
+      
+      if (!isAvailable) {
+        return res.status(409).json({ 
+          message: "The requested time slot is not available for this station"
+        });
+      }
+      
+      // Create the booking
+      const booking = await storage.createBooking(validatedData);
+      
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ 
+          message: "Invalid booking data", 
+          errors: error.errors 
+        });
+      }
+      throw error;
+    }
+  }));
+  
+  // Update a booking
+  app.patch("/api/bookings/:id", asyncHandler(async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+      
+      const bookingData = req.body;
+      
+      // If changing time/date/duration/stationId, check availability first
+      if (bookingData.date || bookingData.time || bookingData.duration || bookingData.stationId) {
+        const currentBooking = await storage.getBookingById(bookingId);
+        if (!currentBooking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+        
+        const isAvailable = await storage.checkStationAvailability(
+          bookingData.stationId || currentBooking.stationId,
+          bookingData.date || currentBooking.date,
+          bookingData.time || currentBooking.time,
+          bookingData.duration || currentBooking.duration
+        );
+        
+        if (!isAvailable) {
+          return res.status(409).json({ 
+            message: "The requested time slot is not available for this station"
+          });
+        }
+      }
+      
+      const booking = await storage.updateBooking(bookingId, bookingData);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      res.json(booking);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      throw error;
+    }
+  }));
+  
+  // Delete a booking
+  app.delete("/api/bookings/:id", asyncHandler(async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+      
+      const success = await storage.deleteBooking(bookingId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting booking:", error);
       throw error;
     }
   }));
