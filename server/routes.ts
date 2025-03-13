@@ -1707,7 +1707,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add route for creating a new game
   app.post("/api/games", asyncHandler(async (req, res) => {
     try {
-      const gameData = req.body;
+      // Validate game data using zod schema
+      const parseResult = insertGameSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid game data", 
+          errors: parseResult.error.format() 
+        });
+      }
+      
+      const gameData = parseResult.data;
       const game = await storage.createGame(gameData);
       res.status(201).json(game);
     } catch (error) {
@@ -1724,7 +1734,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid game ID" });
       }
 
+      // Partial validation for update - we don't require all fields
       const gameData = req.body;
+      
+      // Check if any game category values are invalid
+      if (gameData.category) {
+        const validCategories = [
+          'action', 'adventure', 'rpg', 'strategy', 'simulation', 
+          'sports', 'racing', 'puzzle', 'fighting', 'shooter', 'mmo', 'other'
+        ];
+        
+        if (!validCategories.includes(gameData.category)) {
+          return res.status(400).json({ 
+            message: "Invalid game category", 
+            validCategories 
+          });
+        }
+      }
+      
       const game = await storage.updateGame(gameId, gameData);
       
       if (!game) {
