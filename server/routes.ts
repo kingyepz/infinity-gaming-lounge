@@ -469,6 +469,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw error;
     }
   }));
+  
+  // Check-in a booking
+  app.patch("/api/bookings/:id/check-in", asyncHandler(async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+      
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Only pending bookings can be checked in
+      if (booking.status !== "pending") {
+        return res.status(400).json({ 
+          message: `Cannot check in a booking with status "${booking.status}". Only pending bookings can be checked in.` 
+        });
+      }
+      
+      // Update booking status to "completed"
+      const updatedBooking = await storage.updateBooking(bookingId, { status: "completed" });
+      
+      if (!updatedBooking) {
+        return res.status(500).json({ message: "Failed to update booking status" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Booking checked in successfully",
+        booking: updatedBooking
+      });
+    } catch (error) {
+      console.error("Error checking in booking:", error);
+      throw error;
+    }
+  }));
+  
+  // Cancel a booking
+  app.patch("/api/bookings/:id/cancel", asyncHandler(async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+      
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Only pending or confirmed bookings can be cancelled
+      if (booking.status !== "pending" && booking.status !== "confirmed") {
+        return res.status(400).json({ 
+          message: `Cannot cancel a booking with status "${booking.status}". Only pending or confirmed bookings can be cancelled.` 
+        });
+      }
+      
+      // Update booking status to "cancelled"
+      const updatedBooking = await storage.updateBooking(bookingId, { status: "cancelled" });
+      
+      if (!updatedBooking) {
+        return res.status(500).json({ message: "Failed to update booking status" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Booking cancelled successfully",
+        booking: updatedBooking
+      });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      throw error;
+    }
+  }));
 
   app.get("/api/reports/current", asyncHandler(async (_req, res) => {
     try {
