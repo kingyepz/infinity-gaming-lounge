@@ -90,11 +90,23 @@ export default function GameCatalogSection({
     },
   });
 
-  // Filter games based on search query
-  const filteredGames = games.filter(game => 
-    game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (game.description && game.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // State for category filter
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  
+  // Filter games based on search query and category
+  const filteredGames = games.filter(game => {
+    // Text search filter
+    const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (game.description && game.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Category filter
+    const matchesCategory = !categoryFilter || game.category === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
+  });
+  
+  // Get unique categories from games
+  const categories = Array.from(new Set(games.map(game => game.category).filter(Boolean))) as string[];
 
   // Get game details and show dialog
   const handleViewGameDetails = (game: Game) => {
