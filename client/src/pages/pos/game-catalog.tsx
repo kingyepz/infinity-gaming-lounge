@@ -227,7 +227,7 @@ export default function GameCatalog() {
     form.reset({
       name: game.name,
       description: game.description || "",
-      category: game.category || "other",
+      category: (game.category as any) || "other",
       pricePerSession: game.pricePerSession,
       pricePerHour: game.pricePerHour,
       isActive: game.isActive,
