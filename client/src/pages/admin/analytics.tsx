@@ -402,6 +402,8 @@ export default function AdminAnalytics() {
   const [showAddGameDialog, setShowAddGameDialog] = useState(false);
   const [newGameName, setNewGameName] = useState("");
   const [newGameDescription, setNewGameDescription] = useState("");
+  const [newGameImageUrl, setNewGameImageUrl] = useState<string | null>(null);
+  const [newGameCategory, setNewGameCategory] = useState<string | null>(null);
   
   // Edit Game Dialog
   const [showEditGameDialog, setShowEditGameDialog] = useState(false);
@@ -5192,6 +5194,38 @@ export default function AdminAnalytics() {
                 value={newGameDescription}
                 onChange={(e) => setNewGameDescription(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Image URL</label>
+              <Input
+                placeholder="Enter image URL"
+                value={newGameImageUrl || ''}
+                onChange={(e) => setNewGameImageUrl(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Select 
+                onValueChange={(value) => setNewGameCategory(value)}
+                value={newGameCategory || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="action">Action</SelectItem>
+                  <SelectItem value="adventure">Adventure</SelectItem>
+                  <SelectItem value="rpg">RPG</SelectItem>
+                  <SelectItem value="simulation">Simulation</SelectItem>
+                  <SelectItem value="strategy">Strategy</SelectItem>
+                  <SelectItem value="sports">Sports</SelectItem>
+                  <SelectItem value="racing">Racing</SelectItem>
+                  <SelectItem value="fighting">Fighting</SelectItem>
+                  <SelectItem value="shooter">Shooter</SelectItem>
+                  <SelectItem value="party">Party</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
