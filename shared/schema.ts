@@ -209,6 +209,15 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
   splitTotal: true
 });
 
+export const insertBookingSchema = createInsertSchema(bookings).pick({
+  userId: true,
+  stationId: true,
+  date: true,
+  time: true,
+  duration: true,
+  status: true
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type StationCategory = typeof stationCategories.$inferSelect;
@@ -221,3 +230,5 @@ export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Booking = typeof bookings.$inferSelect;
+export type InsertBooking = z.infer<typeof insertBookingSchema>;

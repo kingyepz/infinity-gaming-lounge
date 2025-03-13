@@ -1,11 +1,12 @@
-import { gameStations, games, transactions, users, payments, stationCategories } from "@shared/schema";
+import { gameStations, games, transactions, users, payments, stationCategories, bookings } from "@shared/schema";
 import type { 
   GameStation, InsertGameStation, 
   Game, InsertGame, 
   Transaction, InsertTransaction, 
   User, InsertUser, 
   Payment, InsertPayment,
-  StationCategory, InsertStationCategory 
+  StationCategory, InsertStationCategory,
+  Booking, InsertBooking
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -749,6 +750,143 @@ export class StorageService {
       console.error("Error creating transaction with payment:", error);
       throw error;
     }
+  }
+
+  // Booking/Reservation Methods
+  async getBookings(): Promise<Booking[]> {
+    try {
+      return await db.select().from(bookings).orderBy(desc(bookings.createdAt));
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      return [];
+    }
+  }
+
+  async getBookingById(id: number): Promise<Booking | null> {
+    try {
+      const results = await db.select()
+        .from(bookings)
+        .where(eq(bookings.id, id))
+        .limit(1);
+
+      return results[0] || null;
+    } catch (error) {
+      console.error("Error fetching booking by id:", error);
+      return null;
+    }
+  }
+
+  async getBookingsByUserId(userId: number): Promise<Booking[]> {
+    try {
+      return await db.select()
+        .from(bookings)
+        .where(eq(bookings.userId, userId))
+        .orderBy(desc(bookings.createdAt));
+    } catch (error) {
+      console.error("Error fetching bookings for user:", error);
+      return [];
+    }
+  }
+
+  async getBookingsByStationId(stationId: number): Promise<Booking[]> {
+    try {
+      return await db.select()
+        .from(bookings)
+        .where(eq(bookings.stationId, stationId))
+        .orderBy(desc(bookings.createdAt));
+    } catch (error) {
+      console.error("Error fetching bookings for station:", error);
+      return [];
+    }
+  }
+
+  async getBookingsByDate(date: string): Promise<Booking[]> {
+    try {
+      return await db.select()
+        .from(bookings)
+        .where(eq(bookings.date, date))
+        .orderBy(bookings.time);
+    } catch (error) {
+      console.error("Error fetching bookings by date:", error);
+      return [];
+    }
+  }
+
+  async createBooking(data: InsertBooking): Promise<Booking> {
+    try {
+      const [booking] = await db.insert(bookings)
+        .values({
+          ...data,
+          status: data.status || "pending",
+          createdAt: new Date()
+        })
+        .returning();
+      return booking;
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      throw error;
+    }
+  }
+
+  async updateBooking(id: number, data: Partial<Booking>): Promise<Booking | null> {
+    try {
+      const [updated] = await db.update(bookings)
+        .set(data)
+        .where(eq(bookings.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      throw error;
+    }
+  }
+
+  async deleteBooking(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(bookings)
+        .where(eq(bookings.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      throw error;
+    }
+  }
+
+  async checkStationAvailability(stationId: number, date: string, time: string, duration: number): Promise<boolean> {
+    try {
+      // Get all bookings for the requested station and date
+      const stationBookings = await db.select()
+        .from(bookings)
+        .where(eq(bookings.stationId, stationId))
+        .where(eq(bookings.date, date))
+        .where(eq(bookings.status, "confirmed")); // Only consider confirmed bookings
+      
+      // Convert requested time to minutes for easier comparison
+      const requestedStartTime = this.timeToMinutes(time);
+      const requestedEndTime = requestedStartTime + duration * 60; // Duration is in hours, convert to minutes
+      
+      // Check if any existing booking overlaps with the requested time slot
+      const isAvailable = stationBookings.every(booking => {
+        const bookingStartTime = this.timeToMinutes(booking.time);
+        const bookingEndTime = bookingStartTime + booking.duration * 60;
+        
+        // Check if there's no overlap
+        return (requestedEndTime <= bookingStartTime) || (requestedStartTime >= bookingEndTime);
+      });
+      
+      return isAvailable;
+    } catch (error) {
+      console.error("Error checking station availability:", error);
+      throw error;
+    }
+  }
+  
+  // Helper function to convert time string (HH:MM) to minutes since midnight
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 }
 
