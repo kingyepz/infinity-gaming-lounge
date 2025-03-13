@@ -84,7 +84,8 @@ import {
   Loader2Icon,
   MousePointer as MousePointerIcon,
   Tv as TvIcon,
-  X
+  X,
+  Gamepad2
 } from "lucide-react";
 import { useLocation } from "wouter";
 import axios from "axios";
