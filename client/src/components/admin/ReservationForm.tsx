@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { Booking, GameStation, User } from '@shared/schema';
+import { Booking, GameStation, User, StationCategory } from '@shared/schema';
 
 // UI Components
 import {
@@ -77,7 +77,17 @@ export default function ReservationForm({
   onCancel,
   isEditing = false,
 }: ReservationFormProps) {
-  const [selectedStation, setSelectedStation] = useState<GameStation | null>(null);
+  // Extended types to handle optional fields needed in this component
+  interface ExtendedGameStation extends GameStation {
+    hourlyRate?: number;
+    type?: string;
+  }
+  
+  interface ExtendedBooking extends Booking {
+    price?: number;
+  }
+  
+  const [selectedStation, setSelectedStation] = useState<ExtendedGameStation | null>(null);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
   // Create form with validation
@@ -111,18 +121,22 @@ export default function ReservationForm({
         customer.phoneNumber?.includes(customerSearchQuery))
     : customers;
 
+  // This is a duplicate interface declaration - remove it
+
   // Update selected station when stationId changes
   useEffect(() => {
     const stationId = form.watch('stationId');
-    const station = stations.find(s => s.id === stationId);
+    const station = stations.find(s => s.id === stationId) as ExtendedGameStation | undefined;
     setSelectedStation(station || null);
   }, [form.watch('stationId'), stations]);
 
   // Calculate estimated price based on station and duration
   useEffect(() => {
-    if (selectedStation && selectedStation.hourlyRate) {
+    if (selectedStation && (selectedStation as ExtendedGameStation).hourlyRate) {
       const duration = form.watch('duration') || 1;
-      const estimatedPrice = selectedStation.hourlyRate * duration;
+      // Safe access to hourlyRate with type assertion
+      const hourlyRate = (selectedStation as ExtendedGameStation).hourlyRate || 0;
+      const estimatedPrice = hourlyRate * duration;
       form.setValue('price', estimatedPrice);
     }
   }, [selectedStation, form.watch('duration')]);

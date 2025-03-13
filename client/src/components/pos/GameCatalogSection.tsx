@@ -201,14 +201,39 @@ export default function GameCatalogSection({
       )}
 
       {!showTitle && (
-        <div className="relative mb-4">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            placeholder="Search games catalog..."
-            className="pl-9 bg-black/20"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="mb-4 space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search games catalog..."
+              className="pl-9 bg-black/20"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Badge
+                variant={categoryFilter === null ? "default" : "outline"}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setCategoryFilter(null)}
+              >
+                All Categories
+              </Badge>
+              
+              {categories.map(category => (
+                <Badge
+                  key={category}
+                  variant={categoryFilter === category ? "default" : "outline"}
+                  className="cursor-pointer capitalize hover:opacity-80 transition-opacity"
+                  onClick={() => setCategoryFilter(category)}
+                >
+                  {category}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
