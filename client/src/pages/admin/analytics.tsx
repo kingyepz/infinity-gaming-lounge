@@ -1542,6 +1542,8 @@ export default function AdminAnalytics() {
     setEditGameDescription(game.description || "");
     setEditGamePricePerSession(String(game.pricePerSession));
     setEditGamePricePerHour(String(game.pricePerHour));
+    setEditGameImageUrl(game.imageUrl || null);
+    setEditGameCategory(game.category || null);
     setShowEditGameDialog(true);
   };
 
@@ -1564,7 +1566,9 @@ export default function AdminAnalytics() {
           name: editGameName,
           description: editGameDescription,
           pricePerSession: Number(editGamePricePerSession),
-          pricePerHour: Number(editGamePricePerHour)
+          pricePerHour: Number(editGamePricePerHour),
+          imageUrl: editGameImageUrl,
+          category: editGameCategory
         }
       });
 
@@ -1581,6 +1585,8 @@ export default function AdminAnalytics() {
       setEditGameDescription("");
       setEditGamePricePerSession("");
       setEditGamePricePerHour("");
+      setEditGameImageUrl(null);
+      setEditGameCategory(null);
     } catch (error) {
       toast({
         title: "Error",
