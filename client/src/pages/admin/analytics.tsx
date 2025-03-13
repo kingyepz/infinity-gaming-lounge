@@ -3288,7 +3288,7 @@ export default function AdminAnalytics() {
                                       <TableCell>{formatCurrency(station.revenue)}</TableCell>
                                       <TableCell>
                                         {station.currentlyActive ? (
-                                          <Badge variant="success">Active</Badge>
+                                          <Badge className="bg-green-500 text-white">Active</Badge>
                                         ) : (
                                           <Badge variant="outline">Inactive</Badge>
                                         )}
