@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend, LineChart, Line, ResponsiveContainer } from "recharts";
@@ -87,7 +87,230 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import axios from "axios";
-import type { GameStation, Game, User, Transaction, StationCategory } from "@shared/schema";
+import type { GameStation, Game, User, Transaction, StationCategory, Booking } from "@shared/schema";
+
+// Reservation Form Component
+interface ReservationFormProps {
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
+  customers: User[];
+  stations: GameStation[];
+  initialData?: Booking;
+  isEditing?: boolean;
+}
+
+function ReservationForm({ onSubmit, onCancel, customers, stations, initialData, isEditing = false }: ReservationFormProps) {
+  const form = useForm<z.infer<typeof reservationFormSchema>>({
+    resolver: zodResolver(reservationFormSchema),
+    defaultValues: initialData ? {
+      userId: initialData.userId,
+      stationId: initialData.stationId,
+      date: initialData.date,
+      time: initialData.time,
+      duration: initialData.duration,
+      note: initialData.note || "",
+      status: initialData.status as "pending" | "confirmed" | "completed" | "cancelled"
+    } : {
+      userId: undefined,
+      stationId: undefined,
+      date: new Date().toISOString().split('T')[0],
+      time: "12:00",
+      duration: 1,
+      note: "",
+      status: "pending"
+    }
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="userId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer</FormLabel>
+              <Select 
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                defaultValue={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.displayName} ({customer.phoneNumber})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="stationId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Game Station</FormLabel>
+              <Select 
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                defaultValue={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select station" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {stations.map((station) => (
+                    <SelectItem key={station.id} value={station.id.toString()}>
+                      {station.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="duration"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Duration (hours)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  {...field} 
+                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  min={1}
+                  max={12}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="note"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea {...field} />
+              </FormControl>
+              <FormDescription>
+                Any special requests or additional information
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        {isEditing && (
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select 
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {isEditing ? "Update Reservation" : "Create Reservation"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+// Variable used in ReservationForm - need to define it here at the module level
+const reservationFormSchema = z.object({
+  userId: z.number({
+    required_error: "Customer is required",
+  }),
+  stationId: z.number({
+    required_error: "Station is required",
+  }),
+  date: z.string({
+    required_error: "Date is required",
+  }),
+  time: z.string({
+    required_error: "Time is required",
+  }),
+  duration: z.number({
+    required_error: "Duration is required",
+  }).min(1, "Duration must be at least 1 hour"),
+  note: z.string().optional(),
+  status: z.enum(["pending", "confirmed", "completed", "cancelled"], {
+    required_error: "Status is required",
+  }),
+});
 
 export default function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -341,6 +564,215 @@ export default function AdminAnalytics() {
     queryKey: ["/api/reports/predictive-analytics"],
     queryFn: () => apiRequest({ path: "/api/reports/predictive-analytics" })
   });
+  
+  // Fetch bookings data for reservations management
+  const { data: bookings = [] } = useQuery({
+    queryKey: ["/api/bookings"],
+    queryFn: () => apiRequest({ path: "/api/bookings" })
+  });
+  
+  // Reservations management state
+  const [showAddReservationDialog, setShowAddReservationDialog] = useState(false);
+  const [showEditReservationDialog, setShowEditReservationDialog] = useState(false);
+  const [editReservationId, setEditReservationId] = useState<number | null>(null);
+  const [confirmDeleteReservationDialog, setConfirmDeleteReservationDialog] = useState(false);
+  const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
+  const [reservationFilterDate, setReservationFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [reservationDateFilter, setReservationDateFilter] = useState<string>("today");
+  
+  // Using the reservationFormSchema defined at the module level
+  
+  // Current reservation filter date
+  const formatReservationFilterDate = (filter: string) => {
+    const today = new Date();
+    
+    switch (filter) {
+      case "today":
+        return today.toISOString().split('T')[0];
+      case "tomorrow":
+        const tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+        return tomorrow.toISOString().split('T')[0];
+      case "next7days":
+        return ""; // Special case - handled in filtering logic
+      case "custom":
+        return reservationFilterDate;
+      default:
+        return today.toISOString().split('T')[0];
+    }
+  };
+  
+  // Filter reservations based on date filter
+  const filteredReservations = useMemo(() => {
+    if (!bookings.length) return [];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const next7Days = new Date(today);
+    next7Days.setDate(next7Days.getDate() + 7);
+    
+    return bookings.filter((booking: Booking) => {
+      const bookingDate = new Date(booking.date);
+      bookingDate.setHours(0, 0, 0, 0); // Set to start of day
+      
+      if (reservationDateFilter === "today") {
+        return bookingDate.getTime() === today.getTime();
+      } else if (reservationDateFilter === "tomorrow") {
+        return bookingDate.getTime() === tomorrow.getTime();
+      } else if (reservationDateFilter === "next7days") {
+        return bookingDate >= today && bookingDate < next7Days;
+      } else if (reservationDateFilter === "custom" && reservationFilterDate) {
+        const filterDate = new Date(reservationFilterDate);
+        filterDate.setHours(0, 0, 0, 0);
+        return bookingDate.getTime() === filterDate.getTime();
+      }
+      
+      return true; // Default to showing all
+    });
+  }, [bookings, reservationDateFilter, reservationFilterDate]);
+  
+  // Reservation Management Handlers
+  const handleAddReservation = async (data: z.infer<typeof reservationFormSchema>) => {
+    try {
+      await apiRequest({
+        path: "/api/bookings",
+        method: "POST",
+        data
+      });
+      
+      toast({
+        title: "Reservation Added",
+        description: "The reservation has been successfully added.",
+      });
+      
+      setShowAddReservationDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+    } catch (error: any) {
+      console.error("Error adding reservation:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleEditReservation = async (data: z.infer<typeof reservationFormSchema>) => {
+    if (!editReservationId) return;
+    
+    try {
+      await apiRequest({
+        path: `/api/bookings/${editReservationId}`,
+        method: "PATCH",
+        data
+      });
+      
+      toast({
+        title: "Reservation Updated",
+        description: "The reservation has been successfully updated.",
+      });
+      
+      setShowEditReservationDialog(false);
+      setEditReservationId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+    } catch (error: any) {
+      console.error("Error updating reservation:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleCheckInReservation = async (reservationId: number) => {
+    try {
+      await apiRequest({
+        path: `/api/bookings/${reservationId}/check-in`,
+        method: "PATCH"
+      });
+      
+      toast({
+        title: "Customer Checked In",
+        description: "The customer has been successfully checked in.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+    } catch (error: any) {
+      console.error("Error checking in reservation:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to check in customer. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleCancelReservation = async (reservationId: number) => {
+    try {
+      await apiRequest({
+        path: `/api/bookings/${reservationId}/cancel`,
+        method: "PATCH"
+      });
+      
+      toast({
+        title: "Reservation Cancelled",
+        description: "The reservation has been cancelled successfully.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+    } catch (error: any) {
+      console.error("Error cancelling reservation:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeleteReservation = async () => {
+    if (!reservationToDelete) return;
+    
+    try {
+      await apiRequest({
+        path: `/api/bookings/${reservationToDelete}`,
+        method: "DELETE"
+      });
+      
+      toast({
+        title: "Reservation Deleted",
+        description: "The reservation has been deleted successfully.",
+      });
+      
+      setConfirmDeleteReservationDialog(false);
+      setReservationToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+    } catch (error: any) {
+      console.error("Error deleting reservation:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to handle confirming delete reservation
+  const handleDeleteReservationClick = (reservationId: number) => {
+    setReservationToDelete(reservationId);
+    setConfirmDeleteReservationDialog(true);
+  };
+  
+  // Function to open edit reservation dialog
+  const handleEditReservationClick = (reservation: Booking) => {
+    setEditReservationId(reservation.id);
+    setShowEditReservationDialog(true);
+  };
 
   // Date and time filter functions
   const applyDateFilter = useCallback(async () => {
@@ -507,6 +939,7 @@ export default function AdminAnalytics() {
         queryClient.invalidateQueries({ queryKey: ["/api/transactions"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/users/customers"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/station-categories"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/bookings"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/daily"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/revenue/weekly"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/reports/popular-games"] }),
