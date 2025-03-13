@@ -85,6 +85,7 @@ interface Game {
 const gameFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
+  category: z.string().default("other"),
   pricePerSession: z.coerce.number().min(0, "Price must be positive"),
   pricePerHour: z.coerce.number().min(0, "Price must be positive"),
   isActive: z.boolean().default(true),
@@ -112,6 +113,7 @@ export default function GameCatalog() {
     defaultValues: {
       name: "",
       description: "",
+      category: "other",
       pricePerSession: 0,
       pricePerHour: 0,
       isActive: true,
@@ -222,6 +224,7 @@ export default function GameCatalog() {
     form.reset({
       name: game.name,
       description: game.description || "",
+      category: game.category || "other",
       pricePerSession: game.pricePerSession,
       pricePerHour: game.pricePerHour,
       isActive: game.isActive,
@@ -235,6 +238,7 @@ export default function GameCatalog() {
     form.reset({
       name: "",
       description: "",
+      category: "other",
       pricePerSession: 0,
       pricePerHour: 0,
       isActive: true,
@@ -354,6 +358,42 @@ export default function GameCatalog() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="action">Action</SelectItem>
+                        <SelectItem value="adventure">Adventure</SelectItem>
+                        <SelectItem value="rpg">RPG</SelectItem>
+                        <SelectItem value="strategy">Strategy</SelectItem>
+                        <SelectItem value="simulation">Simulation</SelectItem>
+                        <SelectItem value="sports">Sports</SelectItem>
+                        <SelectItem value="racing">Racing</SelectItem>
+                        <SelectItem value="puzzle">Puzzle</SelectItem>
+                        <SelectItem value="fighting">Fighting</SelectItem>
+                        <SelectItem value="shooter">Shooter</SelectItem>
+                        <SelectItem value="mmo">MMO</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -520,6 +560,12 @@ function GameManagementTab({ onEditGame }: { onEditGame: (game: Game) => void })
                   {game.description}
                 </p>
               )}
+              <div className="flex items-center gap-4 mt-1">
+                <div className="text-sm flex items-center">
+                  <span className="text-gray-400 mr-1">Category:</span>
+                  <Badge variant="secondary" className="capitalize">{game.category || "Other"}</Badge>
+                </div>
+              </div>
               <div className="flex items-center gap-4 mt-1">
                 <div className="text-sm flex items-center">
                   <span className="text-gray-400 mr-1">Per Game:</span>

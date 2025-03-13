@@ -216,8 +216,15 @@ export default function GameCatalogSection({
                     <CardTitle className="text-base flex-grow">{game.name}</CardTitle>
                     {renderPopularity(game.popularity)}
                   </div>
+                  {game.category && (
+                    <div className="mt-1">
+                      <Badge variant="outline" className="capitalize text-xs">
+                        {game.category}
+                      </Badge>
+                    </div>
+                  )}
                   {game.description && !compact && (
-                    <CardDescription className="line-clamp-2">
+                    <CardDescription className="line-clamp-2 mt-1">
                       {game.description}
                     </CardDescription>
                   )}
