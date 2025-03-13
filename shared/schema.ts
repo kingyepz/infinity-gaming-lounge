@@ -51,7 +51,8 @@ export const bookings = pgTable("bookings", {
   date: text("date").notNull(),
   time: text("time").notNull(),
   duration: integer("duration").notNull(), // in hours
-  status: text("status", { enum: ["pending", "confirmed", "cancelled"] }).notNull(),
+  status: text("status", { enum: ["pending", "confirmed", "completed", "cancelled"] }).notNull(),
+  note: text("note"),
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -215,7 +216,8 @@ export const insertBookingSchema = createInsertSchema(bookings).pick({
   date: true,
   time: true,
   duration: true,
-  status: true
+  status: true,
+  note: true
 });
 
 export type User = typeof users.$inferSelect;
