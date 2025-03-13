@@ -49,7 +49,6 @@ interface Game {
   id: number;
   name: string;
   description?: string;
-  category?: string;
   pricePerSession: number;
   pricePerHour: number;
   popularity: number;
@@ -216,15 +215,8 @@ export default function GameCatalogSection({
                     <CardTitle className="text-base flex-grow">{game.name}</CardTitle>
                     {renderPopularity(game.popularity)}
                   </div>
-                  {game.category && (
-                    <div className="mt-1">
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {game.category}
-                      </Badge>
-                    </div>
-                  )}
                   {game.description && !compact && (
-                    <CardDescription className="line-clamp-2 mt-1">
+                    <CardDescription className="line-clamp-2">
                       {game.description}
                     </CardDescription>
                   )}
@@ -307,13 +299,6 @@ export default function GameCatalogSection({
                 <div>
                   <h4 className="text-sm font-medium text-gray-400 mb-1">Description</h4>
                   <p className="text-sm">{selectedGame.description}</p>
-                </div>
-              )}
-              
-              {selectedGame.category && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">Category</h4>
-                  <Badge variant="secondary" className="capitalize">{selectedGame.category}</Badge>
                 </div>
               )}
               
