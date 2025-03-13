@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { format, parse, startOfWeek, getDay, parseISO } from 'date-fns';
-import { enUS } from 'date-fns/locale/en-US';
+import moment from 'moment';
+import { format } from 'date-fns';
 import type { Booking, GameStation } from '@shared/schema';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,19 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
-// Create a custom localizer using date-fns
-const locales = {
-  'en-US': enUS,
-};
-
-// Helper function to convert date-fns date format to JavaScript Date
-const localizer = {
-  format: (date: Date, formatString: string) => format(date, formatString),
-  parse: (dateString: string, formatString: string) => parse(dateString, formatString, new Date()),
-  startOfWeek: (date: Date) => startOfWeek(date),
-  getDay: (date: Date) => getDay(date),
-  locales: locales
-};
+// Create a proper moment localizer for react-big-calendar
+const localizer = momentLocalizer(moment);
 
 // Custom event component to show booking details
 const BookingEvent = ({ event }: { event: any }) => {
@@ -163,7 +152,7 @@ export default function ReservationCalendar({
           <TabsContent value="month" className="mt-0">
             <div className="h-[600px]">
               <Calendar
-                localizer={momentLocalizer(localizer)}
+                localizer={localizer}
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
@@ -183,7 +172,7 @@ export default function ReservationCalendar({
           <TabsContent value="week" className="mt-0">
             <div className="h-[600px]">
               <Calendar
-                localizer={momentLocalizer(localizer)}
+                localizer={localizer}
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
@@ -203,7 +192,7 @@ export default function ReservationCalendar({
           <TabsContent value="day" className="mt-0">
             <div className="h-[600px]">
               <Calendar
-                localizer={momentLocalizer(localizer)}
+                localizer={localizer}
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
@@ -223,7 +212,7 @@ export default function ReservationCalendar({
           <TabsContent value="agenda" className="mt-0">
             <div className="h-[600px]">
               <Calendar
-                localizer={momentLocalizer(localizer)}
+                localizer={localizer}
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
