@@ -1514,7 +1514,9 @@ export default function AdminAnalytics() {
           name: newGameName,
           description: newGameDescription,
           pricePerHour: 200,
-          pricePerSession: 40
+          pricePerSession: 40,
+          imageUrl: newGameImageUrl,
+          category: newGameCategory
         }
       });
 
@@ -1528,6 +1530,8 @@ export default function AdminAnalytics() {
       setShowAddGameDialog(false);
       setNewGameName("");
       setNewGameDescription("");
+      setNewGameImageUrl(null);
+      setNewGameCategory(null);
     } catch (error) {
       toast({
         title: "Error",
