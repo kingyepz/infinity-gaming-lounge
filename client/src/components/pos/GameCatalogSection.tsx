@@ -49,6 +49,7 @@ interface Game {
   id: number;
   name: string;
   description?: string;
+  category?: string;
   pricePerSession: number;
   pricePerHour: number;
   popularity: number;
