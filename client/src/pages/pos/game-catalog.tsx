@@ -132,12 +132,10 @@ export default function GameCatalog() {
   const handleCreateGame = async (values: GameFormValues) => {
     setIsSubmitting(true);
     try {
-      await apiRequest("/api/games", {
+      await apiRequest({
+        path: "/api/games",
         method: "POST",
-        body: JSON.stringify(values),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        data: values
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
@@ -163,12 +161,10 @@ export default function GameCatalog() {
     if (!editingGame) return;
     setIsSubmitting(true);
     try {
-      await apiRequest(`/api/games/${editingGame.id}`, {
+      await apiRequest({
+        path: `/api/games/${editingGame.id}`,
         method: "PATCH",
-        body: JSON.stringify(values),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        data: values
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
@@ -195,11 +191,9 @@ export default function GameCatalog() {
     if (!editingGame) return;
     setIsSubmitting(true);
     try {
-      await apiRequest(`/api/games/${editingGame.id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      await apiRequest({
+        path: `/api/games/${editingGame.id}`,
+        method: "DELETE"
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
@@ -465,7 +459,9 @@ function GameManagementTab({ onEditGame }: { onEditGame: (game: Game) => void })
   const { data: games = [], isLoading } = useQuery({
     queryKey: ["/api/games"],
     queryFn: async () => {
-      const response = await apiRequest<Game[]>("/api/games");
+      const response = await apiRequest<Game[]>({
+        path: "/api/games"
+      });
       return response;
     },
   });
