@@ -79,6 +79,7 @@ interface Game {
   pricePerHour: number;
   popularity: number;
   isActive: boolean;
+  imageUrl?: string;
 }
 
 // Form validation schema for game
@@ -92,6 +93,7 @@ const gameFormSchema = z.object({
   pricePerSession: z.coerce.number().min(0, "Price must be positive"),
   pricePerHour: z.coerce.number().min(0, "Price must be positive"),
   isActive: z.boolean().default(true),
+  imageUrl: z.string().url("Please enter a valid URL").optional(),
 });
 
 type GameFormValues = z.infer<typeof gameFormSchema>;
