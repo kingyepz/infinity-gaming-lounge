@@ -43,3 +43,66 @@
   "shortCode": "174379",
   "baseUrl": "https://sandbox.safaricom.co.ke"
 }
+[2025-04-16T16:07:34.758Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T16:07:34.760Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}
+[2025-04-16T16:19:01.000Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T16:19:01.003Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}
+[2025-04-16T16:26:16.007Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T16:26:16.010Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}
+[2025-04-16T16:33:43.795Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T16:33:43.799Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}
+[2025-04-16T16:37:14.963Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T16:37:14.965Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}
+[2025-04-16T17:01:18.940Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T17:01:18.943Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}
+[2025-04-16T17:01:24.654Z] [MPESAENHANCED] [init] {
+  "baseUrl": "https://sandbox.safaricom.co.ke",
+  "environment": "sandbox"
+}
+[2025-04-16T17:01:24.657Z] [MPESAAPI.CONSTRUCTOR] [init] {
+  "environment": "sandbox",
+  "shortCode": "174379",
+  "baseUrl": "https://sandbox.safaricom.co.ke"
+}

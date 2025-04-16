@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,16 @@ import {
   UserCircle,
   Phone
 } from "lucide-react";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import CustomerRegistrationForm, {
+  type CustomerRegistrationForm,
+} from "@/components/shared/CustomerRegistrationForm";
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog";
+import { useForm } from "react-hook-form";
 
 export default function CustomerPortal() {
   const { toast } = useToast(); // Get toast function from hook
@@ -74,10 +84,41 @@ export default function CustomerPortal() {
       });
     }
   };
+  const form = useForm<CustomerRegistrationFormProps>();
+  const onSubmit = async (values: CustomerRegistrationFormProps) => {
+    console.log("values", values);
+    // Handle form submission here, e.g., send data to API
+    // After successful submission, you may want to reset the form
+    form.reset();
+  };
+
 
   return (
     <div className="space-y-6 pb-8">
       {/* User Profile and Points */}
+      <div className="flex justify-between items-center">
+        <div></div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button>Register New Customer</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Register New Customer</AlertDialogTitle>
+            </AlertDialogHeader>
+            <CustomerRegistrationForm form={form} />
+            <AlertDialogAction
+              type="submit"
+              onClick={form.handleSubmit(onSubmit)}
+            >
+              Submit
+            </AlertDialogAction>
+            <AlertDialogCancel>
+              Cancel
+            </AlertDialogCancel>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* User Profile */}
         <Card className="bg-black/30 border-primary/20 md:col-span-2">
