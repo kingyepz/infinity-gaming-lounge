@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState,useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; 
-import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,18 +51,46 @@ interface RewardsResponse {
 export default function LoyaltyPointsCard({ userId, points }: LoyaltyPointsCardProps) {
   const [redeemDialogOpen, setRedeemDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const [loyaltyHistoryData, setLoyaltyHistoryData] = useState<any[] | null>(null);
+  const [loyaltyHistoryLoading, setLoyaltyHistoryLoading] = useState(false);
+  const [loyaltyHistoryError, setLoyaltyHistoryError] = useState<Error | null>(null);
+
 
   const { data: rewards, isLoading } = useQuery({
-    queryKey: ["/api/rewards"]
+    queryKey: ["/api/rewards", { userId }],
+    queryFn: async ({ queryKey }) => {
+      const [, { userId }] = queryKey; 
+      try {
+        const response = await fetch("/api/rewards", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data as RewardsResponse;
+      } catch (error) {
+        console.error("Failed to fetch rewards:", error);
+        throw error;
+      }
+    },
   });
 
   const redeemMutation = useMutation({
-    mutationFn: (rewardId: number) =>
-      apiRequest("/api/rewards/redeem",{
+    mutationFn: async (rewardId: number) => {
+      const response = await fetch("/api/rewards/redeem", {
         method: "POST",
+        headers: {
           "Content-Type": "application/json",
+        },
         body: JSON.stringify({ userId, rewardId }),
-      }) as Promise<any>,
+      });
+      return await response.json();
+    },
     onSuccess: (data) => {
       toast({
         // @ts-ignore
@@ -82,6 +109,34 @@ export default function LoyaltyPointsCard({ userId, points }: LoyaltyPointsCardP
       });
     },
   })
+
+  useEffect(() => {
+    const fetchLoyaltyHistory = async () => {
+      setLoyaltyHistoryLoading(true);
+      setLoyaltyHistoryError(null);
+      try {
+        const response = await fetch('/api/loyalty/history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setLoyaltyHistoryData(data); 
+      } catch (error: any) {
+        console.error('Error fetching loyalty history:', error);
+        setLoyaltyHistoryError(error);
+      } finally {
+        setLoyaltyHistoryLoading(false);
+      }
+    };
+
+    fetchLoyaltyHistory();
+  }, [userId]);
   
   const handleRedeemReward = (rewardId: number) => {
     redeemMutation.mutate(rewardId);
@@ -146,7 +201,7 @@ export default function LoyaltyPointsCard({ userId, points }: LoyaltyPointsCardP
                   ))}
                 </div> 
               ) : rewards && rewards.length > 0 ? ( 
-              <div className="space-y-4">
+                <div className="space-y-4">
                   {(rewards as RewardsResponse)?.rewards.map((reward: Reward) => (
                     <div key={reward.id} className="flex items-center justify-between border-b pb-3">
                       <div>
@@ -169,12 +224,45 @@ export default function LoyaltyPointsCard({ userId, points }: LoyaltyPointsCardP
                       </Button>
                     </div>
                   ))}
-                  </div>
-              ) :  (rewards as RewardsResponse).rewards.length === 0? (
+                </div>
+              ) : (rewards as RewardsResponse).rewards.length === 0 ? (
                 <div className="text-center py-4">
                   <p>No rewards available at the moment</p>
                 </div>
-              )
+              ) : (
+              <div>Error loading</div>
+              )}
+            </ScrollArea>
+
+            <Separator className="my-4" />
+              <DialogTitle>Loyalty History</DialogTitle>
+              <DialogDescription className="pb-4">
+              View your loyalty points history
+              </DialogDescription>
+            <ScrollArea className="h-72 rounded-md border p-4">
+              {loyaltyHistoryLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-3 w-[200px]" />
+                      </div>
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  ))}
+                </div>
+              ) : loyaltyHistoryError ? (
+                  <div>Error loading history</div>
+              ) : loyaltyHistoryData && Array.isArray(loyaltyHistoryData) && loyaltyHistoryData.length > 0 ? (
+                <div className="space-y-4">
+                  {loyaltyHistoryData.map((transaction: any) => (
+                  <div key={transaction.id}>{JSON.stringify(transaction)}</div>
+                  ))}
+                </div>
+              ) : loyaltyHistoryData && Array.isArray(loyaltyHistoryData) && loyaltyHistoryData.length === 0? (
+                 <div>No loyalty history</div>
+              )   
                 : <div>Error loading</div>
               }
             </ScrollArea>
