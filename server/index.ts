@@ -5,6 +5,7 @@ import { registerRoutes } from "./routes";
 import { createServer } from "http";
 import { storage } from "./storage"; // Import storage module
 import { websocketService } from "./websocket"; // Import WebSocket service
+import { addCustomer } from "./customer";
 
 // Initialize express app
 const app = express();
@@ -37,6 +38,28 @@ app.get("/api/health", (_req, res) => {
     message: "Server is running correctly"
   });
 });
+
+
+// POST route to handle customer creation
+app.post("/api/users/create", async (req, res) => {
+  const { displayName, gamingName, phoneNumber } = req.body;
+
+  try {
+    if (!displayName || !gamingName || !phoneNumber) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const newCustomer = await addCustomer({ displayName, gamingName, phoneNumber });
+    console.log("customer added", newCustomer)
+    res.status(201).json({
+      message: "Customer added successfully",
+      customer: newCustomer,
+    });
+  } catch (error) {
+    console.error("Error creating customer:", error);
+    res.status(500).json({ message: "Failed to create customer", error });
+  }
+});
+
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
